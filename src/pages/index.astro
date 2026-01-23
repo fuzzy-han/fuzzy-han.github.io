@@ -2,47 +2,115 @@
 import '../styles/global.css';
 
 const siteName = "Fuzzy Han";
-const tagline = "Developer & Explorer";
+const tagline = "Software Engineer";
 
 const skills = [
-  { name: "Python", level: 90 },
-  { name: "JavaScript/TypeScript", level: 85 },
-  { name: "C/C++", level: 75 },
-  { name: "Go", level: 70 },
-  { name: "Database", level: 80 },
+  { name: "Python", level: 90, category: "backend" },
+  { name: "TypeScript/JavaScript", level: 85, category: "frontend" },
+  { name: "C/C++", level: 75, category: "languages" },
+  { name: "Go", level: 70, category: "backend" },
+  { name: "SQL/NoSQL", level: 80, category: "database" },
+  { name: "Vue/React", level: 75, category: "frontend" },
+  { name: "Docker/K8s", level: 65, category: "devops" },
+  { name: "Git/CI-CD", level: 80, category: "tools" },
 ];
 
 const projects = [
   {
     name: "AutoOJ",
-    desc: "自动化在线评测系统",
-    link: "https://github.com/fuzzy-han/AutoOJ"
+    desc: "自动化在线评测系统，支持多语言代码编译与执行，实时反馈评测结果",
+    tech: ["Python", "Docker", "Redis"],
+    link: "https://github.com/fuzzy-han/AutoOJ",
+    stars: "⭐"
   },
   {
     name: "OpenManus",
-    desc: "AI 智能助手框架",
-    link: "https://github.com/fuzzy-han/OpenManus"
+    desc: "AI 智能助手框架，集成多种 LLM，支持工具调用和多轮对话",
+    tech: ["Python", "TypeScript", "LLM"],
+    link: "https://github.com/fuzzy-han/OpenManus",
+    stars: "⭐"
   },
   {
     name: "DeepSearch Agent",
-    desc: "深度搜索智能代理",
-    link: "https://github.com/fuzzy-han/DeepSearchAgent-Demo"
+    desc: "深度搜索智能代理，实现复杂信息检索与分析能力",
+    tech: ["Python", "LangChain", "Vector DB"],
+    link: "https://github.com/fuzzy-han/DeepSearchAgent-Demo",
+    stars: "⭐"
+  },
+  {
+    name: "Algorithm Collection",
+    desc: "个人算法练习与题解集合，涵盖 LeetCode、洛奥等平台",
+    tech: ["C++", "Python", "Go"],
+    link: "https://github.com/fuzzy-han/algorithm",
+    stars: "📚"
+  }
+];
+
+const experiences = [
+  {
+    title: "软件工程师",
+    company: "待填写",
+    period: "2024 - 至今",
+    desc: [
+      "参与系统架构设计与核心功能开发",
+      "优化代码性能，提升系统稳定性",
+      "推动技术栈升级与工程化实践"
+    ]
+  }
+];
+
+const education = [
+  {
+    school: "待填写大学",
+    degree: "计算机科学与技术 / 本科",
+    period: "2020 - 2024",
+    gpa: "GPA: 待填写",
+    courses: ["数据结构与算法", "操作系统", "计算机网络", "数据库原理"]
+  }
+];
+
+const articles = [
+  {
+    title: "深入理解 AutoOJ 系统架构",
+    date: "2024-12",
+    summary: "分享自动化评测系统的设计与实现细节",
+    tags: ["系统设计", "Docker", "Python"]
+  },
+  {
+    title: "AI Agent 开发实践",
+    date: "2024-11",
+    summary: "基于 LLM 的智能代理开发经验总结",
+    tags: ["AI", "LLM", "Python"]
+  },
+  {
+    title: "算法刷题路线图",
+    date: "2024-10",
+    summary: "高效刷题策略与经典题目分析",
+    tags: ["算法", "LeetCode"]
   }
 ];
 
 const socials = [
-  { name: "GitHub", icon: "", url: "https://github.com/fuzzy-han" },
-  { name: "Email", icon: "", url: "mailto:your-email@example.com" }
+  { name: "GitHub", icon: "GH", url: "https://github.com/fuzzy-han" },
+  { name: "Email", icon: "@", url: "mailto:your-email@example.com" },
+  { name: "Blog", icon: "✎", url: "#" }
 ];
+
+const contactInfo = {
+  email: "your-email@example.com",
+  location: "中国",
+  availability: "开放机会"
+};
 ---
 
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content="Fuzzy Han - 个人简介网站" />
+    <meta name="description" content="Fuzzy Han - 软件工程师个人简介" />
+    <meta name="keywords" content="软件工程师,Python,TypeScript,算法,AI" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{siteName}</title>
+    <title>{siteName} - {tagline}</title>
   </head>
   <body>
     <div class="container">
@@ -54,25 +122,59 @@ const socials = [
         <h1 class="name">{siteName}</h1>
         <p class="tagline">{tagline}</p>
         <p class="bio">
-          热爱编程与探索，专注于软件开发、算法研究和 AI 技术。<br />
-          享受解决复杂问题，持续学习新技术。
+          热爱编程，专注于软件开发、算法研究和 AI 技术。<br />
+          享受解决复杂问题，持续学习新技术，用代码创造价值。
         </p>
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span>{contactInfo.availability}</span>
+        </div>
         <div class="social-links">
           {socials.map(social => (
             <a href={social.url} target="_blank" rel="noopener" class="social-link">
+              <span class="social-icon">{social.icon}</span>
               {social.name}
             </a>
           ))}
         </div>
       </header>
 
+      <!-- About Section -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="section-icon">ℹ️</span>
+          关于我
+        </h2>
+        <div class="about-content">
+          <p>
+            我是一名充满热情的软件工程师，对编程和技术探索充满热爱。
+            技术领域涉及 Web 开发、算法设计、数据库系统和人工智能。
+          </p>
+          <p>
+            在日常工作和学习中，我喜欢：
+          </p>
+          <ul class="about-list">
+            <li>💡 探索新技术，并将其应用到实际项目</li>
+            <li>🔧 解决复杂的技术问题，优化系统性能</li>
+            <li>📚 持续学习，分享技术经验和见解</li>
+            <li>🤝 参与开源社区，与优秀的开发者交流</li>
+          </ul>
+        </div>
+      </section>
+
       <!-- Skills Section -->
       <section class="section">
-        <h2 class="section-title">技术栈</h2>
+        <h2 class="section-title">
+          <span class="section-icon">🛠️</span>
+          技术栈
+        </h2>
         <div class="skills-grid">
           {skills.map(skill => (
             <div class="skill-item">
-              <span class="skill-name">{skill.name}</span>
+              <div class="skill-header">
+                <span class="skill-name">{skill.name}</span>
+                <span class="skill-level">{skill.level}%</span>
+              </div>
               <div class="skill-bar">
                 <div class="skill-fill" style={`width: ${skill.level}%`}></div>
               </div>
@@ -83,37 +185,139 @@ const socials = [
 
       <!-- Projects Section -->
       <section class="section">
-        <h2 class="section-title">项目</h2>
+        <h2 class="section-title">
+          <span class="section-icon">🚀</span>
+          精选项目
+        </h2>
         <div class="projects-grid">
           {projects.map(project => (
             <a href={project.link} target="_blank" rel="noopener" class="project-card">
-              <h3 class="project-name">{project.name}</h3>
+              <div class="project-header">
+                <h3 class="project-name">{project.name}</h3>
+                <span class="project-stars">{project.stars}</span>
+              </div>
               <p class="project-desc">{project.desc}</p>
+              <div class="project-tech">
+                {project.tech.map(t => (
+                  <span class="tech-tag">{t}</span>
+                ))}
+              </div>
               <span class="project-link">查看项目 →</span>
             </a>
           ))}
         </div>
       </section>
 
-      <!-- About Section -->
+      <!-- Experience Section -->
       <section class="section">
-        <h2 class="section-title">关于</h2>
-        <div class="about">
-          <p>
-            我是一名充满热情的开发者，对编程和技术探索充满热爱。
-            在日常工作和学习中，我喜欢尝试各种新技术，解决实际问题，
-            并通过开源社区分享我的成果。
-          </p>
-          <p>
-            技术领域涉及 Web 开发、算法设计、数据库系统和人工智能。
-            相信代码的力量可以改变世界。
-          </p>
+        <h2 class="section-title">
+          <span class="section-icon">💼</span>
+          工作经历
+        </h2>
+        <div class="timeline">
+          {experiences.map(exp => (
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <h3 class="timeline-title">{exp.title}</h3>
+                  <span class="timeline-period">{exp.period}</span>
+                </div>
+                <p class="timeline-company">{exp.company}</p>
+                <ul class="timeline-desc">
+                  {exp.desc.map(d => <li>{d}</li>)}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Education Section -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="section-icon">🎓</span>
+          教育背景
+        </h2>
+        <div class="education-grid">
+          {education.map(edu => (
+            <div class="education-card">
+              <div class="education-header">
+                <h3 class="education-school">{edu.school}</h3>
+                <span class="education-period">{edu.period}</span>
+              </div>
+              <p class="education-degree">{edu.degree}</p>
+              <p class="education-gpa">{edu.gpa}</p>
+              <div class="education-courses">
+                <span class="courses-label">核心课程：</span>
+                {edu.courses.map(c => <span class="course-tag">{c}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Articles Section -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="section-icon">✍️</span>
+          技术文章
+        </h2>
+        <div class="articles-list">
+          {articles.map(article => (
+            <article class="article-item">
+              <div class="article-header">
+                <h3 class="article-title">{article.title}</h3>
+                <span class="article-date">{article.date}</span>
+              </div>
+              <p class="article-summary">{article.summary}</p>
+              <div class="article-tags">
+                {article.tags.map(tag => (
+                  <span class="article-tag">#{tag}</span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section class="section">
+        <h2 class="section-title">
+          <span class="section-icon">📬</span>
+          联系方式
+        </h2>
+        <div class="contact-grid">
+          <div class="contact-item">
+            <span class="contact-icon">📧</span>
+            <div class="contact-info">
+              <span class="contact-label">Email</span>
+              <a href={`mailto:${contactInfo.email}`} class="contact-value">{contactInfo.email}</a>
+            </div>
+          </div>
+          <div class="contact-item">
+            <span class="contact-icon">📍</span>
+            <div class="contact-info">
+              <span class="contact-label">Location</span>
+              <span class="contact-value">{contactInfo.location}</span>
+            </div>
+          </div>
+          <div class="contact-item">
+            <span class="contact-icon">🔗</span>
+            <div class="contact-info">
+              <span class="contact-label">GitHub</span>
+              <a href="https://github.com/fuzzy-han" target="_blank" class="contact-value">github.com/fuzzy-han</a>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- Footer -->
       <footer class="footer">
         <p>© 2025 {siteName}. Built with Astro</p>
+        <p class="footer-note">
+          用心编码，持续探索 🚀
+        </p>
       </footer>
     </div>
   </body>
