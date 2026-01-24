@@ -1,9 +1,11 @@
 ---
 import '../styles/global.css';
 
+// Config
 const manualTitle = "AutoOJ 教师手册系统";
 const manualSubtitle = "《高级语言程序设计》实验指导书 2025版";
 
+// Data
 const chapters = [
   { id: 1, title: "实验一：C语言开发环境搭建", page: "1-10" },
   { id: 2, title: "实验二：数据类型与运算符", page: "11-25" },
@@ -16,10 +18,23 @@ const chapters = [
 ];
 
 const quickLinks = [
-  { name: "系统介绍", icon: "📖", desc: "了解AutoOJ系统功能与特点" },
-  { name: "实验安排", icon: "📋", desc: "查看完整的实验课程安排" },
-  { name: "评分标准", icon: "📊", desc: "实验评分与考核标准说明" },
-  { name: "常见问题", icon: "❓", desc: "使用过程中的常见问题解答" },
+  { name: "系统介绍", icon: "📖", desc: "了解AutoOJ系统功能与特点", id: "intro" },
+  { name: "实验安排", icon: "📋", desc: "查看完整的实验课程安排", id: "schedule" },
+  { name: "评分标准", icon: "📊", desc: "实验评分与考核标准说明", id: "grading" },
+  { name: "常见问题", icon: "❓", desc: "使用过程中的常见问题解答", id: "faq" },
+];
+
+const features = [
+  { icon: "📖", title: "在线阅读", desc: "支持PDF在线预览，无需下载即可查看完整的实验指导内容" },
+  { icon: "🔍", title: "快速导航", desc: "通过左侧章节目录快速定位到感兴趣的实验内容" },
+  { icon: "📋", title: "实验资源", desc: "提供完整的实验代码模板、测试用例和参考答案" },
+  { icon: "🎯", title: "评分标准", desc: "详细的评分标准和考核要求，便于教师批改和管理" },
+];
+
+const stats = [
+  { value: String(chapters.length), label: "个实验" },
+  { value: "2025", label: "最新版本" },
+  { value: "C语言", label: "程序设计" },
 ];
 ---
 
@@ -32,46 +47,147 @@ const quickLinks = [
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{manualTitle}</title>
     <style is:global>
-      * {
+      /* ========================================
+         CSS Custom Properties (Design Tokens)
+         ======================================== */
+      :root {
+        /* Colors - Primary (Blue) */
+        --color-primary-50: #eff6ff;
+        --color-primary-100: #dbeafe;
+        --color-primary-200: #bfdbfe;
+        --color-primary-300: #93c5fd;
+        --color-primary-400: #60a5fa;
+        --color-primary-500: #3b82f6;
+        --color-primary-600: #2563eb;
+        --color-primary-700: #1d4ed8;
+
+        /* Colors - Neutral */
+        --color-gray-50: #f9fafb;
+        --color-gray-100: #f3f4f6;
+        --color-gray-200: #e5e7eb;
+        --color-gray-300: #d1d5db;
+        --color-gray-400: #9ca3af;
+        --color-gray-500: #6b7280;
+        --color-gray-600: #4b5563;
+        --color-gray-700: #374151;
+        --color-gray-800: #1f2937;
+        --color-gray-900: #111827;
+
+        /* Colors - Semantic */
+        --color-success: #10b981;
+        --color-warning: #f59e0b;
+        --color-error: #ef4444;
+
+        /* Spacing */
+        --space-xs: 4px;
+        --space-sm: 8px;
+        --space-md: 12px;
+        --space-lg: 16px;
+        --space-xl: 20px;
+        --space-2xl: 24px;
+        --space-3xl: 32px;
+        --space-4xl: 40px;
+
+        /* Border Radius */
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+
+        /* Shadows */
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+        /* Transitions */
+        --transition-fast: 150ms ease;
+        --transition-normal: 250ms ease;
+        --transition-slow: 350ms ease;
+
+        /* Z-index */
+        --z-dropdown: 100;
+        --z-sticky: 200;
+        --z-modal: 300;
+      }
+
+      /* ========================================
+         Reset & Base
+         ======================================== */
+      *,
+      *::before,
+      *::after {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
 
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
+      html {
+        scroll-behavior: smooth;
       }
 
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        background: var(--color-gray-100);
+        color: var(--color-gray-800);
+        line-height: 1.6;
+        min-height: 100vh;
+        padding: var(--space-lg);
+      }
+
+      /* Focus visible for keyboard navigation */
+      :focus-visible {
+        outline: 2px solid var(--color-primary-500);
+        outline-offset: 2px;
+      }
+
+      /* Reduced motion for accessibility */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* ========================================
+         Layout Components
+         ======================================== */
       .app-container {
         max-width: 1400px;
         margin: 0 auto;
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
         overflow: hidden;
         display: flex;
         flex-direction: column;
         min-height: 95vh;
+        animation: fadeIn 0.4s ease;
       }
 
+      /* ========================================
+         Header
+         ======================================== */
       .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--color-primary-600);
         color: white;
-        padding: 24px 32px;
+        padding: var(--space-2xl) var(--space-3xl);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: var(--space-lg);
       }
 
       .header-left h1 {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 700;
-        margin-bottom: 4px;
+        margin-bottom: var(--space-xs);
+        letter-spacing: -0.5px;
       }
 
       .header-left p {
@@ -81,88 +197,128 @@ const quickLinks = [
 
       .header-actions {
         display: flex;
-        gap: 12px;
+        gap: var(--space-md);
       }
 
+      /* ========================================
+         Buttons
+         ======================================== */
       .btn {
-        padding: 10px 20px;
+        padding: var(--space-md) var(--space-lg);
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all var(--transition-normal);
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--space-sm);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+      }
+
+      .btn:hover::before {
+        transform: translateX(0);
+      }
+
+      .btn:active {
+        transform: scale(0.98);
       }
 
       .btn-primary {
         background: white;
-        color: #667eea;
+        color: var(--color-primary-600);
       }
 
       .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--shadow-lg);
       }
 
       .btn-secondary {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.15);
         color: white;
         backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
       }
 
       .btn-secondary:hover {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.25);
       }
 
+      .btn-large {
+        font-size: 16px;
+        padding: var(--space-lg) var(--space-3xl);
+      }
+
+      /* ========================================
+         Main Content Layout
+         ======================================== */
       .main-content {
         display: flex;
         flex: 1;
         overflow: hidden;
       }
 
+      /* ========================================
+         Sidebar
+         ======================================== */
       .sidebar {
         width: 280px;
-        background: #f8f9fa;
-        border-right: 1px solid #e9ecef;
+        background: var(--color-gray-50);
+        border-right: 1px solid var(--color-gray-200);
         overflow-y: auto;
         flex-shrink: 0;
       }
 
       .sidebar-section {
-        padding: 20px;
-        border-bottom: 1px solid #e9ecef;
+        padding: var(--space-xl);
+        border-bottom: 1px solid var(--color-gray-200);
       }
 
       .sidebar-title {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        color: #6c757d;
-        margin-bottom: 12px;
+        color: var(--color-gray-500);
+        margin-bottom: var(--space-md);
         letter-spacing: 0.5px;
       }
 
+      /* Quick Links */
       .quick-link {
         display: flex;
         align-items: flex-start;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 8px;
+        gap: var(--space-md);
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all var(--transition-fast);
         text-decoration: none;
         color: inherit;
       }
 
       .quick-link:hover {
-        background: #e9ecef;
+        background: var(--color-gray-200);
+      }
+
+      .quick-link:focus-visible {
+        outline: 2px solid var(--color-primary-500);
+        outline-offset: 0;
       }
 
       .quick-link-icon {
-        font-size: 20px;
+        font-size: 18px;
       }
 
       .quick-link-content {
@@ -172,15 +328,16 @@ const quickLinks = [
       .quick-link-name {
         font-weight: 600;
         font-size: 14px;
-        color: #212529;
+        color: var(--color-gray-800);
       }
 
       .quick-link-desc {
         font-size: 12px;
-        color: #6c757d;
+        color: var(--color-gray-500);
         margin-top: 2px;
       }
 
+      /* Chapter List */
       .chapter-list {
         list-style: none;
       }
@@ -188,22 +345,45 @@ const quickLinks = [
       .chapter-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 8px;
+        gap: var(--space-md);
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all var(--transition-normal);
+        position: relative;
+      }
+
+      .chapter-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 0;
+        background: var(--color-primary-500);
+        border-radius: 0 2px 2px 0;
+        transition: height var(--transition-normal);
       }
 
       .chapter-item:hover {
-        background: #e9ecef;
-        transform: translateX(4px);
+        background: var(--color-gray-200);
+        padding-left: calc(var(--space-md) + 4px);
+      }
+
+      .chapter-item:hover::before {
+        height: 60%;
+      }
+
+      .chapter-item:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px var(--color-primary-500);
       }
 
       .chapter-number {
         width: 28px;
         height: 28px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--color-primary-500);
         color: white;
         border-radius: 50%;
         display: flex;
@@ -221,65 +401,109 @@ const quickLinks = [
       .chapter-title {
         font-size: 13px;
         font-weight: 500;
-        color: #212529;
+        color: var(--color-gray-800);
         line-height: 1.4;
       }
 
       .chapter-page {
         font-size: 11px;
-        color: #6c757d;
+        color: var(--color-gray-500);
         margin-top: 2px;
       }
 
+      /* ========================================
+         Viewer Area
+         ======================================== */
       .viewer-area {
         flex: 1;
         display: flex;
         flex-direction: column;
-        background: #f1f3f5;
+        background: var(--color-gray-100);
       }
 
-      .viewer-header {
+      /* ========================================
+         Welcome Content
+         ======================================== */
+      .welcome-content {
+        padding: var(--space-4xl);
+        max-width: 800px;
+        margin: 0 auto;
+        animation: slideUp 0.5s ease;
+      }
+
+      .welcome-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--color-gray-900);
+        margin-bottom: var(--space-md);
+        letter-spacing: -1px;
+      }
+
+      .welcome-subtitle {
+        font-size: 17px;
+        color: var(--color-gray-600);
+        margin-bottom: var(--space-3xl);
+        line-height: 1.7;
+      }
+
+      /* Feature Grid */
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-lg);
+        margin-top: var(--space-3xl);
+      }
+
+      .feature-card {
         background: white;
-        padding: 16px 24px;
-        border-bottom: 1px solid #e9ecef;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        padding: var(--space-xl);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        transition: all var(--transition-normal);
+        border: 1px solid var(--color-gray-200);
+        animation: fadeIn 0.5s ease backwards;
       }
 
-      .viewer-title {
-        font-size: 16px;
+      .feature-card:nth-child(1) { animation-delay: 0.1s; }
+      .feature-card:nth-child(2) { animation-delay: 0.2s; }
+      .feature-card:nth-child(3) { animation-delay: 0.3s; }
+      .feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--color-primary-300);
+      }
+
+      .feature-icon {
+        font-size: 28px;
+        margin-bottom: var(--space-md);
+      }
+
+      .feature-title {
+        font-size: 15px;
         font-weight: 600;
-        color: #212529;
+        color: var(--color-gray-800);
+        margin-bottom: var(--space-sm);
       }
 
-      .viewer-controls {
-        display: flex;
-        gap: 8px;
-      }
-
-      .viewer-btn {
-        padding: 8px 12px;
-        border: 1px solid #dee2e6;
-        background: white;
-        border-radius: 6px;
-        cursor: pointer;
+      .feature-desc {
         font-size: 13px;
-        transition: all 0.2s;
+        color: var(--color-gray-600);
+        line-height: 1.6;
       }
 
-      .viewer-btn:hover {
-        background: #f8f9fa;
-        border-color: #adb5bd;
-      }
-
+      /* ========================================
+         PDF Container
+         ======================================== */
       .pdf-container {
         flex: 1;
         position: relative;
-        background: #212529;
+        background: var(--color-gray-900);
         display: flex;
         align-items: center;
         justify-content: center;
+        animation: fadeIn 0.3s ease;
       }
 
       .pdf-iframe {
@@ -288,110 +512,76 @@ const quickLinks = [
         border: none;
       }
 
-      .pdf-placeholder {
-        text-align: center;
-        color: #adb5bd;
-        padding: 40px;
-      }
-
-      .pdf-placeholder-icon {
-        font-size: 64px;
-        margin-bottom: 16px;
-      }
-
-      .pdf-placeholder h3 {
-        font-size: 20px;
-        color: #dee2e6;
-        margin-bottom: 8px;
-      }
-
-      .pdf-placeholder p {
-        margin-bottom: 24px;
-      }
-
-      .welcome-content {
-        padding: 40px;
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      .welcome-title {
-        font-size: 32px;
-        font-weight: 700;
-        color: #212529;
-        margin-bottom: 16px;
-      }
-
-      .welcome-subtitle {
-        font-size: 18px;
-        color: #6c757d;
-        margin-bottom: 32px;
-      }
-
-      .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-top: 32px;
-      }
-
-      .feature-card {
-        background: white;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-
-      .feature-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      }
-
-      .feature-icon {
-        font-size: 32px;
-        margin-bottom: 12px;
-      }
-
-      .feature-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #212529;
-        margin-bottom: 8px;
-      }
-
-      .feature-desc {
-        font-size: 13px;
-        color: #6c757d;
-        line-height: 1.6;
-      }
-
+      /* ========================================
+         Stats Bar
+         ======================================== */
       .stats-bar {
-        background: #f8f9fa;
-        padding: 16px 24px;
+        background: var(--color-gray-50);
+        padding: var(--space-lg) var(--space-3xl);
         display: flex;
-        gap: 32px;
-        border-top: 1px solid #e9ecef;
+        gap: var(--space-3xl);
+        border-top: 1px solid var(--color-gray-200);
       }
 
       .stat-item {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--space-sm);
       }
 
       .stat-value {
         font-size: 18px;
         font-weight: 700;
-        color: #667eea;
+        color: var(--color-primary-600);
       }
 
       .stat-label {
         font-size: 12px;
-        color: #6c757d;
+        color: var(--color-gray-600);
       }
 
+      /* ========================================
+         Animations
+         ======================================== */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ========================================
+         Responsive Design
+         ======================================== */
       @media (max-width: 768px) {
+        body {
+          padding: var(--space-sm);
+        }
+
         .main-content {
           flex-direction: column;
         }
@@ -404,177 +594,360 @@ const quickLinks = [
         .header {
           flex-direction: column;
           text-align: center;
+          padding: var(--space-lg);
         }
 
         .header-actions {
           justify-content: center;
         }
+
+        .welcome-content {
+          padding: var(--space-2xl);
+        }
+
+        .welcome-title {
+          font-size: 24px;
+        }
+
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-bar {
+          flex-wrap: wrap;
+          gap: var(--space-lg);
+          justify-content: center;
+        }
+      }
+
+      /* ========================================
+         Utility Classes
+         ======================================== */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .flex {
+        display: flex;
+      }
+
+      .flex-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
     </style>
   </head>
   <body>
-    <div class="app-container">
-      <header class="header">
+    <div class="app-container" role="main">
+      <!-- Header -->
+      <header class="header" role="banner">
         <div class="header-left">
           <h1>{manualTitle}</h1>
           <p>{manualSubtitle}</p>
         </div>
         <div class="header-actions">
-          <button class="btn btn-secondary" id="downloadBtn">
-            <span>📥</span>
+          <button
+            class="btn btn-secondary"
+            id="downloadBtn"
+            aria-label="下载实验指导书PDF文件"
+            title="下载手册到本地"
+          >
+            <span aria-hidden="true">📥</span>
             <span>下载手册</span>
           </button>
-          <button class="btn btn-primary" id="openPdfBtn">
-            <span>📖</span>
+          <button
+            class="btn btn-primary"
+            id="openPdfBtn"
+            aria-label="打开PDF查看器"
+            aria-expanded="false"
+            aria-controls="pdfContainer"
+          >
+            <span aria-hidden="true">📖</span>
             <span>打开PDF</span>
           </button>
         </div>
       </header>
 
+      <!-- Main Content -->
       <div class="main-content">
-        <aside class="sidebar">
-          <div class="sidebar-section">
-            <div class="sidebar-title">快速导航</div>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" role="complementary" aria-label="侧边导航">
+          <!-- Quick Links -->
+          <nav class="sidebar-section" aria-label="快速导航">
+            <h2 class="sidebar-title">快速导航</h2>
             {quickLinks.map(link => (
-              <a href="#" class="quick-link">
-                <span class="quick-link-icon">{link.icon}</span>
+              <a
+                href={`#${link.id}`}
+                class="quick-link"
+                role="button"
+                tabindex="0"
+                aria-label={`${link.name}：${link.desc}`}
+              >
+                <span class="quick-link-icon" aria-hidden="true">{link.icon}</span>
                 <div class="quick-link-content">
                   <div class="quick-link-name">{link.name}</div>
                   <div class="quick-link-desc">{link.desc}</div>
                 </div>
               </a>
             ))}
-          </div>
+          </nav>
 
-          <div class="sidebar-section">
-            <div class="sidebar-title">实验章节</div>
-            <ul class="chapter-list">
-              {chapters.map(chapter => (
-                <li class="chapter-item" data-page={chapter.page}>
-                  <span class="chapter-number">{chapter.id}</span>
-                  <div class="chapter-info">
-                    <div class="chapter-title">{chapter.title}</div>
-                    <div class="chapter-page">第 {chapter.page} 页</div>
-                  </div>
+          <!-- Chapter List -->
+          <nav class="sidebar-section" aria-label="实验章节目录">
+            <h2 class="sidebar-title">实验章节</h2>
+            <ul class="chapter-list" role="list">
+              {chapters.map((chapter, index) => (
+                <li>
+                  <button
+                    class="chapter-item"
+                    data-page={chapter.page}
+                    aria-label={`跳转到${chapter.title}，第${chapter.page}页`}
+                    style="animation: slideIn 0.3s ease backwards; animation-delay: {index * 0.05}s;"
+                  >
+                    <span class="chapter-number" aria-hidden="true">{chapter.id}</span>
+                    <div class="chapter-info">
+                      <div class="chapter-title">{chapter.title}</div>
+                      <div class="chapter-page">第 {chapter.page} 页</div>
+                    </div>
+                  </button>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
         </aside>
 
-        <main class="viewer-area" id="viewerArea">
-          <div class="welcome-content" id="welcomeContent">
+        <!-- Main Viewer Area -->
+        <main class="viewer-area" id="viewerArea" role="main" aria-live="polite">
+          <!-- Welcome Content -->
+          <div class="welcome-content" id="welcomeContent" aria-hidden="false">
             <h1 class="welcome-title">欢迎使用 AutoOJ 教师手册系统</h1>
             <p class="welcome-subtitle">
               本系统提供完整的《高级语言程序设计》实验指导书，支持在线阅读、章节导航和快速查询功能。
             </p>
 
             <div class="feature-grid">
-              <div class="feature-card">
-                <div class="feature-icon">📖</div>
-                <div class="feature-title">在线阅读</div>
-                <div class="feature-desc">支持PDF在线预览，无需下载即可查看完整的实验指导内容</div>
-              </div>
-              <div class="feature-card">
-                <div class="feature-icon">🔍</div>
-                <div class="feature-title">快速导航</div>
-                <div class="feature-desc">通过左侧章节目录快速定位到感兴趣的实验内容</div>
-              </div>
-              <div class="feature-card">
-                <div class="feature-icon">📋</div>
-                <div class="feature-title">实验资源</div>
-                <div class="feature-desc">提供完整的实验代码模板、测试用例和参考答案</div>
-              </div>
-              <div class="feature-card">
-                <div class="feature-icon">🎯</div>
-                <div class="feature-title">评分标准</div>
-                <div class="feature-desc">详细的评分标准和考核要求，便于教师批改和管理</div>
-              </div>
+              {features.map(feature => (
+                <article class="feature-card">
+                  <div class="feature-icon" aria-hidden="true">{feature.icon}</div>
+                  <h3 class="feature-title">{feature.title}</h3>
+                  <p class="feature-desc">{feature.desc}</p>
+                </article>
+              ))}
             </div>
 
-            <div style="margin-top: 40px; text-align: center;">
-              <button class="btn btn-primary" id="startReadingBtn" style="font-size: 16px; padding: 14px 32px;">
-                <span style="font-size: 18px;">🚀</span>
+            <div style="margin-top: var(--space-4xl); text-align: center;">
+              <button
+                class="btn btn-primary btn-large"
+                id="startReadingBtn"
+                aria-label="开始阅读实验指导书"
+              >
+                <span style="font-size: 18px;" aria-hidden="true">🚀</span>
                 <span>开始阅读手册</span>
               </button>
             </div>
           </div>
 
-          <div class="pdf-container" id="pdfContainer" style="display: none;">
+          <!-- PDF Container -->
+          <div
+            class="pdf-container hidden"
+            id="pdfContainer"
+            role="region"
+            aria-label="PDF查看器"
+            aria-hidden="true"
+          >
             <iframe
               src="/manual.pdf"
               class="pdf-iframe"
               id="pdfIframe"
-              title="实验指导书PDF"
+              title="实验指导书PDF内容"
+              aria-label="实验指导书PDF文档查看区域"
             ></iframe>
           </div>
         </main>
       </div>
 
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-value">{chapters.length}</span>
-          <span class="stat-label">个实验</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">2025</span>
-          <span class="stat-label">最新版本</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">C语言</span>
-          <span class="stat-label">程序设计</span>
-        </div>
-      </div>
+      <!-- Stats Bar -->
+      <footer class="stats-bar" role="contentinfo">
+        {stats.map(stat => (
+          <div class="stat-item">
+            <span class="stat-value">{stat.value}</span>
+            <span class="stat-label">{stat.label}</span>
+          </div>
+        ))}
+      </footer>
     </div>
 
     <script define:vars={{ chapters }}>
-      const openPdfBtn = document.getElementById('openPdfBtn');
-      const startReadingBtn = document.getElementById('startReadingBtn');
-      const downloadBtn = document.getElementById('downloadBtn');
-      const welcomeContent = document.getElementById('welcomeContent');
-      const pdfContainer = document.getElementById('pdfContainer');
+      // ========================================
+      // State Management (Reactive Store)
+      // ========================================
+      const createStore = (initialState) => {
+        let state = initialState;
+        const listeners = new Set();
 
-      if (!openPdfBtn || !startReadingBtn || !downloadBtn || !welcomeContent || !pdfContainer) {
-        console.error('Required elements not found');
-        throw new Error('Required elements not found');
+        return {
+          getState: () => state,
+          setState: (newState) => {
+            state = typeof newState === 'function' ? newState(state) : newState;
+            listeners.forEach(listener => listener(state));
+          },
+          subscribe: (listener) => {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+          }
+        };
+      };
+
+      // App State
+      const store = createStore({
+        isPdfOpen: false,
+        activeChapter: null
+      });
+
+      // ========================================
+      // DOM Elements (with null safety)
+      // ========================================
+      const elements = {
+        openPdfBtn: document.getElementById('openPdfBtn'),
+        startReadingBtn: document.getElementById('startReadingBtn'),
+        downloadBtn: document.getElementById('downloadBtn'),
+        welcomeContent: document.getElementById('welcomeContent'),
+        pdfContainer: document.getElementById('pdfContainer'),
+      };
+
+      // Validate required elements
+      const missingElements = Object.entries(elements)
+        .filter(([, el]) => !el)
+        .map(([name]) => name);
+
+      if (missingElements.length > 0) {
+        console.error('Missing required elements:', missingElements);
+        throw new Error(`Required elements not found: ${missingElements.join(', ')}`);
       }
 
-      function openPdf() {
-        welcomeContent.style.display = 'none';
-        pdfContainer.style.display = 'flex';
-      }
+      // ========================================
+      // PDF View Controller
+      // ========================================
+      const PdfController = {
+        open() {
+          elements.welcomeContent.setAttribute('aria-hidden', 'true');
+          elements.pdfContainer.classList.remove('hidden');
+          elements.pdfContainer.setAttribute('aria-hidden', 'false');
+          elements.openPdfBtn.setAttribute('aria-expanded', 'true');
+          store.setState({ isPdfOpen: true });
 
-      function closePdf() {
-        welcomeContent.style.display = 'block';
-        pdfContainer.style.display = 'none';
-      }
+          // Focus management for accessibility
+          elements.pdfContainer.focus();
 
-      openPdfBtn.addEventListener('click', () => {
-        if (pdfContainer.style.display === 'none') {
-          openPdf();
-          openPdfBtn.innerHTML = '<span>✖️</span><span>关闭PDF</span>';
-        } else {
-          closePdf();
-          openPdfBtn.innerHTML = '<span>📖</span><span>打开PDF</span>';
+          // Update button UI
+          elements.openPdfBtn.innerHTML = '<span aria-hidden="true">✖️</span><span>关闭PDF</span>';
+        },
+
+        close() {
+          elements.welcomeContent.setAttribute('aria-hidden', 'false');
+          elements.pdfContainer.classList.add('hidden');
+          elements.pdfContainer.setAttribute('aria-hidden', 'true');
+          elements.openPdfBtn.setAttribute('aria-expanded', 'false');
+          store.setState({ isPdfOpen: false });
+
+          // Restore focus
+          elements.openPdfBtn.focus();
+
+          // Update button UI
+          elements.openPdfBtn.innerHTML = '<span aria-hidden="true">📖</span><span>打开PDF</span>';
+        },
+
+        toggle() {
+          const { isPdfOpen } = store.getState();
+          isPdfOpen ? this.close() : this.open();
+        }
+      };
+
+      // ========================================
+      // Download Controller
+      // ========================================
+      const DownloadController = {
+        download() {
+          const link = document.createElement('a');
+          link.href = '/manual.pdf';
+          link.download = '高级语言程序设计实验指导书-2025版.pdf';
+          link.click();
+        }
+      };
+
+      // ========================================
+      // Event Listeners
+      // ========================================
+      elements.openPdfBtn.addEventListener('click', () => PdfController.toggle());
+      elements.startReadingBtn.addEventListener('click', () => PdfController.open());
+      elements.downloadBtn.addEventListener('click', () => DownloadController.download());
+
+      // Chapter navigation with keyboard support
+      document.querySelectorAll('.chapter-item').forEach(item => {
+        item.addEventListener('click', () => {
+          PdfController.open();
+        });
+
+        // Add keyboard support
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            PdfController.open();
+          }
+        });
+      });
+
+      // Quick links keyboard support
+      document.querySelectorAll('.quick-link').forEach(link => {
+        link.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            // Could implement modal or section navigation here
+            console.log('Quick link clicked');
+          }
+        });
+      });
+
+      // ========================================
+      // Keyboard Shortcuts
+      // ========================================
+      document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + K to open/close PDF
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+          e.preventDefault();
+          PdfController.toggle();
+        }
+
+        // Escape to close PDF
+        if (e.key === 'Escape' && store.getState().isPdfOpen) {
+          PdfController.close();
         }
       });
 
-      startReadingBtn.addEventListener('click', openPdf);
-
-      downloadBtn.addEventListener('click', () => {
-        const link = document.createElement('a');
-        link.href = '/manual.pdf';
-        link.download = '高级语言程序设计实验指导书-2025版.pdf';
-        link.click();
+      // ========================================
+      // Subscribe to state changes (optional)
+      // ========================================
+      store.subscribe((state) => {
+        console.log('State changed:', state);
       });
 
-      // 章节点击跳转（可选功能，需要PDF支持）
-      document.querySelectorAll('.chapter-item').forEach(item => {
-        item.addEventListener('click', () => {
-          openPdf();
-          openPdfBtn.innerHTML = '<span>✖️</span><span>关闭PDF</span>';
-        });
-      });
+      // ========================================
+      // Initialize
+      // ========================================
+      console.log('AutoOJ Manual System initialized');
     </script>
   </body>
 </html>
