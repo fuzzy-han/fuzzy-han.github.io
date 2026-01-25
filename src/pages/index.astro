@@ -17,10 +17,10 @@ const chapters = [
 ];
 
 const quickLinks = [
-  { name: "系统介绍", id: "intro", page: 1 },
-  { name: "日程安排", id: "schedule", page: 116 },
-  { name: "评分标准", id: "grading", page: 118 },
-  { name: "常见问题", id: "faq", page: 120 },
+  { name: "系统介绍", id: "intro", url: "/intro" },
+  { name: "日程安排", id: "schedule", url: "/schedule" },
+  { name: "评分标准", id: "grading", url: "/grading" },
+  { name: "常见问题", id: "faq", url: "/faq" },
 ];
 ---
 
@@ -61,27 +61,24 @@ const quickLinks = [
         <nav>
           <div class="section-title">快速访问</div>
           {quickLinks.map(link => (
-            <button 
-              class="menu-btn" 
-              onclick={`jumpToPage(${link.page})`}
-            >
+            <a href={link.url} class="menu-btn" style="text-decoration: none; display: block;">
               {link.name}
-            </button>
+            </a>
           ))}
         </nav>
 
         <nav>
           <div class="section-title">模块 // 章节</div>
           {chapters.map(chapter => (
-            <button 
-              class="menu-btn" 
+            <button
+              class="menu-btn"
               onclick={`jumpToPage(${chapter.startPage})`}
             >
               {chapter.title}
             </button>
           ))}
         </nav>
-        
+
         <div style="margin-top: auto;">
           <a href="/logs" class="menu-btn" style="text-decoration: none; display: block; text-align: left;">
             [ 系统日志 ]

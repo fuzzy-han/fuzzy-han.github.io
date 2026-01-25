@@ -1,0 +1,82 @@
+---
+import '../styles/global.css';
+
+const pageTitle = "系统介绍";
+const manualTitle = "AUTO_OJ // 操作手册";
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle} - {manualTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="cyber-shell">
+      <!-- Header -->
+      <header class="cyber-header">
+        <div class="brand">{manualTitle}</div>
+        <a href="/" class="menu-btn" style="width: auto; padding: 8px 20px; text-decoration: none;">&larr; 返回首页</a>
+      </header>
+
+      <!-- Sidebar -->
+      <aside class="cyber-sidebar">
+        <div class="section-title">快速导航</div>
+        <a href="/intro" class="menu-btn active">系统介绍</a>
+        <a href="/schedule" class="menu-btn">日程安排</a>
+        <a href="/grading" class="menu-btn">评分标准</a>
+        <a href="/faq" class="menu-btn">常见问题</a>
+        <a href="/" class="menu-btn" style="border-color: var(--color-neon-pink); color: var(--color-neon-pink);">[ 返回手册 ]</a>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="cyber-main" style="overflow-y: auto; padding: 40px;">
+        <div class="content-container">
+          <section class="content-section">
+            <h2>欢迎使用 AUTO_OJ 系统</h2>
+            <p>AUTO_OJ 是一个全自动化的在线评测系统，专为编程教学和学习设计。本系统提供实时代码评测、详细的错误反馈以及完整的学习进度追踪。</p>
+          </section>
+
+          <section class="content-section">
+            <h2>系统特性</h2>
+            <h3>1. 实时评测</h3>
+            <p>提交代码后立即获得评测结果，无需等待。系统支持多种编程语言，包括 C、C++、Java、Python 等。</p>
+
+            <h3>2. 智能反馈</h3>
+            <p>除了常规的通过/失败判定，系统还会提供详细的错误分析，帮助学习者快速定位问题所在。</p>
+
+            <h3>3. 进度追踪</h3>
+            <p>完整记录学习进度，包括完成题目数、正确率、耗时等数据，帮助学习者了解自己的学习状态。</p>
+
+            <h3>4. 多样化题库</h3>
+            <p>涵盖从基础语法到高级算法的各类题目，满足不同水平学习者的需求。</p>
+          </section>
+
+          <section class="content-section">
+            <h2>技术架构</h2>
+            <ul>
+              <li><strong>前端：</strong>基于现代 Web 技术构建，提供流畅的用户体验</li>
+              <li><strong>后端：</strong>高性能评测引擎，支持并发处理</li>
+              <li><strong>安全：</strong>沙箱环境执行代码，确保系统安全</li>
+              <li><strong>可扩展：</strong>模块化设计，易于扩展新功能</li>
+            </ul>
+          </section>
+
+          <section class="content-section">
+            <h2>快速开始</h2>
+            <ol>
+              <li>阅读本手册的各个章节，了解系统使用方法</li>
+              <li>查看日程安排，规划学习计划</li>
+              <li>了解评分标准，明确学习目标</li>
+              <li>遇到问题可查看常见问题解答</li>
+            </ol>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

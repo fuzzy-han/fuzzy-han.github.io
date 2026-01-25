@@ -1,0 +1,134 @@
+---
+import '../styles/global.css';
+
+const pageTitle = "日程安排";
+const manualTitle = "AUTO_OJ // 操作手册";
+
+// 学习周数据
+const scheduleWeeks = [
+  {
+    week: 1,
+    topic: "环境配置与基础",
+    chapters: ["01 // 环境配置"],
+    topics: ["开发环境搭建", "基本语法", "第一个程序"],
+    tasks: ["完成环境配置", "编写 Hello World", "练习基本输入输出"]
+  },
+  {
+    week: 2,
+    topic: "数据类型",
+    chapters: ["02 // 数据类型"],
+    topics: ["基本数据类型", "变量与常量", "类型转换"],
+    tasks: ["掌握基本类型", "理解变量作用域", "完成类型转换练习"]
+  },
+  {
+    week: 3,
+    topic: "控制流程",
+    chapters: ["03 // 控制流程"],
+    topics: ["条件语句", "循环结构", "跳转语句"],
+    tasks: ["if-else 练习", "循环嵌套", "break 和 continue 使用"]
+  },
+  {
+    week: 4,
+    topic: "数组与字符串",
+    chapters: ["04 // 数组字符串"],
+    topics: ["数组操作", "字符串处理", "常用算法"],
+    tasks: ["数组排序", "字符串查找", "实现基础算法"]
+  },
+  {
+    week: 5,
+    topic: "函数",
+    chapters: ["05 // 函数"],
+    topics: ["函数定义", "参数传递", "递归"],
+    tasks: ["编写自定义函数", "理解值传递与引用", "递归问题求解"]
+  },
+  {
+    week: 6,
+    topic: "指针",
+    chapters: ["06 // 指针"],
+    topics: ["指针基础", "指针与数组", "动态内存"],
+    tasks: ["指针运算", "指针数组", "内存分配与释放"]
+  },
+  {
+    week: 7,
+    topic: "结构体",
+    chapters: ["07 // 结构体"],
+    topics: ["结构体定义", "结构体数组", "链表"],
+    tasks: ["定义复杂数据结构", "链表操作", "综合应用"]
+  },
+  {
+    week: 8,
+    topic: "文件操作",
+    chapters: ["08 // 文件操作"],
+    topics: ["文件读写", "文件定位", "错误处理"],
+    tasks: ["文本文件处理", "二进制文件", "文件综合应用"]
+  }
+];
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle} - {manualTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="cyber-shell">
+      <!-- Header -->
+      <header class="cyber-header">
+        <div class="brand">{manualTitle}</div>
+        <a href="/" class="menu-btn" style="width: auto; padding: 8px 20px; text-decoration: none;">&larr; 返回首页</a>
+      </header>
+
+      <!-- Sidebar -->
+      <aside class="cyber-sidebar">
+        <div class="section-title">快速导航</div>
+        <a href="/intro" class="menu-btn">系统介绍</a>
+        <a href="/schedule" class="menu-btn active">日程安排</a>
+        <a href="/grading" class="menu-btn">评分标准</a>
+        <a href="/faq" class="menu-btn">常见问题</a>
+        <a href="/" class="menu-btn" style="border-color: var(--color-neon-pink); color: var(--color-neon-pink);">[ 返回手册 ]</a>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="cyber-main" style="overflow-y: auto; padding: 40px;">
+        <div class="content-container">
+          <section class="content-section">
+            <h2>8 周学习计划</h2>
+            <p>本课程为期 8 周，每周专注于特定主题。请按照以下计划进行学习，确保按时完成每周任务。</p>
+          </section>
+
+          {scheduleWeeks.map(week => (
+            <section class="content-section">
+              <h3>第 {week.week} 周：{week.topic}</h3>
+              <p><strong>对应章节：</strong> {week.chapters.join(", ")}</p>
+
+              <h4>本周主题</h4>
+              <ul>
+                {week.topics.map(topic => <li>{topic}</li>)}
+              </ul>
+
+              <h4>本周任务</h4>
+              <ul>
+                {week.tasks.map(task => <li>{task}</li>)}
+              </ul>
+            </section>
+          ))}
+
+          <section class="content-section">
+            <h2>重要提醒</h2>
+            <ul>
+              <li>每周建议学习时间：10-15 小时</li>
+              <li>完成每周任务后进行自我评估</li>
+              <li>遇到问题及时查阅常见问题或寻求帮助</li>
+              <li>每周复习前一周内容，巩固知识</li>
+            </ul>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

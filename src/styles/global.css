@@ -248,23 +248,9 @@ body::before {
   100% { clip: rect(54px, 9999px, 78px, 0); }
 }
 
-/* CRT Scanline Effect */
+/* CRT Scanline Effect - 已禁用 */
 .scanline {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0) 50%,
-    rgba(0, 0, 0, 0.2) 50%,
-    rgba(0, 0, 0, 0.2)
-  );
-  background-size: 100% 4px;
-  pointer-events: none;
-  z-index: 9999;
+  display: none;
 }
 
 @keyframes blink {
@@ -274,13 +260,106 @@ body::before {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  html, body {
+    overflow-y: auto;
+  }
+
   .cyber-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: 60px 200px 1fr;
+    grid-template-rows: 60px auto 1fr;
+    height: auto;
+    min-height: 100vh;
   }
-  
+
   .cyber-sidebar {
     border-right: none;
     border-bottom: var(--border-width) solid var(--color-neon-acid);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .cyber-main {
+    height: 600px;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .glitch-text {
+    font-size: 36px;
+  }
+
+  .menu-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .section-title {
+    font-size: 11px;
+  }
+}
+
+/* 响应式内容容器 */
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.content-section {
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid var(--color-neon-cyan);
+  border-radius: 4px;
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.content-section h2 {
+  color: var(--color-neon-acid);
+  font-size: 28px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.content-section h3 {
+  color: var(--color-neon-cyan);
+  font-size: 20px;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.content-section p {
+  line-height: 1.8;
+  margin-bottom: 15px;
+  color: #e0e0e0;
+}
+
+.content-section ul, .content-section ol {
+  margin-left: 20px;
+  margin-bottom: 15px;
+}
+
+.content-section li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    padding: 20px 15px;
+  }
+
+  .content-section {
+    padding: 20px;
+  }
+
+  .content-section h2 {
+    font-size: 22px;
+  }
+
+  .content-section h3 {
+    font-size: 18px;
   }
 }
