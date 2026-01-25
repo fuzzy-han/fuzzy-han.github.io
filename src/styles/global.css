@@ -368,6 +368,7 @@ body::before {
     min-height: 100vh;
     max-height: 100vh;
     overflow: hidden;
+    border: none;
   }
 
   /* 手机版侧边栏默认隐藏，从左侧滑出 */
@@ -412,6 +413,9 @@ body::before {
     max-height: calc(100vh - 60px);
     overflow-y: auto;
     overflow-x: hidden;
+    padding: 20px 15px;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
   }
 
   .brand {
@@ -496,20 +500,21 @@ body::before {
 /* 主题切换按钮 */
 .theme-toggle {
   position: fixed;
-  top: 70px;
+  top: 10px;
   right: 20px;
   z-index: 10001;
   background: var(--color-panel);
   border: 2px solid var(--color-neon-cyan);
   border-radius: 50%;
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .theme-toggle:hover {
@@ -518,8 +523,8 @@ body::before {
 }
 
 .theme-toggle svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   fill: var(--color-neon-cyan);
   transition: fill 0.3s;
 }
@@ -534,10 +539,11 @@ body::before {
 
 @media (max-width: 768px) {
   .theme-toggle {
-    width: 40px;
-    height: 40px;
-    top: 10px;
-    right: 10px;
+    position: static;
+    width: 36px;
+    height: 36px;
+    margin-right: 8px;
+    order: 1;
   }
 
   .theme-toggle svg {
@@ -549,7 +555,8 @@ body::before {
 @media (max-width: 768px) {
   .content-container {
     padding: 20px 15px;
-    height: 100%;
+    height: auto;
+    min-height: 0;
   }
 
   .content-section {
@@ -568,7 +575,7 @@ body::before {
 
 /* Markdown 教程样式 */
 .tutorial-container {
-  max-width: 800px;
+  max-width: 1600px;
   width: 100%;
   padding: 40px;
 }
@@ -700,9 +707,30 @@ body::before {
 
 @media (max-width: 768px) {
   .tutorial-container {
-    padding: 20px 15px;
+    padding: 20px 5px;
     max-height: none;
-    height: 100%;
+    height: auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+  }
+
+  .markdown-body {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .markdown-body pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .markdown-body table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 
   .markdown-body h1 {

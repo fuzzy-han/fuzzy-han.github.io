@@ -31,13 +31,6 @@ const navLinks = [
   <body>
     <div class="scanline"></div>
 
-    <!-- 主题切换按钮 -->
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="切换主题" id="themeToggle">
-      <svg viewBox="0 0 24 24" id="themeIcon">
-        <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
-      </svg>
-    </button>
-
     <div class="cyber-shell">
       <!-- 手机版侧边栏遮罩 -->
       <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -48,6 +41,12 @@ const navLinks = [
             <rect x="3" y="5" width="18" height="2" rx="1"/>
             <rect x="3" y="11" width="18" height="2" rx="1"/>
             <rect x="3" y="17" width="18" height="2" rx="1"/>
+          </svg>
+        </button>
+        <!-- 主题切换按钮 -->
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="切换主题" id="themeToggle">
+          <svg viewBox="0 0 24 24" id="themeIcon">
+            <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
           </svg>
         </button>
         <a href="/" class="brand" style="text-decoration: none;">{manualTitle}</a>
@@ -260,7 +259,7 @@ const navLinks = [
       const THEME_KEY = 'auto-oj-theme';
 
       function getTheme() {
-        return localStorage.getItem(THEME_KEY) || 'light';
+        return localStorage.getItem(THEME_KEY) || 'dark';
       }
 
       function saveTheme(theme) {
