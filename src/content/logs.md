@@ -1,14 +1,12 @@
-# CHANGELOG
+# 更新日志
 
-## [ BUILD_2025.0.1 ]
+## [ BUILD_2026.1.23 ]
 
-- REFACTORED_UI_CORE
-- IMPLEMENTED_NEURAL_PDF_LINKING
-- REMOVED_AI_RESIDUE_PATTERNS
-- OPTIMIZED_FOR_HIGH_SPEED_NAVIGATION
+- 重构UI界面
+- 优化界面导航栏
 
-## [ SYSTEM_CREDITS ]
+## [ 特别鸣谢 ]
 
-- ARCHITECT: HAN
-- STYLE: CYBER_BRUTALISM
-- STATUS: OPERATIONAL
+- 开发者: 彭文晓,冷秋旱,杨云昊,宋雨扬,李晓雅,胡良浩
+- 指导老师: 蒋设想
+- 开发状态: 系统开发中....
