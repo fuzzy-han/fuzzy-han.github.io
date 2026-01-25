@@ -364,6 +364,7 @@ body::before {
   .cyber-shell {
     grid-template-columns: 1fr;
     grid-template-rows: 60px 1fr;
+    width: 100vw;
     height: 100vh;
     min-height: 100vh;
     max-height: 100vh;
