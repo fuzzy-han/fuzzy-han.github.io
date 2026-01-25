@@ -1,26 +1,26 @@
 ---
 import '../styles/global.css';
 
-const manualTitle = "AUTO_OJ // MANUAL";
-const manualSubtitle = "V.2025.0.1 // EXPERIMENTAL";
+const manualTitle = "AUTO_OJ // 操作手册";
+const manualSubtitle = "V.2025.0.1 // 实验版本";
 
-// Data Structure Optimized for Navigation
+// 导航数据结构
 const chapters = [
-  { id: 1, title: "01 // ENV_SETUP", page: "1-10", startPage: 1 },
-  { id: 2, title: "02 // DATA_TYPES", page: "11-25", startPage: 11 },
-  { id: 3, title: "03 // CONTROL_FLOW", page: "26-40", startPage: 26 },
-  { id: 4, title: "04 // ARRAYS_STR", page: "41-55", startPage: 41 },
-  { id: 5, title: "05 // FUNCTIONS", page: "56-70", startPage: 56 },
-  { id: 6, title: "06 // POINTERS", page: "71-85", startPage: 71 },
-  { id: 7, title: "07 // STRUCTS", page: "86-100", startPage: 86 },
-  { id: 8, title: "08 // FILE_IO", page: "101-115", startPage: 101 },
+  { id: 1, title: "01 // 环境配置", page: "1-10", startPage: 1 },
+  { id: 2, title: "02 // 数据类型", page: "11-25", startPage: 11 },
+  { id: 3, title: "03 // 控制流程", page: "26-40", startPage: 26 },
+  { id: 4, title: "04 // 数组字符串", page: "41-55", startPage: 41 },
+  { id: 5, title: "05 // 函数", page: "56-70", startPage: 56 },
+  { id: 6, title: "06 // 指针", page: "71-85", startPage: 71 },
+  { id: 7, title: "07 // 结构体", page: "86-100", startPage: 86 },
+  { id: 8, title: "08 // 文件操作", page: "101-115", startPage: 101 },
 ];
 
 const quickLinks = [
-  { name: "SYS_INTRO", id: "intro", page: 1 },
-  { name: "SCHEDULE", id: "schedule", page: 116 }, // Assuming appendix
-  { name: "GRADING", id: "grading", page: 118 },
-  { name: "FAQ_DB", id: "faq", page: 120 },
+  { name: "系统介绍", id: "intro", page: 1 },
+  { name: "日程安排", id: "schedule", page: 116 },
+  { name: "评分标准", id: "grading", page: 118 },
+  { name: "常见问题", id: "faq", page: 120 },
 ];
 ---
 
@@ -44,22 +44,22 @@ const quickLinks = [
         <div style="font-size: 12px; opacity: 0.7;">{manualSubtitle}</div>
       </header>
 
-      <!-- Sidebar -->
+      <!-- 侧边栏 -->
       <aside class="cyber-sidebar">
-        <!-- System Status Block -->
+        <!-- 系统状态模块 -->
         <div style="border: 1px solid var(--color-neon-acid); padding: 10px; margin-bottom: 20px;">
-          <div style="font-size: 10px; margin-bottom: 5px;">SYSTEM_STATUS</div>
+          <div style="font-size: 10px; margin-bottom: 5px;">系统状态</div>
           <div style="height: 4px; background: #333; width: 100%;">
             <div style="height: 100%; width: 87%; background: var(--color-neon-acid);"></div>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px;">
-            <span>MEM: 64TB</span>
-            <span>NET: ONLINE</span>
+            <span>内存: 64TB</span>
+            <span>网络: 在线</span>
           </div>
         </div>
 
         <nav>
-          <div class="section-title">QUICK_ACCESS</div>
+          <div class="section-title">快速访问</div>
           {quickLinks.map(link => (
             <button 
               class="menu-btn" 
@@ -71,7 +71,7 @@ const quickLinks = [
         </nav>
 
         <nav>
-          <div class="section-title">MODULES // CHAPTERS</div>
+          <div class="section-title">模块 // 章节</div>
           {chapters.map(chapter => (
             <button 
               class="menu-btn" 
@@ -84,17 +84,17 @@ const quickLinks = [
         
         <div style="margin-top: auto;">
           <a href="/logs" class="menu-btn" style="text-decoration: none; display: block; text-align: left;">
-            [ SYSTEM_LOGS ]
+            [ 系统日志 ]
           </a>
           <button class="menu-btn" onclick="toggleOverlay()" style="border-color: var(--color-neon-pink); color: var(--color-neon-pink);">
-            [ RESET_VIEW ]
+            [ 重置视图 ]
           </button>
         </div>
       </aside>
 
-      <!-- Main Content -->
+      <!-- 主内容区 -->
       <main class="cyber-main">
-        <!-- PDF Layer (Always Active) -->
+        <!-- PDF 图层 (始终激活) -->
         <iframe
           src="/manual.pdf#page=1"
           class="pdf-frame"
@@ -102,40 +102,38 @@ const quickLinks = [
           title="Manual Content"
         ></iframe>
 
-        <!-- Overlay Layer -->
+        <!-- 覆盖层 -->
         <div class="pdf-overlay" id="welcomeOverlay">
           <div class="glitch-text" data-text="AUTO_OJ">AUTO_OJ</div>
-          <div style="font-size: 24px; margin-bottom: 40px; letter-spacing: 5px;">INSTRUCTION MANUAL</div>
-          
-          <button 
-            class="menu-btn" 
+          <div style="font-size: 24px; margin-bottom: 40px; letter-spacing: 5px;">操作手册</div>
+
+          <button
+            class="menu-btn"
             style="width: 200px; text-align: center; font-size: 18px;"
             onclick="dismissOverlay()"
           >
-            INITIALIZE >>
+            初始化 >>
           </button>
         </div>
       </main>
     </div>
 
     <script is:inline>
-      // PDF Control Logic
+      // PDF 控制逻辑
       const pdfFrame = document.getElementById('pdfIframe');
       const overlay = document.getElementById('welcomeOverlay');
       let isOverlayVisible = true;
 
-      // Function to handle page jumping - The Core Bug Fix
+      // 处理页面跳转函数
       window.jumpToPage = (pageNumber) => {
-        console.log(`Command received: JUMP_TO_SECTOR ${pageNumber}`);
+        console.log(`收到命令: 跳转至第 ${pageNumber} 页`);
         
-        // Hide overlay if visible
+        // 如果覆盖层可见则隐藏
         if (isOverlayVisible) {
           dismissOverlay();
         }
 
-        // Force reload iframe with new page hash
-        // Note: Just changing src hash might not always trigger reload in some browsers/PDF viewers
-        // so we force a clean reload for robustness
+        // 强制重新加载 iframe 并跳转到新页面
         const currentSrc = pdfFrame.src.split('#')[0];
         pdfFrame.src = `${currentSrc}#page=${pageNumber}`;
       };
@@ -150,14 +148,13 @@ const quickLinks = [
         isOverlayVisible = !isOverlayVisible;
       };
 
-      // Sound Effect Simulation (Visual only for now)
+      // 音效模拟（目前仅视觉效果）
       document.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('mouseenter', () => {
-          // Could add hover sound here
-          console.log('AUD: HOVER_BEEP');
+          console.log('音频: 鼠标悬停提示音');
         });
         btn.addEventListener('click', () => {
-           console.log('AUD: CLICK_CONFIRM');
+           console.log('音频: 点击确认音');
         });
       });
     </script>
