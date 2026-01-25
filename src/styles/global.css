@@ -129,7 +129,7 @@ body::before {
 }
 
 .cyber-header::after {
-  content: "系统在线";
+  content: "ON";
   position: absolute;
   right: 20px;
   font-size: 12px;
