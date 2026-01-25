@@ -1,0 +1,300 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  showSidebar?: boolean;
+  activePage?: string;
+}
+
+const { title, showSidebar = true, activePage = '' } = Astro.props;
+const manualTitle = "AutoOj // 操作手册";
+
+const navLinks = [
+  { name: "系统介绍", id: "intro", url: "/intro" },
+  { name: "日程安排", id: "schedule", url: "/schedule" },
+  { name: "评分标准", id: "grading", url: "/grading" },
+  { name: "常见问题", id: "faq", url: "/faq" },
+];
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} - {manualTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="scanline"></div>
+
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="切换主题" id="themeToggle">
+      <svg viewBox="0 0 24 24" id="themeIcon">
+        <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+      </svg>
+    </button>
+
+    <div class="cyber-shell">
+      <!-- 手机版侧边栏遮罩 -->
+      <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+      <!-- Header -->
+      <header class="cyber-header">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="切换侧边栏" id="sidebarToggle">
+          <svg viewBox="0 0 24 24" id="sidebarIcon" style="width: 24px; height: 24px; fill: var(--color-text);">
+            <rect x="3" y="5" width="18" height="2" rx="1"/>
+            <rect x="3" y="11" width="18" height="2" rx="1"/>
+            <rect x="3" y="17" width="18" height="2" rx="1"/>
+          </svg>
+        </button>
+        <a href="/" class="brand" style="text-decoration: none;">{manualTitle}</a>
+        {showSidebar ? (
+          <div style="font-size: 12px; opacity: 0.7;"></div>
+        ) : (
+          <a href="/" class="menu-btn" style="width: auto; padding: 8px 20px; text-decoration: none;">&larr; 返回首页</a>
+        )}
+      </header>
+
+      {showSidebar ? (
+        <!-- 侧边栏 -->
+        <aside class="cyber-sidebar" id="sidebar">
+          <!-- 系统状态模块 -->
+          <div style="border: 1px solid var(--color-neon-acid); padding: 10px; margin-bottom: 20px;">
+            <div style="font-size: 10px; margin-bottom: 5px;">系统状态</div>
+            <div style="height: 4px; background: #333; width: 100%;">
+              <div style="height: 100%; width: 87%; background: var(--color-neon-acid);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px;">
+              <span>网络: 在线</span>
+            </div>
+          </div>
+
+          <nav>
+            <div class="section-title">快速访问</div>
+            {navLinks.map(link => (
+              <a 
+                href={link.url} 
+                class:list={["menu-btn", { active: activePage === link.id }]}
+                style="text-decoration: none; display: block;"
+              >
+                {link.name}
+              </a>
+            ))}
+          </nav>
+
+          <div style="margin-top: auto;">
+            <a href="/logs" class="menu-btn" style="text-decoration: none; display: block; text-align: left;">
+              [ 系统日志 ]
+            </a>
+          </div>
+        </aside>
+      ) : (
+        <!-- 子页面侧边栏 -->
+        <aside class="cyber-sidebar" id="sidebar">
+          <div class="section-title">快速导航</div>
+          {navLinks.map(link => (
+            <a 
+              href={link.url} 
+              class:list={["menu-btn", { active: activePage === link.id }]}
+              style="text-decoration: none;"
+            >
+              {link.name}
+            </a>
+          ))}
+          <a href="/" class="menu-btn" style="border-color: var(--color-neon-pink); color: var(--color-neon-pink); text-decoration: none;">
+            [ 返回手册 ]
+          </a>
+        </aside>
+      )}
+
+      <!-- 主内容区 -->
+      <main class="cyber-main">
+        <slot />
+      </main>
+    </div>
+
+    <script is:inline>
+      // 检测是否为移动设备
+      function isMobile() {
+        return window.innerWidth <= 768;
+      }
+
+      // 侧边栏切换功能
+      const SIDEBAR_KEY = 'auto-oj-sidebar-closed';
+      const MOBILE_SIDEBAR_KEY = 'auto-oj-mobile-sidebar-open';
+
+      function getSidebarState() {
+        const stored = localStorage.getItem(SIDEBAR_KEY);
+        // 默认为 false（显示侧边栏），只有明确为 'true' 时才折叠
+        return stored === 'true';
+      }
+
+      function getMobileSidebarState() {
+        const stored = localStorage.getItem(MOBILE_SIDEBAR_KEY);
+        // 移动端默认关闭
+        return stored === 'true';
+      }
+
+      function saveSidebarState(closed) {
+        localStorage.setItem(SIDEBAR_KEY, closed);
+      }
+
+      function saveMobileSidebarState(open) {
+        localStorage.setItem(MOBILE_SIDEBAR_KEY, open);
+      }
+
+      function applySidebarState(closed) {
+        const sidebar = document.getElementById('sidebar');
+        const shell = document.querySelector('.cyber-shell');
+        if (sidebar && shell) {
+          if (closed) {
+            sidebar.classList.add('collapsed');
+            shell.classList.add('sidebar-collapsed');
+          } else {
+            sidebar.classList.remove('collapsed');
+            shell.classList.remove('sidebar-collapsed');
+          }
+        }
+      }
+
+      function applyMobileSidebarState(open) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) {
+          if (open) {
+            sidebar.classList.add('mobile-open');
+            if (overlay) overlay.classList.add('active');
+          } else {
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('active');
+          }
+        }
+      }
+
+      window.toggleSidebar = function() {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        const isMobileView = isMobile();
+        console.log('toggleSidebar called, isMobile:', isMobileView);
+
+        if (isMobileView) {
+          // 移动端：切换滑出菜单
+          const isOpen = sidebar.classList.contains('mobile-open');
+          const newState = !isOpen;
+          saveMobileSidebarState(newState);
+          applyMobileSidebarState(newState);
+          console.log('Mobile sidebar toggled to:', newState);
+        } else {
+          // 桌面端：切换折叠状态
+          const isClosed = sidebar.classList.contains('collapsed');
+          const newState = !isClosed;
+          saveSidebarState(newState);
+          applySidebarState(newState);
+          console.log('Desktop sidebar toggled to:', newState);
+        }
+      };
+
+      window.closeSidebar = function() {
+        if (isMobile()) {
+          saveMobileSidebarState(false);
+          applyMobileSidebarState(false);
+          console.log('Mobile sidebar closed');
+        }
+      };
+
+      // 初始化应用侧边栏状态
+      function initSidebar() {
+        const isMobileView = isMobile();
+        console.log('initSidebar, isMobile:', isMobileView);
+
+        if (isMobileView) {
+          // 移动端：默认关闭侧边栏
+          applyMobileSidebarState(false);
+        } else {
+          // 桌面端：应用保存的状态，默认显示
+          applySidebarState(getSidebarState());
+        }
+      }
+
+      // 立即应用侧边栏状态
+      document.addEventListener('DOMContentLoaded', function() {
+        initSidebar();
+      });
+
+      // 立即执行一次（不等待 DOMContentLoaded）
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSidebar);
+      } else {
+        initSidebar();
+      }
+
+      // 监听窗口大小变化
+      window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (!sidebar) return;
+
+        const isMobileView = isMobile();
+        console.log('resize, isMobile:', isMobileView);
+
+        if (isMobileView) {
+          // 切换到移动端：清除桌面状态，应用移动端状态
+          sidebar.classList.remove('collapsed');
+          const shell = document.querySelector('.cyber-shell');
+          if (shell) shell.classList.remove('sidebar-collapsed');
+          // 移动端默认关闭
+          applyMobileSidebarState(false);
+        } else {
+          // 切换到桌面端：清除移动端状态，应用桌面端状态
+          sidebar.classList.remove('mobile-open');
+          if (overlay) overlay.classList.remove('active');
+          applySidebarState(getSidebarState());
+        }
+      });
+
+      // 主题切换功能
+      const THEME_KEY = 'auto-oj-theme';
+
+      function getTheme() {
+        return localStorage.getItem(THEME_KEY) || 'light';
+      }
+
+      function saveTheme(theme) {
+        localStorage.setItem(THEME_KEY, theme);
+      }
+
+      function applyTheme(theme) {
+        const themeIcon = document.getElementById('themeIcon');
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          if (themeIcon) {
+            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+          }
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          if (themeIcon) {
+            themeIcon.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
+          }
+        }
+      }
+
+      window.toggleTheme = function() {
+        const currentTheme = getTheme();
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        saveTheme(newTheme);
+        applyTheme(newTheme);
+      };
+
+      // 立即应用主题
+      applyTheme(getTheme());
+
+      document.addEventListener('DOMContentLoaded', function() {
+        applyTheme(getTheme());
+      });
+    </script>
+  </body>
+</html>

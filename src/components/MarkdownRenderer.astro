@@ -1,0 +1,200 @@
+---
+/**
+ * MarkdownRenderer 组件
+ * 渲染 Markdown 内容，自动为标题添加锚点链接
+ */
+interface Props {
+  content: string;
+}
+
+const { content } = Astro.props;
+
+// 将 Markdown 标题转换为锚点 ID
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[\s]+/g, '-')
+    .replace(/[^\w\u4e00-\u9fa5-]/g, '');
+}
+
+// 解析 Markdown 并添加锚点
+function parseMarkdownWithAnchors(md: string): string {
+  const lines = md.split('\n');
+  const result: string[] = [];
+  let inCodeBlock = false;
+  
+  for (const line of lines) {
+    // 检测代码块
+    if (line.trim().startsWith('```')) {
+      inCodeBlock = !inCodeBlock;
+      result.push(line);
+      continue;
+    }
+    
+    // 代码块内不处理
+    if (inCodeBlock) {
+      result.push(line);
+      continue;
+    }
+    
+    // 匹配标题
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2];
+      const slug = slugify(text);
+      // 添加自定义锚点标记
+      result.push(`${'#'.repeat(level)} ${text} {#${slug}}`);
+    } else {
+      result.push(line);
+    }
+  }
+  
+  return result.join('\n');
+}
+
+const processedContent = parseMarkdownWithAnchors(content);
+---
+
+<div id="markdownSource" style="display: none;">{processedContent}</div>
+<div id="markdownRendered" class="markdown-body"></div>
+
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+  const source = document.getElementById('markdownSource');
+  const target = document.getElementById('markdownRendered');
+  
+  if (!source || !target) return;
+  
+  const md = source.textContent || '';
+  
+  // 简单的 Markdown 解析器
+  function parseMarkdown(text) {
+    let html = text;
+    
+    // 代码块
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
+      return '<pre><code class="language-' + lang + '">' + escapeHtml(code.trim()) + '</code></pre>';
+    });
+    
+    // 行内代码
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // 表格
+    html = html.replace(/^\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)*)/gm, function(match, header, body) {
+      const headers = header.split('|').filter(h => h.trim());
+      const rows = body.trim().split('\n').map(row => 
+        row.split('|').filter(c => c.trim())
+      );
+      
+      let table = '<table><thead><tr>';
+      headers.forEach(h => table += '<th>' + h.trim() + '</th>');
+      table += '</tr></thead><tbody>';
+      rows.forEach(row => {
+        table += '<tr>';
+        row.forEach(cell => table += '<td>' + cell.trim() + '</td>');
+        table += '</tr>';
+      });
+      table += '</tbody></table>';
+      return table;
+    });
+    
+    // 标题（带锚点）
+    html = html.replace(/^(#{1,6})\s+(.+?)\s*\{#([\w\u4e00-\u9fa5-]+)\}$/gm, function(match, hashes, text, id) {
+      const level = hashes.length;
+      return '<h' + level + ' id="' + id + '"><a href="#' + id + '" class="anchor-link">' + text + '</a></h' + level + '>';
+    });
+    
+    // 普通标题（无锚点标记）
+    html = html.replace(/^(#{1,6})\s+(.+)$/gm, function(match, hashes, text) {
+      const level = hashes.length;
+      const id = text.toLowerCase().trim().replace(/[\s]+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '');
+      return '<h' + level + ' id="' + id + '"><a href="#' + id + '" class="anchor-link">' + text + '</a></h' + level + '>';
+    });
+    
+    // 粗体
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // 斜体
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // 图片 - 必须在链接之前处理，因为图片语法 ![alt](url) 包含链接语法
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />');
+    
+    // 链接
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    
+    // 无序列表
+    html = html.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    
+    // 有序列表
+    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+    
+    // 段落
+    html = html.replace(/^(?!<[hulot]|$)(.+)$/gm, '<p>$1</p>');
+    
+    // 清理多余的空行
+    html = html.replace(/<\/ul>\n<ul>/g, '');
+    html = html.replace(/<p><\/p>/g, '');
+    
+    return html;
+  }
+  
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
+  target.innerHTML = parseMarkdown(md);
+  
+  // 处理锚点点击 - 平滑滚动
+  target.querySelectorAll('.anchor-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href').slice(1);
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.pushState(null, '', '#' + targetId);
+      }
+    });
+  });
+  
+  // 页面加载时跳转到锚点
+  if (window.location.hash) {
+    const targetEl = document.getElementById(window.location.hash.slice(1));
+    if (targetEl) {
+      setTimeout(function() {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }
+});
+</script>
+
+<style>
+  .anchor-link {
+    color: inherit;
+    text-decoration: none;
+    position: relative;
+  }
+  
+  .anchor-link:hover {
+    color: var(--color-neon-acid);
+  }
+  
+  .anchor-link:hover::before {
+    content: '#';
+    position: absolute;
+    left: -1.2em;
+    color: var(--color-neon-cyan);
+    opacity: 0.7;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    scroll-margin-top: 20px;
+  }
+</style>
