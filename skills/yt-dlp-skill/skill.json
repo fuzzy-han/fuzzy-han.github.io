@@ -1,0 +1,45 @@
+{
+  "name": "yt-dlp-skill",
+  "version": "0.1.0",
+  "description": "Safe wrapper for yt-dlp video downloads with validation and error handling",
+  "author": "Local Skill",
+  "license": "MIT",
+  "entrypoint": "yt_dlp_skill.py",
+  "type": "wrapper",
+  "capabilities": {
+    "download_video": {
+      "description": "Download video from URL with optional authentication",
+      "parameters": {
+        "urls": {
+          "type": "list",
+          "description": "Video URL(s) to download",
+          "required": true
+        },
+        "cookies_path": {
+          "type": "string",
+          "description": "Path to cookies.txt for authentication",
+          "required": false
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "Output directory for downloads",
+          "required": false
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "system": [
+      "yt-dlp"
+    ]
+  },
+  "configuration": {
+    "timeout_seconds": 3600,
+    "safe_flags": [
+      "--quiet",
+      "-f",
+      "best",
+      "--no-warnings"
+    ]
+  }
+}

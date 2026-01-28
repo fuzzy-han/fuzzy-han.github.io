@@ -61,7 +61,7 @@ const processedContent = parseMarkdownWithAnchors(content);
 <div id="markdownRendered" class="markdown-body"></div>
 
 <script is:inline>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('astro:page-load', function() {
   const source = document.getElementById('markdownSource');
   const target = document.getElementById('markdownRendered');
   

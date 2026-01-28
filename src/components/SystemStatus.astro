@@ -1,0 +1,162 @@
+---
+---
+<div class="system-status-box">
+  <div class="status-header">
+    <span>系统状态 / SYSTEM</span>
+    <span class="status-indicator"></span>
+  </div>
+  <div class="status-bar-container">
+    <div class="status-bar">
+      <div class="status-scan"></div>
+    </div>
+  </div>
+  <div class="status-metrics">
+    <div class="metric-row">
+      <span class="metric-label">网络状态 / NET</span>
+      <span class="metric-value online">在线</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">本页热度 / PAGE</span>
+      <span class="metric-value highlight-pink" id="busuanzi_value_page_pv">
+         <span class="loading-dots">...</span>
+      </span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">站点总览 / SITE</span>
+      <span class="metric-value highlight-cyan" id="busuanzi_value_site_pv">
+         <span class="loading-dots">...</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .system-status-box {
+    border: 1px solid var(--color-neon-acid);
+    padding: 12px;
+    margin-bottom: 20px;
+    background: rgba(var(--color-panel), 0.5);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  :global([data-theme="dark"]) .system-status-box {
+    background: rgba(10, 10, 10, 0.6);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .system-status-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--color-neon-acid);
+    box-shadow: 0 0 8px var(--color-neon-acid);
+  }
+
+  .status-header {
+    font-size: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-muted);
+    letter-spacing: 1px;
+    font-weight: bold;
+  }
+
+  .status-indicator {
+    width: 6px;
+    height: 6px;
+    background: var(--color-neon-acid);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--color-neon-acid);
+    animation: pulse 2s infinite;
+  }
+
+  .status-bar-container {
+    height: 4px;
+    background: rgba(100, 100, 100, 0.2);
+    width: 100%;
+    margin-bottom: 12px;
+    border-radius: 2px;
+  }
+
+  .status-bar {
+    height: 100%;
+    width: 87%;
+    background: var(--color-neon-acid);
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  .status-scan {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    animation: scan 3s infinite ease-in-out;
+  }
+
+  .status-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+    border-bottom: 1px dotted rgba(128, 128, 128, 0.2);
+    padding-bottom: 2px;
+  }
+  
+  .metric-row:last-child {
+    border-bottom: none;
+  }
+
+  .metric-label {
+    color: var(--color-text-muted);
+    font-size: 10px;
+  }
+
+  .metric-value {
+    font-weight: bold;
+  }
+  
+  .online { color: var(--color-neon-acid); text-shadow: 0 0 5px rgba(14, 165, 233, 0.3); }
+  .highlight-pink { color: var(--color-neon-pink); text-shadow: 0 0 5px rgba(225, 29, 72, 0.3); }
+  .highlight-cyan { color: var(--color-neon-cyan); text-shadow: 0 0 5px rgba(8, 145, 178, 0.3); }
+
+  .loading-dots {
+    animation: blink 1s infinite;
+    opacity: 0.5;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px var(--color-neon-acid); }
+    50% { opacity: 0.5; transform: scale(0.8); box-shadow: 0 0 2px var(--color-neon-acid); }
+    100% { opacity: 1; transform: scale(1); box-shadow: 0 0 5px var(--color-neon-acid); }
+  }
+
+  @keyframes scan {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+</style>

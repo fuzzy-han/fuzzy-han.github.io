@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import SystemStatus from '../components/SystemStatus.astro';
 
 interface Props {
   title: string;
@@ -28,6 +30,200 @@ const navLinks = [
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <ClientRouter />
+    
+    <script is:inline>
+      // Theme Logic - Immediate Execution
+      const THEME_KEY = 'auto-oj-theme';
+      
+      function getTheme() { 
+        return localStorage.getItem(THEME_KEY) || 'dark'; 
+      }
+      
+      function saveTheme(theme) { 
+        localStorage.setItem(THEME_KEY, theme); 
+      }
+
+      function applyThemeRoot(theme) {
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      }
+      
+      // Execute immediately to prevent flash
+      applyThemeRoot(getTheme());
+
+      // Sidebar & Mobile Logic
+      const SIDEBAR_KEY = 'auto-oj-sidebar-closed';
+      const MOBILE_SIDEBAR_KEY = 'auto-oj-mobile-sidebar-open';
+      
+      function isMobile() { 
+        return window.innerWidth <= 768; 
+      }
+      
+      function getSidebarState() { 
+        return localStorage.getItem(SIDEBAR_KEY) === 'true'; 
+      }
+      
+      function saveSidebarState(closed) { 
+        localStorage.setItem(SIDEBAR_KEY, closed); 
+      }
+      
+      function getMobileSidebarState() { 
+        return localStorage.getItem(MOBILE_SIDEBAR_KEY) === 'true'; 
+      }
+      
+      function saveMobileSidebarState(open) { 
+        localStorage.setItem(MOBILE_SIDEBAR_KEY, open); 
+      }
+
+      // UI Update Logic (Deferred)
+      function updateThemeIcon(theme) {
+        const themeIcon = document.getElementById('themeIcon');
+        if (!themeIcon) return;
+        
+        if (theme === 'dark') {
+          themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+        } else {
+          themeIcon.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
+        }
+      }
+
+      function initSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const shell = document.querySelector('.cyber-shell');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (!sidebar) return;
+
+        if (isMobile()) {
+          sidebar.classList.remove('mobile-open');
+          if (overlay) overlay.classList.remove('active');
+        } else {
+          const closed = getSidebarState();
+          if (closed && shell) {
+            sidebar.classList.add('collapsed');
+            shell.classList.add('sidebar-collapsed');
+          } else {
+            sidebar.classList.remove('collapsed');
+            if (shell) shell.classList.remove('sidebar-collapsed');
+          }
+        }
+      }
+
+      // Global Handlers
+      window.toggleTheme = function() {
+        const current = getTheme();
+        const next = current === 'light' ? 'dark' : 'light';
+        saveTheme(next);
+        applyThemeRoot(next);
+        updateThemeIcon(next);
+      };
+
+      window.toggleSidebar = function() {
+        const sidebar = document.getElementById('sidebar');
+        const shell = document.querySelector('.cyber-shell');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (!sidebar) return;
+
+        if (isMobile()) {
+          const isOpen = sidebar.classList.contains('mobile-open');
+          const next = !isOpen;
+          saveMobileSidebarState(next);
+          
+          if (next) {
+            sidebar.classList.add('mobile-open');
+            if (overlay) overlay.classList.add('active');
+          } else {
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('active');
+          }
+        } else {
+          const isClosed = sidebar.classList.contains('collapsed');
+          const next = !isClosed;
+          saveSidebarState(next);
+          
+          if (next) {
+            sidebar.classList.add('collapsed');
+            if (shell) shell.classList.add('sidebar-collapsed');
+          } else {
+            sidebar.classList.remove('collapsed');
+            if (shell) shell.classList.remove('sidebar-collapsed');
+          }
+        }
+      };
+
+      window.closeSidebar = function() {
+        if (isMobile()) {
+          const sidebar = document.getElementById('sidebar');
+          const overlay = document.getElementById('sidebarOverlay');
+          if (sidebar) sidebar.classList.remove('mobile-open');
+          if (overlay) overlay.classList.remove('active');
+        }
+      };
+      
+      // Busuanzi Integration
+      function loadBusuanzi() {
+        const scriptId = 'busuanzi-script';
+        if (document.getElementById(scriptId)) return; // Prevent duplicate
+        
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = '//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+
+      // Lifecycle Handlers
+      function onPageLoad() {
+        updateThemeIcon(getTheme());
+        initSidebar();
+        loadBusuanzi();
+        
+        // Resize listener (ensure single registration)
+        window.removeEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize);
+      }
+      
+      function handleResize() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const shell = document.querySelector('.cyber-shell');
+        
+        if (!sidebar) return;
+
+        if (isMobile()) {
+          sidebar.classList.remove('collapsed');
+          if (shell) shell.classList.remove('sidebar-collapsed');
+          sidebar.classList.remove('mobile-open');
+          if (overlay) overlay.classList.remove('active');
+        } else {
+          sidebar.classList.remove('mobile-open');
+          if (overlay) overlay.classList.remove('active');
+          
+          // Re-apply desktop state
+          const closed = getSidebarState();
+          if (closed && shell) {
+            sidebar.classList.add('collapsed');
+            shell.classList.add('sidebar-collapsed');
+          } else {
+            sidebar.classList.remove('collapsed');
+            if (shell) shell.classList.remove('sidebar-collapsed');
+          }
+        }
+      }
+
+      // Init
+      document.addEventListener('DOMContentLoaded', onPageLoad);
+      document.addEventListener('astro:after-swap', () => {
+        applyThemeRoot(getTheme());
+        onPageLoad();
+      });
+    </script>
+
     <style is:inline>
       /* image lightbox */
       .image-lightbox { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: opacity .18s ease; pointer-events: none; z-index: 2200; }
@@ -75,15 +271,7 @@ const navLinks = [
         <!-- 侧边栏 -->
         <aside class="cyber-sidebar" id="sidebar">
           <!-- 系统状态模块 -->
-          <div style="border: 1px solid var(--color-neon-acid); padding: 10px; margin-bottom: 20px;">
-            <div style="font-size: 10px; margin-bottom: 5px;">系统状态</div>
-            <div style="height: 4px; background: #333; width: 100%;">
-              <div style="height: 100%; width: 87%; background: var(--color-neon-acid);"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px;">
-              <span>网络: 在线</span>
-            </div>
-          </div>
+          <SystemStatus />
 
           <nav>
             <div class="section-title">快速访问</div>
@@ -107,6 +295,7 @@ const navLinks = [
       ) : (
         <!-- 子页面侧边栏 -->
         <aside class="cyber-sidebar" id="sidebar">
+          <SystemStatus />
           <div class="section-title">快速导航</div>
           {navLinks.map(link => (
             <a 
@@ -136,185 +325,5 @@ const navLinks = [
       <img id="imageLightboxImg" src="" alt="" />
     </div>
 
-    <script is:inline>
-      // 检测是否为移动设备
-      function isMobile() {
-        return window.innerWidth <= 768;
-      }
-
-      // 侧边栏切换功能
-      const SIDEBAR_KEY = 'auto-oj-sidebar-closed';
-      const MOBILE_SIDEBAR_KEY = 'auto-oj-mobile-sidebar-open';
-
-      function getSidebarState() {
-        const stored = localStorage.getItem(SIDEBAR_KEY);
-        // 默认为 false（显示侧边栏），只有明确为 'true' 时才折叠
-        return stored === 'true';
-      }
-
-      function getMobileSidebarState() {
-        const stored = localStorage.getItem(MOBILE_SIDEBAR_KEY);
-        // 移动端默认关闭
-        return stored === 'true';
-      }
-
-      function saveSidebarState(closed) {
-        localStorage.setItem(SIDEBAR_KEY, closed);
-      }
-
-      function saveMobileSidebarState(open) {
-        localStorage.setItem(MOBILE_SIDEBAR_KEY, open);
-      }
-
-      function applySidebarState(closed) {
-        const sidebar = document.getElementById('sidebar');
-        const shell = document.querySelector('.cyber-shell');
-        if (sidebar && shell) {
-          if (closed) {
-            sidebar.classList.add('collapsed');
-            shell.classList.add('sidebar-collapsed');
-          } else {
-            sidebar.classList.remove('collapsed');
-            shell.classList.remove('sidebar-collapsed');
-          }
-        }
-      }
-
-      function applyMobileSidebarState(open) {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (sidebar) {
-          if (open) {
-            sidebar.classList.add('mobile-open');
-            if (overlay) overlay.classList.add('active');
-          } else {
-            sidebar.classList.remove('mobile-open');
-            if (overlay) overlay.classList.remove('active');
-          }
-        }
-      }
-
-      window.toggleSidebar = function() {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
-
-        const isMobileView = isMobile();
-        console.log('toggleSidebar called, isMobile:', isMobileView);
-
-        if (isMobileView) {
-          // 移动端：切换滑出菜单
-          const isOpen = sidebar.classList.contains('mobile-open');
-          const newState = !isOpen;
-          saveMobileSidebarState(newState);
-          applyMobileSidebarState(newState);
-          console.log('Mobile sidebar toggled to:', newState);
-        } else {
-          // 桌面端：切换折叠状态
-          const isClosed = sidebar.classList.contains('collapsed');
-          const newState = !isClosed;
-          saveSidebarState(newState);
-          applySidebarState(newState);
-          console.log('Desktop sidebar toggled to:', newState);
-        }
-      };
-
-      window.closeSidebar = function() {
-        if (isMobile()) {
-          saveMobileSidebarState(false);
-          applyMobileSidebarState(false);
-          console.log('Mobile sidebar closed');
-        }
-      };
-
-      // 初始化应用侧边栏状态
-      function initSidebar() {
-        const isMobileView = isMobile();
-        console.log('initSidebar, isMobile:', isMobileView);
-
-        if (isMobileView) {
-          // 移动端：默认关闭侧边栏
-          applyMobileSidebarState(false);
-        } else {
-          // 桌面端：应用保存的状态，默认显示
-          applySidebarState(getSidebarState());
-        }
-      }
-
-      // 立即应用侧边栏状态
-      document.addEventListener('DOMContentLoaded', function() {
-        initSidebar();
-      });
-
-      // 立即执行一次（不等待 DOMContentLoaded）
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initSidebar);
-      } else {
-        initSidebar();
-      }
-
-      // 监听窗口大小变化
-      window.addEventListener('resize', function() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (!sidebar) return;
-
-        const isMobileView = isMobile();
-        console.log('resize, isMobile:', isMobileView);
-
-        if (isMobileView) {
-          // 切换到移动端：清除桌面状态，应用移动端状态
-          sidebar.classList.remove('collapsed');
-          const shell = document.querySelector('.cyber-shell');
-          if (shell) shell.classList.remove('sidebar-collapsed');
-          // 移动端默认关闭
-          applyMobileSidebarState(false);
-        } else {
-          // 切换到桌面端：清除移动端状态，应用桌面端状态
-          sidebar.classList.remove('mobile-open');
-          if (overlay) overlay.classList.remove('active');
-          applySidebarState(getSidebarState());
-        }
-      });
-
-      // 主题切换功能
-      const THEME_KEY = 'auto-oj-theme';
-
-      function getTheme() {
-        return localStorage.getItem(THEME_KEY) || 'dark';
-      }
-
-      function saveTheme(theme) {
-        localStorage.setItem(THEME_KEY, theme);
-      }
-
-      function applyTheme(theme) {
-        const themeIcon = document.getElementById('themeIcon');
-        if (theme === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          if (themeIcon) {
-            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
-          }
-        } else {
-          document.documentElement.removeAttribute('data-theme');
-          if (themeIcon) {
-            themeIcon.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
-          }
-        }
-      }
-
-      window.toggleTheme = function() {
-        const currentTheme = getTheme();
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        saveTheme(newTheme);
-        applyTheme(newTheme);
-      };
-
-      // 立即应用主题
-      applyTheme(getTheme());
-
-      document.addEventListener('DOMContentLoaded', function() {
-        applyTheme(getTheme());
-      });
-    </script>
   </body>
 </html>

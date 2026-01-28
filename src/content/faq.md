@@ -76,5 +76,5 @@ Wrong Answer 表示你的程序输出了错误的结果。可能的原因包括�
 
 1. 查看系统日志页面获取更多信息
 2. 在讨论区发帖提问
-3. 发送邮件至 support@auto-oj.example.com
+3. 发送邮件至 [开发者github链接](https://github.com/iocion)
 4. 加入官方 QQ 群或微信群
