@@ -1361,6 +1361,7 @@ function drawPlayer(){
   const flashing=S.invT>0&&Math.floor(S.t*10)%2===0;
   const key=(flashing&&ph>=0)?'DS_WHITE':'DEEPSEEK';
   // 光晕 + 阴影
+  ctx.save();
   ctx.shadowColor='rgba(120,190,255,.85)';
   ctx.shadowBlur=18+ph*4;
   // 倾斜 + 呼吸 + 受击挤压
@@ -1370,8 +1371,7 @@ function drawPlayer(){
   ctx.rotate(tilt);
   ctx.scale(breathe*sq,breathe*(2-sq));
   ctx.drawImage(img(key),-D/2,-D/2,D,D);
-  ctx.shadowBlur=0;
-  ctx.rotate(-tilt);
+  ctx.restore();
   // 名牌
   ctx.font='800 '+Math.round(11+D*0.022)+'px sans-serif';
   ctx.textAlign='center';
