@@ -160,6 +160,8 @@ body{
 .w-lb-row input:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(168,197,255,.18)}
 .w-lb-row input::placeholder{color:rgba(154,167,199,.55)}
 .w-lb-ok{font-size:13px; letter-spacing:.14em; color:var(--ok); margin-top:10px}
+.w-lb-dur{font-size:12px; letter-spacing:.12em; color:var(--primary); margin:-6px 0 10px}
+.lb-row .dur{flex:none; font-size:11.5px; color:#ffd9a0; margin-left:2px}
 .w-lb-link{margin-top:14px}
 .w-lb-link .lb-btn{margin-top:0}
 
@@ -266,6 +268,7 @@ body{
     <div class="w-lb-link"><button class="btn lb-btn" id="btnLbFromWin">查看功名榜</button></div>
     <div class="w-lb hidden" id="wLb">
       <div class="w-lb-label serif">全剧终 · 灯影归位 —— 留名功名榜</div>
+      <div class="w-lb-dur" id="lbDurationHint"></div>
       <div class="w-lb-row">
         <input id="lbNameInput" maxlength="12" placeholder="你的名字" autocomplete="off"/>
         <button class="btn primary" id="btnLbAdd">留名上榜</button>
@@ -840,8 +843,8 @@ function drawScene(opts){
     ctx.fillStyle=fg; ctx.fillRect(0,0,board.w,board.h);
   }
   if(o.pool!==false) drawPool();
-  if(o.ghosts!==false) for(const p of S.pieces) drawGhost(p);
   if(o.shadows!==false) for(const p of S.pieces) drawShadow(p);
+  if(o.ghosts!==false) for(const p of S.pieces) drawGhost(p);
   if(o.pieces!==false) for(const p of S.pieces) drawPiece(p, S.t);
   if(o.orb!==false) drawOrb(S.t);
   drawLightHint(S.t);
@@ -920,6 +923,11 @@ function anchoredCov(){
 function checkWin(){
   if(S.winOnce || S.state!=='play') return;
   if(!S.free.every(p=>p.placed)) return;
+  // 每个已归位纸偶的影子必须精确落在虚框上（几何校验，防跟随滞后）
+  for(const p of S.free){
+    const sh=shadowOf(p), g=p.ghost;
+    if(Math.hypot((sh.fx-g.fx)*board.w, (sh.fy-g.fy)*board.h) > 0.12*u) return;
+  }
   if(S.anchors.length){
     if(!S.covs || !S.covs.every(c=>c>=0.92)) return;
   }
@@ -945,6 +953,13 @@ function win(){
     $('#wLb').classList.toggle('hidden', !last);
     $('#wLbOk').classList.add('hidden');
     if(!last && LB_CLOUD.supabase) setTimeout(()=>toast('已通关 '+(S.idx+1)+'/10 幕 · 通关全剧即可登上功名榜'), 1400);
+    if(last){
+      // 通关用时（秒）
+      const dur = Math.max(1, Math.round((Date.now() - (S.gamestart||Date.now()))/1000));
+      S.lastDuration = dur;
+      const lbl=$('#lbDurationHint'); if(lbl) lbl.textContent='本次通关用时 '+fmtTime(dur);
+      try{ localStorage.setItem('shadowplay_gamestart', String(Date.now())); }catch(e){} // 新一轮重新计时
+    }
     const inp=$('#lbNameInput'); if(inp){ inp.value=LB.name; }
     const addBtn=$('#btnLbAdd'); if(addBtn) addBtn.disabled=false;
     renderPreview();
@@ -1015,9 +1030,9 @@ function snapCheck(p){
   if(p.anchored || p.placed) return;
   const g=p.ghost, pp=pinnedPose(p);
   const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
-  const rotOk=Math.abs(angDiff(p.rot, g.rot))<=45;
+  const rotOk=Math.abs(angDiff(p.rot, g.rot))<=15;
   const elevOk=p.elev===g.elev;
-  if(d<0.95*u && rotOk && elevOk) placePiece(p);
+  if(d<0.55*u && rotOk && elevOk) placePiece(p);
 }
 function rotAssist(p){
   const g=p.ghost, pp=pinnedPose(p);
@@ -1236,6 +1251,12 @@ function loadLevel(i){
 function startGame(){
   sfx.unlock();
   $('#titleScreen').classList.add('hidden');
+  // 记录本次通关旅程起始时间（跨会话累计）
+  try{
+    const now=Date.now();
+    if(!localStorage.getItem('shadowplay_gamestart')) localStorage.setItem('shadowplay_gamestart', String(now));
+    S.gamestart = parseInt(localStorage.getItem('shadowplay_gamestart'),10) || now;
+  }catch(e){ S.gamestart = Date.now(); }
   loadLevel(Math.min(progress, LEVELS.length-1));
 }
 function resetLevel(){
@@ -1290,6 +1311,7 @@ $('#btnNext').addEventListener('click', ()=>{
 //   B) kvdbBucket：kvdb.io 免费匿名 KV（CORS ✓）——填入 bucket id 即全球同步
 //   C) restUrl：任意 REST 后端（GET 返回 {entries:[{name,ts}]}；POST {name,ts} 写入）
 const LB_CLOUD = { supabase: { url:'https://lpynpobfvhbywcxlerai.supabase.co', key:'sb_publishable__JcjXpl6qlWwhHgn6b1W7w_bJC4Ez4T' }, kvdbBucket: '', restUrl: '' };
+const fmtTime = s => { s=s||0; const m=Math.floor(s/60), r=s%60; return m>0 ? (m+'分'+r+'秒') : (r+'秒'); };
 const LB = {
   local: [], name: '', cloudList: [],
   load(){
@@ -1316,7 +1338,7 @@ const LB = {
     if(typeof fetch==='undefined') return Promise.resolve();
     const sb = LB_CLOUD.supabase;
     if(sb) return fetch(sb.url+'/rest/v1/leaderboard', {method:'POST', headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify({name:this.name, ts:Date.now()})}).catch(()=>{});
+      body: JSON.stringify({name:this.name, ts:Date.now(), dur: S.lastDuration || 0})}).catch(()=>{});
     const kv = LB_CLOUD.kvdbBucket;
     const payload = JSON.stringify({entries: this.entries(), updatedAt: Date.now()});
     if(kv) return fetch('https://kvdb.io/'+kv+'/leaderboard', {method:'PUT', body: payload}).catch(()=>{});
@@ -1334,8 +1356,9 @@ const LB = {
   async add(rawName){
     try{
     const name=(rawName||'').trim().slice(0,12)||'无名氏';
+    const dur = S.lastDuration || 0;
     this.name=name; this.save();
-    this.local.push({name, ts:Date.now()}); this.save();
+    this.local.push({name, ts:Date.now(), dur}); this.save();
     await this.cloudPush();
     this.refresh();
     const n=this.entries().length;
@@ -1356,7 +1379,8 @@ const LB = {
       row.className='lb-row'+(i<3?' r'+(i+1):'');
       const d=new Date(e.ts);
       const when=(d.getMonth()+1)+'月'+d.getDate()+'日';
-      row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="name"></span><span class="when">'+when+'</span><span class="no">第 '+(i+1)+' 位</span>';
+      const dur = e.dur ? ('<span class="dur">用时 '+fmtTime(e.dur)+'</span>') : '';
+      row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="name"></span>'+dur+'<span class="when">'+when+'</span><span class="no">第 '+(i+1)+' 位</span>';
       row.querySelector('.name').textContent=e.name;
       list.appendChild(row);
     });
@@ -1404,7 +1428,7 @@ function frame(now){
     for(const p of S.free){
       if(p.placed){
         const pp=pinnedPose(p);
-        p.fx=lerp(p.fx, pp.fx, 0.35); p.fy=lerp(p.fy, pp.fy, 0.35);
+        p.fx=lerp(p.fx, pp.fx, 0.85); p.fy=lerp(p.fy, pp.fy, 0.85);
         p.rot+=angDiff(p.rot,pp.rot)*0.35;
       }
     }
