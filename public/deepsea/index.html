@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="theme-color" content="#062b4d"/>
+<title>DeepSeek：深海模拟</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23062b4d'/><ellipse cx='32' cy='36' rx='20' ry='13' fill='%233f7fd0'/><circle cx='38' cy='28' r='3' fill='%23fff'/><path d='M14 30q14-10 30-4' stroke='%233f7fd0' stroke-width='5' fill='none' stroke-linecap='round'/></svg>"/>
+<style>
+:root{
+  --deep:#062b4d; --blue:#3f7fd0; --gold:#ffd76a; --txt:#dceeff; --muted:#8fb4d8;
+  --panel:rgba(8,34,60,.94); --line:rgba(140,190,255,.22);
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%}
+body{
+  background:var(--deep); color:var(--txt); overflow:hidden;
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+}
+.serif{font-family:"Songti SC","STSong","Noto Serif SC",Georgia,serif}
+#scene{position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair}
+
+/* 按钮 */
+.btn{
+  position:relative; overflow:hidden; border:none; cursor:pointer;
+  padding:13px 30px; border-radius:999px; font-size:14.5px; letter-spacing:.08em;
+  font-family:inherit; color:#062b4d; background:var(--gold); font-weight:800;
+  box-shadow:0 5px 0 #b58a1e, 0 12px 26px rgba(0,0,0,.35);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.btn:hover{background:#ffe9a8}
+.btn:active{transform:translateY(4px); box-shadow:0 1px 0 #b58a1e}
+.btn.ghost{background:rgba(255,255,255,.1); color:var(--txt); box-shadow:0 5px 0 rgba(0,0,0,.3); border:1px solid var(--line)}
+.btn.ghost:hover{background:rgba(255,255,255,.18)}
+.btn:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+.ripple{position:absolute; border-radius:50%; background:rgba(255,255,255,.5); transform:scale(0);
+  animation:rip .55s ease-out forwards; pointer-events:none}
+@keyframes rip{to{transform:scale(1); opacity:0}}
+
+/* 覆盖层 */
+.screen{position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
+  background:rgba(3,20,38,.72); transition:opacity .4s ease, visibility .4s ease;}
+.hidden{opacity:0 !important; visibility:hidden !important; pointer-events:none !important}
+.rise{animation:rise .7s cubic-bezier(.2,.85,.25,1) both}
+.rise.d1{animation-delay:.1s}.rise.d2{animation-delay:.2s}.rise.d3{animation-delay:.32s}
+@keyframes rise{from{opacity:0; transform:translateY(24px)} to{opacity:1; transform:none}}
+
+/* 标题 */
+.title-wrap{text-align:center; padding:0 20px}
+.t-title{font-size:clamp(30px,6.5vw,56px); font-weight:900; letter-spacing:.06em; color:#fff;
+  text-shadow:0 4px 0 #1c4a78, 0 10px 30px rgba(0,0,0,.5)}
+.t-title em{font-style:normal; color:var(--gold)}
+.t-sub{margin-top:12px; font-size:15px; letter-spacing:.5em; color:var(--muted)}
+.t-story{margin-top:8px; font-size:12.5px; letter-spacing:.14em; color:#6f9cc8}
+.t-best{margin:22px 0 26px; display:inline-block; background:rgba(20,60,100,.8); border:1px solid var(--line);
+  border-radius:999px; padding:9px 22px; font-size:13.5px; color:var(--gold); letter-spacing:.1em}
+.t-btns{display:flex; gap:14px; justify-content:center; flex-wrap:wrap}
+.t-foot{margin-top:28px; font-size:11.5px; letter-spacing:.24em; color:#5d8ab8}
+
+/* 报告卡 */
+.card{
+  padding:30px 34px; border-radius:24px; max-width:min(560px,94vw); max-height:90vh; overflow:auto;
+  background:var(--panel); border:1px solid var(--line);
+  box-shadow:0 20px 60px rgba(0,0,0,.55);
+}
+.card h2{font-size:24px; letter-spacing:.24em; text-align:center; margin-bottom:4px; color:#fff}
+.card .sub{font-size:12px; color:var(--muted); text-align:center; letter-spacing:.14em; margin-bottom:18px}
+.big-liang{text-align:center; font-size:46px; font-weight:900; color:var(--gold); letter-spacing:.04em;
+  text-shadow:0 3px 0 rgba(120,80,0,.4)}
+.verdict-row{display:flex; align-items:center; gap:12px; justify-content:center; margin:12px 0 6px}
+.verdict-title{font-size:20px; font-weight:900; letter-spacing:.16em; color:#ff9d5c}
+.verdict-comment{margin:10px auto 4px; max-width:400px; text-align:center; font-size:13.5px; color:#cfe4ff;
+  background:rgba(30,80,140,.35); border:1px solid var(--line); border-radius:14px; padding:12px 18px; letter-spacing:.06em}
+.scale{display:flex; flex-direction:column; gap:4px; margin:14px 0 18px; font-size:12px}
+.scale-row{display:flex; justify-content:space-between; padding:6px 12px; border-radius:10px; color:var(--muted)}
+.scale-row.cur{background:rgba(255,215,106,.16); color:var(--gold); font-weight:800; outline:1px solid rgba(255,215,106,.5)}
+.card-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+
+/* HUD */
+#hud{position:fixed; z-index:20; top:max(12px,env(safe-area-inset-top)); left:0; right:0;
+  display:flex; justify-content:space-between; align-items:flex-start; padding:0 max(14px,env(safe-area-inset-left));
+  pointer-events:none; transition:opacity .3s ease}
+.chip{padding:10px 16px; border-radius:14px; background:rgba(8,34,60,.8); border:1px solid var(--line);
+  box-shadow:0 8px 22px rgba(0,0,0,.3); backdrop-filter:blur(8px)}
+.liang{font-size:22px; font-weight:900; color:var(--gold)}
+.liang b{font-size:13px; color:var(--muted); font-weight:600}
+.hud-right{display:flex; gap:8px; align-items:center; pointer-events:auto}
+.hearts{display:flex; gap:5px; font-size:18px; filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+.hearts span.lost{filter:grayscale(1); opacity:.3}
+.icon-btn{width:42px; height:42px; border-radius:12px; border:1px solid var(--line); background:rgba(8,34,60,.8);
+  display:grid; place-items:center; cursor:pointer; color:var(--txt); transition:transform .12s ease}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn svg{width:20px; height:20px}
+
+/* 事件弹窗 */
+#eventBox{position:fixed; z-index:30; left:50%; top:22%; transform:translateX(-50%);
+  max-width:min(480px,92vw); padding:16px 26px; border-radius:18px; text-align:center;
+  background:rgba(8,34,60,.95); border:1px solid var(--gold); box-shadow:0 14px 44px rgba(0,0,0,.5);
+  transition:opacity .35s ease, transform .35s ease}
+#eventBox.hidden{transform:translateX(-50%) translateY(-14px)}
+#eventTitle{font-size:13px; letter-spacing:.3em; color:var(--gold); margin-bottom:8px}
+#eventText{font-size:16px; letter-spacing:.08em; color:#fff; line-height:1.7}
+#eventProgress{height:14px; border-radius:999px; background:rgba(255,255,255,.12); margin-top:12px; overflow:hidden;
+  border:1px solid var(--line)}
+#eventBar{height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,#4d9fff,#7fe0ff);
+  transition:width .3s ease}
+#toast{position:fixed; z-index:35; left:50%; bottom:10%; transform:translateX(-50%); padding:10px 20px;
+  border-radius:999px; background:rgba(8,34,60,.92); border:1px solid var(--line); font-size:13px;
+  letter-spacing:.06em; color:#fff; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,.4);
+  transition:opacity .3s ease}
+#toast.hidden{opacity:0}
+
+@media (max-width:600px){
+  .liang{font-size:18px}
+  .card{padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="scene" role="img" aria-label="DeepSeek深海模拟"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="chip">
+    <div class="liang">梁值 <span id="liangVal">0</span></div>
+    <div class="sub" id="phaseName" style="font-size:11px;letter-spacing:.14em;color:var(--muted)">DeepSeek</div>
+  </div>
+  <div class="hud-right">
+    <div class="hearts" id="hearts"></div>
+    <button class="icon-btn" id="btnMute" aria-label="声音">
+      <svg viewBox="0 0 24 24" fill="currentColor" id="svgOn"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" id="svgOff" style="display:none"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.9 8.9 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H7v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L20.73 21 22 19.73 4.27 3z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- 标题 -->
+<div id="titleScreen" class="screen">
+  <div class="title-wrap">
+    <div class="t-title rise">DeepSeek：<em>深海模拟</em></div>
+    <div class="t-sub rise d1">吃鱼 · 长大 · 等待</div>
+    <div class="t-story rise d1">一个关于 AI、海洋，以及「近期发布」的故事</div>
+    <div class="t-best rise d2" id="tBest">本机最高梁值：0</div>
+    <div class="t-btns rise d3">
+      <button class="btn" id="btnStart">潜入深海</button>
+      <button class="btn ghost" id="btnHelp">研究说明</button>
+    </div>
+    <div class="t-foot rise d3">WASD / 方向键 / 鼠标 / 触摸 移动 · 吃小鱼 +1 梁值 · 远离大鱼</div>
+  </div>
+</div>
+
+<!-- 实验报告 -->
+<div id="reportOverlay" class="screen hidden">
+  <div class="card rise">
+    <h2>实验结束</h2>
+    <div class="sub">DeepSeek 鲸鱼已停止游动。</div>
+    <div class="big-liang" id="rLiang">0 梁值</div>
+    <div class="verdict-row"><span class="verdict-title" id="rTitle">牢梁认证</span></div>
+    <div class="verdict-comment" id="rComment">建议继续等待正式版。</div>
+    <div class="scale" id="rScale"></div>
+    <div class="card-btns">
+      <button class="btn" id="btnAgain">再次等待 V4</button>
+      <button class="btn ghost" id="btnHome">回到海面</button>
+    </div>
+  </div>
+</div>
+
+<!-- 帮助 -->
+<div id="helpOverlay" class="screen hidden">
+  <div class="card rise">
+    <h2>研究说明</h2>
+    <div class="sub">一本正经地荒谬</div>
+    <div class="verdict-comment" style="text-align:left; line-height:2">
+      你是一条 <b>DeepSeek 鲸鱼</b>。<br/>
+      吃小鱼 <b>+1 梁值</b>（梁值即声望）。<br/>
+      大鱼（CHATGPT / CLAUDE / GEMINI / KIMI / GLM / QWEN / GROK）<b>不可吃</b>，碰到 <b>-50 梁值</b> 并掉一颗 ❤。<br/>
+      梁值越高，鲸鱼越接近「梁圣」「梁神」。<br/>
+      超过 100 梁值后……<b>正式版开始发布</b>。<br/>
+      梁值跌破 0 即实验终止，生成实验报告。<br/>
+      海里偶尔会出现<b>「近期发布」的消息</b>，请保持平静。
+    </div>
+    <div class="card-btns"><button class="btn" id="btnHelpClose">下潜</button></div>
+  </div>
+</div>
+
+<div id="eventBox" class="hidden"><div id="eventTitle"></div><div id="eventText"></div><div id="eventProgress" class="hidden"><div id="eventBar"></div></div></div>
+<div id="toast" class="hidden"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   DeepSeek：深海模拟 —— 吃鱼。长大。等待。
+   ============================================================ */
+
+// ---------- utils ----------
+const $=s=>document.querySelector(s);
+const TAU=Math.PI*2;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const store={
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} },
+};
+
+// ---------- 音效 ----------
+let AC=null, master=null, muted=false;
+try{ muted=store.get('deepsea_muted')==='1'; }catch(e){}
+function ac(){
+  if(!AC){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+    AC=new C(); master=AC.createGain(); master.gain.value=0.6; master.connect(AC.destination); }
+  if(AC.state==='suspended') AC.resume();
+  return AC;
+}
+function beep(f,dur=.18,type='sine',vol=.14,delay=0,slide=0){
+  if(muted) return; const a=ac(); if(!a) return;
+  const t0=a.currentTime+delay, o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t0);
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,f+slide), t0+dur);
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(vol,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+0.06);
+}
+function noiseHit(dur=.25,vol=.15){
+  if(muted) return; const a=ac(); if(!a) return;
+  const t0=a.currentTime, len=Math.floor(a.sampleRate*dur);
+  const buf=a.createBuffer(1,len,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+  const src=a.createBufferSource(); src.buffer=buf;
+  const g=a.createGain(); g.gain.setValueAtTime(vol,t0);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=600;
+  src.connect(f); f.connect(g); g.connect(master); src.start(t0);
+}
+const sfx={
+  eat(){ beep(620,.1,'sine',.16); beep(940,.14,'sine',.1,.05); },
+  bite(){ beep(110,.3,'square',.2,0,-40); noiseHit(.35,.2); },
+  glow(){ [660,880,1100].forEach((f,i)=>beep(f,.5,'sine',.08,i*.12)); },
+  event(){ beep(392,.3,'triangle',.1); beep(494,.4,'triangle',.08,.2); },
+  over(){ [392,330,262,196].forEach((f,i)=>beep(f,.5,'triangle',.12,i*.2)); },
+  click(){ beep(700,.06,'triangle',.08); },
+};
+// 深海氛围 BGM
+let bgmNext=0, bgmIdx=0;
+const BGMPAD=[196,196,233,175];
+function bgmTick(t){
+  const a=ac(); if(!a) return;
+  if(bgmNext<t-0.05) bgmNext=t-0.05;
+  if(t+0.2>bgmNext){
+    while(bgmNext<t+0.2){
+      const f=BGMPAD[bgmIdx%4]; bgmIdx++;
+      const dur=1.6;
+      if(!muted){
+        const o=a.createOscillator(), g=a.createGain();
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0,bgmNext);
+        g.gain.linearRampToValueAtTime(.05,bgmNext+0.4);
+        g.gain.exponentialRampToValueAtTime(0.0001,bgmNext+dur);
+        o.connect(g); g.connect(master); o.start(bgmNext); o.stop(bgmNext+dur+.05);
+        const o2=a.createOscillator(), g2=a.createGain();
+        o2.type='sine'; o2.frequency.value=f*2;
+        g2.gain.setValueAtTime(0,bgmNext);
+        g2.gain.linearRampToValueAtTime(.018,bgmNext+0.6);
+        g2.gain.exponentialRampToValueAtTime(0.0001,bgmNext+dur);
+        o2.connect(g2); g2.connect(master); o2.start(bgmNext); o2.stop(bgmNext+dur+.05);
+      }
+      bgmNext+=dur;
+    }
+  }
+}
+function toggleMute(){
+  muted=!muted; store.set('deepsea_muted', muted?'1':'0');
+  $('#svgOn').style.display=muted?'none':'';
+  $('#svgOff').style.display=muted?'':'none';
+}
+
+// ---------- canvas ----------
+const canvas=$('#scene'), ctx=canvas.getContext('2d');
+let W=0,H=0,dpr=1;
+function resize(){
+  W=window.innerWidth; H=window.innerHeight; dpr=devicePixelRatio||1;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);
+resize();
+
+// ---------- 大鱼档案 ----------
+const BIGS=[
+  {name:'CHATGPT', color:'#0f6b46', belly:'#d9f2e2', size:1.55, speed:0.5, slow:false},
+  {name:'CLAUDE',  color:'#c9b89a', belly:'#f5efe2', size:1.9,  speed:0.22, slow:true},
+  {name:'GEMINI',  color:'#4a5fd0', belly:'#dfe6ff', size:1.35, speed:0.55, slow:false},
+  {name:'KIMI',    color:'#f08a2e', belly:'#ffe6c9', size:1.3,  speed:0.5, slow:false},
+  {name:'GLM',     color:'#5c6b80', belly:'#cfd8e2', size:1.25, speed:0.6, slow:false},
+  {name:'QWEN',    color:'#7b4fd0', belly:'#e8ddff', size:1.3,  speed:0.48, slow:false},
+  {name:'GROK',    color:'#1a1a22', belly:'#3a3a44', size:1.4,  speed:0.58, slow:false},
+];
+
+// ---------- 状态 ----------
+const S={
+  state:'title',
+  x:0,y:0,tx:0,ty:0,       // 鲸鱼位置/目标
+  liang:0, hearts:3, invT:0, hurtT:0, shake:0,
+  smalls:[], bigs:[], specials:[],
+  bubbles:[], texts:[], rays:[],
+  eventT:14, event:null, eventPhase:0,
+  t:0, last:0, best:0, scoreShown:0,
+};
+try{ S.best=parseInt(store.get('deepsea_best')||'0',10)||0; }catch(e){}
+
+// ---------- 进化阶段 ----------
+function phaseOf(liang){
+  if(liang>=100) return 5;  // V4 发布中（卡住）
+  if(liang>=80) return 4;   // 梁神
+  if(liang>=60) return 3;   // 梁圣
+  if(liang>=40) return 2;   // 圣光
+  if(liang>=20) return 1;   // V4？
+  return 0;                 // 小鲸鱼
+}
+const PHASE_NAMES=['DeepSeek','DeepSeek V4？','DeepSeek ✨','梁圣','梁神','V4 发布中…'];
+const PHASE_SCALE=[1,1.15,1.3,1.5,1.75,1.15];
+
+// ---------- 结局评级 ----------
+function verdict(liang){
+  // 评级区间（含负分）：0-20 牢梁认证 · 20-40 纯梁子 · 40-60 梁圣观察员 · 60-80 恩情还不完 · 80-100 梁神降临 · 100+ 无量梁尊
+  if(liang<20)  return {title:'牢梁认证',   comment:'建议继续等待正式版。'};
+  if(liang<40)  return {title:'纯梁子',     comment:'已经不是梁神了，但还没进牢。'};
+  if(liang<60)  return {title:'梁圣观察员', comment:'梁圣观察员，距离正式版还有……'};
+  if(liang<80)  return {title:'梁圣恩情还不完', comment:'梁圣的恩情还不完。'};
+  if(liang<100) return {title:'梁神降临',   comment:'梁神降临。'};
+  return {title:'无量梁尊', comment:'梁值溢出，正式版仍在灰度测试。'};
+}
+const SCALE_ROWS=[
+  {min:-Infinity,max:0, label:'0 以下', name:'牢梁认证'},
+  {min:0,max:20, label:'0 – 20', name:'牢梁认证'},
+  {min:20,max:40, label:'20 – 40', name:'纯梁子'},
+  {min:40,max:60, label:'40 – 60', name:'梁圣观察员'},
+  {min:60,max:80, label:'60 – 80', name:'梁圣恩情还不完'},
+  {min:80,max:100, label:'80 – 100', name:'梁神降临'},
+  {min:100,max:Infinity, label:'100+', name:'无量梁尊'},
+];
+
+// ---------- 初始化 ----------
+function spawnSmall(){
+  return {
+    x:rand(-0.15,1.15)*W, y:rand(0.15,0.9)*H,
+    vx:rand(-30,30), vy:rand(-14,14),
+    r:rand(7,11), color:pick(['#ff9d76','#ffd76a','#7fe0b8','#9db8ff','#ff9db1','#c9f2a8']),
+    ph:rand(0,TAU),
+  };
+}
+function spawnBig(kind){
+  const b=BIGS[kind];
+  const fromLeft=Math.random()<.5;
+  return {
+    kind, ...b,
+    x:fromLeft?-W*0.2:W*1.2, y:rand(0.18,0.82)*H,
+    dir:fromLeft?1:-1,
+    vy:rand(-8,8), r:46*b.size,
+  };
+}
+function resetRun(){
+  S.x=W/2; S.y=H*0.55; S.tx=S.x; S.ty=S.y;
+  S.liang=0; S.hearts=3; S.invT=0; S.hurtT=0; S.shake=0; S.scoreShown=0;
+  S.smalls=[]; for(let i=0;i<26;i++) S.smalls.push(spawnSmall());
+  S.bigs=[]; S.specials=[];
+  for(let k=0;k<BIGS.length;k++){
+    // 初始 3 条大鱼在场，其余陆续进场
+    if(k<3) S.bigs.push(spawnBig(k));
+  }
+  S.bubbles=[]; S.texts=[];
+  S.eventT=rand(16,24); S.event=null; S.eventPhase=0;
+  updateHearts(); updateHud();
+}
+
+// ---------- 事件系统 ----------
+const EVENTS=[
+  {type:'news', title:'【官方消息】', text:'DeepSeek V4 将于近期发布。', then:'暂无更多消息'},
+  {type:'progress', title:'【系统提示】', text:'检测到 DeepSeek V4 即将发布。'},
+  {type:'release', title:'【系统提示】', text:'海里出现了一个「发布日期」。'},
+];
+function triggerEvent(){
+  const ev=pick(EVENTS);
+  S.event={...ev};
+  S.eventPhase=0;
+  if(ev.type==='news'){
+    showEvent(ev.title, ev.text);
+    S.freeze=2.6; // 所有鱼停止
+    sfx.event();
+    setTimeout(()=>{ if(S.event&&S.event.type==='news'){ showEvent('', S.event.then); setTimeout(()=>hideEvent(),1600); } },2600);
+  } else if(ev.type==='progress'){
+    showEvent(ev.title, ev.text);
+    S.eventPhase=1; // 进度条出现
+    sfx.event();
+    S.eventBarT=0;
+    setTimeout(()=>{ if(S.event&&S.event.type==='progress'){ S.eventText2='灰度测试中……'; $('#eventText').textContent='灰度测试中……'; } },2200);
+    setTimeout(()=>{ hideEvent(); },3800);
+  } else {
+    // release：发光鱼
+    showEvent(ev.title, ev.text); sfx.event();
+    setTimeout(()=>hideEvent(),1800);
+    S.specials.push({x:rand(0.15,0.85)*W, y:rand(0.2,0.8)*H, vx:rand(-20,20), vy:rand(-10,10),
+      r:13, label:'7月中旬', life:26, ph:0});
+  }
+}
+function showEvent(title,text){
+  $('#eventTitle').textContent=title;
+  $('#eventText').textContent=text;
+  $('#eventProgress').classList.add('hidden');
+  $('#eventBox').classList.remove('hidden');
+}
+function hideEvent(){
+  $('#eventBox').classList.add('hidden');
+  $('#eventProgress').classList.add('hidden');
+  if(S.event) S.event=null;
+}
+
+// ---------- 输入 ----------
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyM') toggleMute();
+  if(S.state==='title'&&(e.code==='Enter'||e.code==='Space')){ e.preventDefault(); startGame(); }
+  if(S.state==='dead'&&e.code==='Enter'){ e.preventDefault(); startGame(); }
+});
+window.addEventListener('keyup',e=>{ keys[e.code]=false; });
+canvas.addEventListener('pointermove',e=>{
+  if(S.state!=='play') return;
+  const r=canvas.getBoundingClientRect();
+  S.tx=e.clientX-r.left; S.ty=e.clientY-r.top;
+});
+canvas.addEventListener('pointerdown',e=>{
+  ac();
+  if(S.state!=='play') return;
+  const r=canvas.getBoundingClientRect();
+  S.tx=e.clientX-r.left; S.ty=e.clientY-r.top;
+});
+
+// ---------- 飘字 ----------
+function addText(x,y,str,col,size=15){
+  S.texts.push({x,y,str,col,size,life:0,max:1.4,vy:-34});
+}
+function updateHud(){
+  const v=Math.floor(S.liang);
+  $('#liangVal').textContent=v;
+  $('#phaseName').textContent=PHASE_NAMES[phaseOf(v)];
+}
+function updateHearts(){
+  const el=$('#hearts'); el.innerHTML='';
+  for(let i=0;i<3;i++) el.innerHTML+='<span'+(i>=S.hearts?' class="lost"':'')+'>❤️</span>';
+}
+
+// ---------- 更新 ----------
+function update(dt){
+  S.t+=dt;
+  // 键盘移动
+  let dx=(keys['KeyD']||keys['ArrowRight']?1:0)-(keys['KeyA']||keys['ArrowLeft']?1:0);
+  let dy=(keys['KeyS']||keys['ArrowDown']?1:0)-(keys['KeyW']||keys['ArrowUp']?1:0);
+  if(dx||dy){ const m=Math.hypot(dx,dy); S.tx=S.x+dx/m*220; S.ty=S.y+dy/m*220; }
+  // 平滑跟随
+  S.x=lerp(S.x,S.tx,dt*5.5); S.y=lerp(S.y,S.ty,dt*5.5);
+  S.x=clamp(S.x,36,W-36); S.y=clamp(S.y,40,H-46);
+  // 无敌/眩晕
+  if(S.invT>0) S.invT-=dt;
+  if(S.hurtT>0) S.hurtT-=dt;
+  S.shake=Math.max(0,S.shake-dt*2.5);
+  // 冻结（官方消息事件）
+  const frozen=S.freeze>0;
+  if(frozen) S.freeze-=dt;
+  // 小鱼
+  for(const f of S.smalls){
+    if(!frozen){ f.x+=f.vx*dt; f.y+=f.vy*dt+Math.sin(S.t*2+f.ph)*8*dt; }
+    if(f.x<-30) f.x=W+30; if(f.x>W+30) f.x=-30;
+    if(f.y<-30) f.y=H+30; if(f.y>H+30) f.y=-30;
+    // 吃
+    if(S.invT<=0){
+      const d=Math.hypot(f.x-S.x,f.y-S.y);
+      if(d<34+phaseScale()){
+        f.x=rand(-0.1,1.1)*W; f.y=rand(0.1,0.9)*H;
+        S.liang+=1; sfx.eat();
+        addText(f.x,f.y,'+1 梁值','#ffd76a');
+        spawnBubbles(f.x,f.y,4);
+        updateHud();
+      }
+    }
+  }
+  // 大鱼
+  const bigCount=S.bigs.length;
+  if(bigCount<BIGS.length && S.t>S.nextBigT){
+    S.bigs.push(spawnBig(bigCount%7));
+    S.nextBigT=S.t+rand(9,15);
+  }
+  for(let i=S.bigs.length-1;i>=0;i--){
+    const b=S.bigs[i];
+    if(!frozen){ b.x+=b.dir*b.speed*36*dt; b.y=clamp(b.y+b.vy*dt,60,H-60); if(b.y<=62||b.y>=H-62) b.vy*=-1; }
+    // 出屏移除
+    if((b.dir>0&&b.x>W*1.25)||(b.dir<0&&b.x<-W*0.25)){ S.bigs.splice(i,1); continue; }
+    // 碰撞
+    if(S.invT<=0){
+      const d=Math.hypot(b.x-S.x,b.y-S.y);
+      if(d<b.r+30){
+        S.liang-=50; S.hearts--; S.invT=2.2; S.hurtT=1.3; S.shake=1.2;
+        sfx.bite();
+        addText(S.x,S.y,'-50 梁值','#ff6b5e',19);
+        spawnBubbles(S.x,S.y,10);
+        updateHearts(); updateHud();
+        if(b.kind===0) S.shake=2; // ChatGPT 屏幕大震
+        if(S.hearts<=0){ die(); return; }
+      }
+    }
+  }
+  // 特殊鱼（发布日期）
+  for(let i=S.specials.length-1;i>=0;i--){
+    const sp=S.specials[i];
+    sp.life-=dt; sp.ph+=dt;
+    sp.x+=sp.vx*dt; sp.y+=sp.vy*dt;
+    if(sp.x<-30) sp.x=W+30; if(sp.x>W+30) sp.x=-30;
+    if(sp.y<-30) sp.y=H+30; if(sp.y>H+30) sp.y=-30;
+    if(sp.life<=0){ S.specials.splice(i,1); continue; }
+    if(S.invT<=0){
+      const d=Math.hypot(sp.x-S.x,sp.y-S.y);
+      if(d<30+phaseScale()){
+        S.specials.splice(i,1);
+        S.liang+=50; sfx.glow();
+        addText(sp.x,sp.y,'+50 梁值','#7fe0ff',18);
+        // 两秒后过期
+        setTimeout(()=>{
+          if(S.state==='play'){
+            S.liang-=50; sfx.event();
+            addText(S.x,S.y-40,'该发布日期已过期','#ff6b5e',16);
+            updateHud();
+          }
+        },2000);
+        updateHud();
+      }
+    }
+  }
+  // 气泡
+  if(Math.random()<dt*14) S.bubbles.push({x:rand(0,W),y:H+10,r:rand(2,5),vy:rand(-50,-18),ph:rand(0,TAU)});
+  for(let i=S.bubbles.length-1;i>=0;i--){
+    const b=S.bubbles[i]; b.y+=b.vy*dt; b.x+=Math.sin(S.t*3+b.ph)*6*dt;
+    if(b.y<-10) S.bubbles.splice(i,1);
+  }
+  // 飘字
+  for(let i=S.texts.length-1;i>=0;i--){
+    const tx=S.texts[i]; tx.life+=dt; tx.y+=tx.vy*dt;
+    if(tx.life>tx.max) S.texts.splice(i,1);
+  }
+  // 事件计时
+  S.eventT-=dt;
+  if(S.eventT<=0 && !S.event){
+    S.eventT=rand(20,32);
+    triggerEvent();
+  }
+  // 进化音效（跨阶段）
+  const ph=phaseOf(S.liang);
+  if(ph!==S.lastPhase){
+    S.lastPhase=ph;
+    if(ph>0) sfx.glow();
+    addText(S.x,S.y-56,PHASE_NAMES[ph],'#ffd76a',20);
+  }
+  // 100+ 的「发布卡住」
+  if(phaseOf(S.liang)>=5){
+    S.releaseT=(S.releaseT||0)+dt;
+    if(S.releaseT>9){ S.releaseT=0; toast(S.eventFreeze?'发布进度：99%':'灰度测试中……进度：20%'); S.eventFreeze=!S.eventFreeze; }
+  }
+}
+function phaseScale(){ return PHASE_SCALE[phaseOf(S.liang)]; }
+
+function die(){
+  S.state='dead';
+  sfx.over();
+  const v=Math.floor(S.liang);
+  if(v>S.best){ S.best=v; store.set('deepsea_best',v); }
+  const vd=verdict(v);
+  $('#rLiang').textContent=v+' 梁值';
+  $('#rTitle').textContent=vd.title;
+  $('#rComment').textContent='评价：'+vd.comment;
+  const sc=$('#rScale'); sc.innerHTML='';
+  for(const row of SCALE_ROWS){
+    const el=document.createElement('div');
+    el.className='scale-row'+(v>=row.min&&v<row.max?' cur':'');
+    el.innerHTML='<span>'+row.label+'</span><span>'+row.name+'</span>';
+    sc.appendChild(el);
+  }
+  $('#hud').classList.add('hidden');
+  $('#reportOverlay').classList.remove('hidden');
+}
+
+// ---------- 流程 ----------
+function startGame(){
+  sfx.click();
+  resetRun();
+  S.state='play';
+  S.nextBigT=S.t+rand(5,9);
+  S.lastPhase=0;
+  $('#titleScreen').classList.add('hidden');
+  $('#reportOverlay').classList.add('hidden');
+  $('#hud').classList.remove('hidden');
+  ac();
+}
+function backHome(){
+  sfx.click();
+  S.state='title';
+  $('#reportOverlay').classList.add('hidden');
+  $('#hud').classList.add('hidden');
+  $('#tBest').textContent='本机最高梁值：'+S.best;
+  $('#titleScreen').classList.remove('hidden');
+}
+function toast(msg,ms=2200){
+  const el=$('#toast'); el.textContent=msg; el.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.add('hidden'),ms);
+}
+function spawnBubbles(x,y,n){
+  for(let i=0;i<n;i++) S.bubbles.push({x:x+rand(-14,14),y:y+rand(-10,10),r:rand(2,5),vy:rand(-70,-30),ph:rand(0,TAU)});
+}
+
+// ---------- 渲染 ----------
+function drawSea(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0a4a78'); g.addColorStop(.5,'#07375e'); g.addColorStop(1,'#041f38');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // 光线
+  for(let i=0;i<7;i++){
+    const rx=(i*0.16+0.05)*W+Math.sin(S.t*0.2+i)*10;
+    const rw=rand(26,44);
+    const rg=ctx.createLinearGradient(0,0,0,H*0.8);
+    rg.addColorStop(0,'rgba(160,225,255,.10)'); rg.addColorStop(1,'rgba(160,225,255,0)');
+    ctx.fillStyle=rg;
+    ctx.beginPath();
+    ctx.moveTo(rx,0); ctx.lineTo(rx+rw*0.4,H*0.85); ctx.lineTo(rx-rw*0.4,H*0.85);
+    ctx.closePath(); ctx.fill();
+  }
+  // 远景海草（底）
+  ctx.strokeStyle='rgba(30,120,90,.5)'; ctx.lineWidth=5; ctx.lineCap='round';
+  for(let i=0;i<16;i++){
+    const hx=i/16*W+Math.sin(S.t*.5+i)*8;
+    ctx.beginPath();
+    ctx.moveTo(hx,H);
+    ctx.quadraticCurveTo(hx+Math.sin(S.t*.8+i)*10,H-rand(40,90),hx+Math.sin(S.t*.6+i)*18,H-rand(80,160));
+    ctx.stroke();
+  }
+}
+function drawSmallFish(f){
+  ctx.save();
+  ctx.translate(f.x,f.y);
+  const dir=f.vx>0?1:-1;
+  ctx.scale(dir,1);
+  ctx.rotate(Math.sin(S.t*3+f.ph)*0.2);
+  ctx.fillStyle=f.color;
+  ctx.beginPath(); ctx.ellipse(0,0,f.r,f.r*0.62,0,0,TAU); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-f.r*0.8,0); ctx.lineTo(-f.r*1.6,-f.r*0.55); ctx.lineTo(-f.r*1.6,f.r*0.55);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#1c2733';
+  ctx.beginPath(); ctx.arc(f.r*0.35,-f.r*0.12,f.r*0.16,0,TAU); ctx.fill();
+  ctx.restore();
+}
+function drawBigFish(b){
+  ctx.save();
+  ctx.translate(b.x,b.y);
+  ctx.scale(b.dir,1);
+  const s=b.r/46;
+  // 身体
+  const g=ctx.createLinearGradient(-b.r,b.r*0.4,b.r,-b.r*0.4);
+  g.addColorStop(0,shade(b.color,0.25)); g.addColorStop(1,b.color);
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.ellipse(0,0,b.r,b.r*0.55,0,0,TAU); ctx.fill();
+  // 尾
+  ctx.fillStyle=shade(b.color,0.3);
+  ctx.beginPath();
+  ctx.moveTo(-b.r*0.85,0);
+  ctx.lineTo(-b.r*1.45,-b.r*0.5);
+  ctx.lineTo(-b.r*1.45,b.r*0.5);
+  ctx.closePath(); ctx.fill();
+  // 鳍
+  ctx.beginPath(); ctx.ellipse(-b.r*0.1,b.r*0.45,b.r*0.32,b.r*0.18,-0.4,0,TAU); ctx.fill();
+  // 肚皮
+  ctx.fillStyle=b.belly;
+  ctx.beginPath(); ctx.ellipse(b.r*0.12,b.r*0.14,b.r*0.62,b.r*0.36,0,0,TAU); ctx.fill();
+  // 眼睛
+  ctx.fillStyle='#101820';
+  ctx.beginPath(); ctx.arc(b.r*0.5,-b.r*0.16,b.r*0.1,0,TAU); ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(b.r*0.53,-b.r*0.2,b.r*0.035,0,TAU); ctx.fill();
+  // GLM 机械纹
+  if(b.kind===4){
+    ctx.strokeStyle='rgba(220,235,255,.4)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(-b.r*0.5,-b.r*0.4); ctx.lineTo(b.r*0.3,b.r*0.4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-b.r*0.3,b.r*0.42); ctx.lineTo(b.r*0.5,-b.r*0.42); ctx.stroke();
+  }
+  // 名牌
+  ctx.scale(b.dir,1);
+  ctx.font='800 '+Math.max(11,13*s)+'px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.95)';
+  ctx.fillText(b.name, 0, -b.r*0.72);
+  ctx.restore();
+}
+function shade(hex,t){
+  const n=parseInt(hex.slice(1),16), r=n>>16&255, g2=n>>8&255, b2=n&255;
+  return `rgb(${Math.round(r*(1-t))},${Math.round(g2*(1-t))},${Math.round(b2*(1-t))})`;
+}
+function drawSpecial(sp){
+  const glow=0.5+0.5*Math.sin(sp.ph*5);
+  ctx.save();
+  ctx.translate(sp.x,sp.y);
+  // 光晕
+  const g=ctx.createRadialGradient(0,0,0,0,0,26);
+  g.addColorStop(0,`rgba(127,224,255,${0.5+glow*0.3})`); g.addColorStop(1,'rgba(127,224,255,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,26,0,TAU); ctx.fill();
+  // 发光鱼
+  ctx.fillStyle='#c9f4ff';
+  ctx.beginPath(); ctx.ellipse(0,0,13,8,0,0,TAU); ctx.fill();
+  ctx.fillStyle='#1c2733';
+  ctx.beginPath(); ctx.arc(4,-2,1.8,0,TAU); ctx.fill();
+  // 标签
+  ctx.font='800 12px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#fff';
+  ctx.fillText(sp.label,0,-20);
+  ctx.restore();
+}
+function drawWhale(){
+  const ph=phaseOf(S.liang);
+  const sc=PHASE_SCALE[ph];
+  const x=S.x, y=S.y;
+  ctx.save();
+  ctx.translate(x,y);
+  // 圣光（phase 2+）
+  if(ph>=2){
+    const gg=ctx.createRadialGradient(0,0,0,0,0,sc*64);
+    gg.addColorStop(0,`rgba(255,215,106,${0.28+ph*0.05})`); gg.addColorStop(1,'rgba(255,215,106,0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(0,0,sc*64,0,TAU); ctx.fill();
+  }
+  // 光环文字（phase 3+）
+  if(ph>=3){
+    ctx.save();
+    ctx.font='900 '+Math.round(15+sc*4)+'px serif';
+    ctx.textAlign='center';
+    ctx.fillStyle=ph>=4?'rgba(255,190,60,.95)':'rgba(255,215,106,.9)';
+    ctx.fillText(ph>=4?'梁 神':'梁 圣', 0, -sc*52);
+    ctx.restore();
+  }
+  ctx.scale(sc,sc);
+  // 受伤闪烁
+  if(S.invT>0&&Math.floor(S.t*9)%2===0) ctx.globalAlpha=0.45;
+  // 尾
+  ctx.fillStyle='#2a63a8';
+  ctx.save();
+  ctx.rotate(Math.sin(S.t*5)*0.12);
+  ctx.beginPath();
+  ctx.moveTo(-30,0); ctx.lineTo(-48,-17); ctx.lineTo(-48,17);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // 身体
+  const g=ctx.createLinearGradient(0,-34,0,26);
+  g.addColorStop(0,'#6fb1ff'); g.addColorStop(.55,'#3f7fd0'); g.addColorStop(1,'#245a9e');
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.ellipse(0,0,36,27,0,0,TAU); ctx.fill();
+  // 肚皮
+  ctx.fillStyle='#dceeff';
+  ctx.beginPath(); ctx.ellipse(4,10,24,14,0,0,TAU); ctx.fill();
+  // 鳍
+  ctx.fillStyle='#2a63a8';
+  ctx.beginPath(); ctx.ellipse(-2,20,16,7,0.35,0,TAU); ctx.fill();
+  // 眼睛
+  ctx.fillStyle='#0d1b2e';
+  ctx.beginPath(); ctx.arc(16,-8,5.4,0,TAU); ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(18,-10,2,0,TAU); ctx.fill();
+  // 嘴（微笑）
+  ctx.strokeStyle='#0d1b2e'; ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(20,-2,7,-0.3,0.9); ctx.stroke();
+  // 气孔水花
+  ctx.fillStyle='rgba(220,240,255,.8)';
+  for(let i=0;i<3;i++){
+    const bb=(S.t*0.8+i/3)%1;
+    ctx.beginPath(); ctx.arc(-20,-30-bb*16,2.4*(1-bb)+1,0,TAU); ctx.fill();
+  }
+  // phase 5：发布气泡
+  if(ph>=5){
+    ctx.fillStyle='rgba(8,34,60,.9)';
+    roundRect(-64,-66,108,30,10); ctx.fill();
+    ctx.font='700 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#ffd76a';
+    ctx.fillText('V4 发布中…',-10,-54);
+    ctx.fillStyle='#8fb4d8';
+    ctx.fillText('发布时间：即将',-10,-38);
+  }
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawParticles(){
+  for(const b of S.bubbles){
+    ctx.globalAlpha=0.5;
+    ctx.strokeStyle='rgba(190,230,255,.7)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,TAU); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  for(const tx of S.texts){
+    const k=1-tx.life/tx.max;
+    ctx.globalAlpha=Math.min(1,k*1.6);
+    ctx.font='900 '+tx.size+'px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillStyle=tx.col;
+    ctx.fillText(tx.str,tx.x,tx.y);
+  }
+  ctx.globalAlpha=1;
+}
+function render(t){
+  ctx.save();
+  if(S.shake>0){
+    const m=7*S.shake;
+    ctx.translate(rand(-m,m),rand(-m,m));
+  }
+  drawSea();
+  for(const f of S.smalls) drawSmallFish(f);
+  for(const sp of S.specials) drawSpecial(sp);
+  for(const b of S.bigs) drawBigFish(b);
+  drawWhale();
+  drawParticles();
+  ctx.restore();
+}
+
+// ---------- 主循环 ----------
+function frame(now){
+  const t=now/1000;
+  const dt=Math.min(0.05,(now-S.last)/1000||0.016);
+  S.last=now;
+  if(S.state==='play'){ update(dt); bgmTick(t); }
+  render(t);
+  requestAnimationFrame(frame);
+}
+
+// ---------- UI ----------
+function attachRipple(btn){
+  btn.addEventListener('pointerdown',e=>{
+    const r=btn.getBoundingClientRect(), d=Math.max(r.width,r.height)*1.2;
+    const s=document.createElement('span'); s.className='ripple';
+    s.style.width=s.style.height=d+'px';
+    s.style.left=(e.clientX-r.left-d/2)+'px'; s.style.top=(e.clientY-r.top-d/2)+'px';
+    btn.appendChild(s); setTimeout(()=>s.remove(),600);
+  });
+}
+document.querySelectorAll('.btn,.icon-btn').forEach(attachRipple);
+$('#btnStart').addEventListener('click',startGame);
+$('#btnAgain').addEventListener('click',startGame);
+$('#btnHome').addEventListener('click',backHome);
+$('#btnMute').addEventListener('click',toggleMute);
+$('#btnHelp').addEventListener('click',()=>{ sfx.click(); $('#helpOverlay').classList.remove('hidden'); });
+$('#btnHelpClose').addEventListener('click',()=>{ sfx.click(); $('#helpOverlay').classList.add('hidden'); });
+
+// ---------- boot ----------
+try{ if(muted){ $('#svgOn').style.display='none'; $('#svgOff').style.display=''; } }catch(e){}
+$('#tBest').textContent='本机最高梁值：'+S.best;
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
