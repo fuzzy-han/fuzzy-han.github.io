@@ -348,7 +348,7 @@ body{
 <div id="lbOverlay" class="screen hidden">
   <div class="lb-card rise">
     <div class="lb-title serif">功名榜</div>
-    <div class="lb-sub">已有 <b id="lbSubCount">0</b> 位影人通关全剧</div>
+    <div class="lb-sub">已有 <b id="lbSubCount">0</b> 位影人通关全剧 · 按完成速度排序</div>
     <div class="lb-list" id="lbList"></div>
     <div class="how-close"><button class="btn primary" id="btnLbClose">关 幕</button></div>
   </div>
@@ -1553,7 +1553,13 @@ const LB = {
     const m=new Map();
     for(const e of (Array.isArray(this.cloudList)?this.cloudList:[])) if(e && typeof e.name==='string') m.set(e.name, e);
     for(const e of (Array.isArray(this.local)?this.local:[])) if(e && e.pending && typeof e.name==='string') m.set(e.name, e);
-    return [...m.values()].sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(0,200);
+    // 按完成速度排序：用时最短在前；无用时记录（旧数据）排后；同速按完成先后
+    return [...m.values()].sort((a,b)=>{
+      const da = (a.duration||a.dur) || 1e9;
+      const db = (b.duration||b.dur) || 1e9;
+      if(da!==db) return da-db;
+      return (a.ts||0)-(b.ts||0);
+    }).slice(0,200);
   },
   markSynced(rec){
     const i=this.local.findIndex(e=>e.name===rec.name && e.ts===rec.ts && e.pending);
