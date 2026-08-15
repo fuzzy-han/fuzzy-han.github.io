@@ -175,7 +175,9 @@ body{
     <div class="verdict-comment" style="text-align:left; line-height:2">
       你是一条 <b>DeepSeek 鲸鱼</b>。<br/>
       吃小鱼 <b>+1 梁值</b>（梁值即声望）。<br/>
-      大鱼（CHATGPT / CLAUDE / GEMINI / KIMI / GLM / QWEN / GROK）<b>不可吃</b>，碰到 <b>-50 梁值</b> 并掉一颗 ❤。<br/>
+      大鱼（CHATGPT / CLAUDE / GEMINI / KIMI / GLM / QWEN / GROK）每家全场只有一只。<br/>
+      你的图标随梁值<b>变大</b>——<b>比它大就能吃掉它</b>（+30 梁值）；还不够大就撞伤（-50 梁值、掉 ❤）。<br/>
+      <b>吃完全部 7 家，成为海洋霸主。</b><br/>
       梁值越高，鲸鱼越接近「梁圣」「梁神」。<br/>
       超过 100 梁值后……<b>正式版开始发布</b>。<br/>
       梁值跌破 0 即实验终止，生成实验报告。<br/>
@@ -311,16 +313,17 @@ function drawIcon(name, cx, cy, size, color) {
   ctx.restore();
 }
 
-// ---------- 大鱼档案 ----------
-const BIGS=[
-  {name:'CHATGPT', color:'#0f6b46', belly:'#d9f2e2', size:1.55, speed:0.5, slow:false},
-  {name:'CLAUDE',  color:'#c9b89a', belly:'#f5efe2', size:1.9,  speed:0.22, slow:true},
-  {name:'GEMINI',  color:'#4a5fd0', belly:'#dfe6ff', size:1.35, speed:0.55, slow:false},
-  {name:'KIMI',    color:'#f08a2e', belly:'#ffe6c9', size:1.3,  speed:0.5, slow:false},
-  {name:'GLM',     color:'#5c6b80', belly:'#cfd8e2', size:1.25, speed:0.6, slow:false},
-  {name:'QWEN',    color:'#7b4fd0', belly:'#e8ddff', size:1.3,  speed:0.48, slow:false},
-  {name:'GROK',    color:'#1a1a22', belly:'#3a3a44', size:1.4,  speed:0.58, slow:false},
+// ---------- 公司鱼档案（全场唯一，按体型从小到大出场） ----------
+const COMPANIES=[
+  {name:'GLM',     size:110, speed:0.62, color:'#0d2b45', quote:'智谱 IPO 了，开源依然「即将全部开源」。'},
+  {name:'KIMI',    size:116, speed:0.55, color:'#0e2440', quote:'K2 很强，但广告先走一波。'},
+  {name:'QWEN',    size:116, speed:0.52, color:'#0f2145', quote:'开源榜第一，模型全家桶又上新了。'},
+  {name:'GEMINI',  size:120, speed:0.58, color:'#0a2f4a', quote:'我们改名了，但真的没换皮。（大概）'},
+  {name:'GROK',    size:124, speed:0.6,  color:'#071422', quote:'十万卡算力，吐槽最猛，改名最快。'},
+  {name:'CHATGPT', size:136, speed:0.5,  color:'#0a3a30', quote:'非营利？那都是过去式了。'},
+  {name:'CLAUDE',  size:168, speed:0.3,  color:'#2a2a33', quote:'安全第一，价格也第一。'},
 ];
+const BIGS=COMPANIES;
 
 // ---------- 状态 ----------
 const S={
@@ -328,6 +331,7 @@ const S={
   x:0,y:0,tx:0,ty:0,       // 鲸鱼位置/目标
   liang:0, hearts:3, invT:0, hurtT:0, shake:0,
   smalls:[], bigs:[], specials:[],
+  queue:[], eaten:0, quote:null, quoteT:0,
   bubbles:[], texts:[], rays:[],
   eventT:14, event:null, eventPhase:0,
   t:0, last:0, best:0, scoreShown:0,
@@ -375,14 +379,13 @@ function spawnSmall(){
     ph:rand(0,TAU),
   };
 }
-function spawnBig(kind){
-  const b=BIGS[kind];
+function spawnBig(comp){
   const fromLeft=Math.random()<.5;
   return {
-    kind, ...b,
-    x:fromLeft?-W*0.2:W*1.2, y:rand(0.18,0.82)*H,
+    ...comp,
+    x:fromLeft?-comp.size*0.7:W+comp.size*0.7, y:rand(0.2,0.8)*H,
     dir:fromLeft?1:-1,
-    vy:rand(-8,8), r:46*b.size,
+    vy:rand(-10,10), r:comp.size/2,
   };
 }
 function resetRun(){
@@ -390,10 +393,8 @@ function resetRun(){
   S.liang=0; S.hearts=3; S.invT=0; S.hurtT=0; S.shake=0; S.scoreShown=0;
   S.smalls=[]; for(let i=0;i<26;i++) S.smalls.push(spawnSmall());
   S.bigs=[]; S.specials=[];
-  for(let k=0;k<BIGS.length;k++){
-    // 初始 3 条大鱼在场，其余陆续进场
-    if(k<3) S.bigs.push(spawnBig(k));
-  }
+  S.queue=COMPANIES.map((c,i)=>({...c,idx:i}));  // 全部待出场，每公司唯一
+  S.eaten=0; S.quote=null; S.quoteT=0;
   S.bubbles=[]; S.texts=[];
   S.eventT=rand(16,24); S.event=null; S.eventPhase=0;
   updateHearts(); updateHud();
@@ -510,31 +511,49 @@ function update(dt){
       }
     }
   }
-  // 大鱼
-  const bigCount=S.bigs.length;
-  if(bigCount<BIGS.length && S.t>S.nextBigT){
-    S.bigs.push(spawnBig(bigCount%7));
-    S.nextBigT=S.t+rand(9,15);
+  // 公司鱼：队列出场（每公司全场唯一；未吃掉的游走后稍后重游）
+  if(S.queue.length && S.bigs.length<2 && S.t>S.nextBigT){
+    S.bigs.push(spawnBig(S.queue.shift()));
+    S.nextBigT=S.t+rand(8,13);
   }
   for(let i=S.bigs.length-1;i>=0;i--){
     const b=S.bigs[i];
     if(!frozen){ b.x+=b.dir*b.speed*36*dt; b.y=clamp(b.y+b.vy*dt,60,H-60); if(b.y<=62||b.y>=H-62) b.vy*=-1; }
-    // 出屏移除
-    if((b.dir>0&&b.x>W*1.25)||(b.dir<0&&b.x<-W*0.25)){ S.bigs.splice(i,1); continue; }
-    // 碰撞
+    // 游出屏幕：未吃掉的放回队列稍后重游（不会出现第二只）
+    if((b.dir>0&&b.x>W+b.size*0.8)||(b.dir<0&&b.x<-b.size*0.8)){
+      S.bigs.splice(i,1); S.queue.push(b);
+      continue;
+    }
     if(S.invT<=0){
       const d=Math.hypot(b.x-S.x,b.y-S.y);
-      if(d<b.r+30){
-        S.liang-=50; S.hearts--; S.invT=2.2; S.hurtT=1.3; S.shake=1.2;
-        sfx.bite();
-        addText(S.x,S.y,'-50 梁值','#ff6b5e',19);
-        spawnBubbles(S.x,S.y,10);
-        updateHearts(); updateHud();
-        if(b.kind===0) S.shake=2; // ChatGPT 屏幕大震
-        if(S.hearts<=0){ die(); return; }
+      const reach=(playerD()+b.size)/2; // 两圆相触距离
+      if(d<reach){
+        if(playerD()>=b.size){
+          // 体型够大：吃掉这家公司！
+          S.bigs.splice(i,1);
+          S.eaten++;
+          S.liang+=30;
+          sfx.glow();
+          addText(b.x,b.y,'吃掉 '+b.name+'！ +30 梁值','#7fe0ff',22);
+          showQuote(b.quote);
+          spawnBubbles(b.x,b.y,16);
+          S.shake=0.8;
+          updateHud();
+          if(S.eaten>=COMPANIES.length){ winBoss(); return; }
+        } else {
+          // 还不够大：撞上受伤
+          S.liang-=50; S.hearts--; S.invT=2.2; S.hurtT=1.3; S.shake=1.2;
+          sfx.bite();
+          addText(S.x,S.y,'-50 梁值（还不够大）','#ff6b5e',18);
+          spawnBubbles(S.x,S.y,10);
+          updateHearts(); updateHud();
+          if(S.hearts<=0){ die(); return; }
+        }
       }
     }
   }
+  // 梗话计时
+  if(S.quoteT>0){ S.quoteT-=dt; if(S.quoteT<=0) S.quote=null; }
   // 特殊鱼（发布日期）
   for(let i=S.specials.length-1;i>=0;i--){
     const sp=S.specials[i];
@@ -592,9 +611,32 @@ function update(dt){
   }
 }
 function phaseScale(){ return PHASE_SCALE[phaseOf(S.liang)]; }
+function playerD(){ return Math.max(30, 46 + S.liang*1.8); } // DeepSeek 图标直径（随梁值长大）
 
+function showQuote(q){
+  S.quote=q; S.quoteT=3.2;
+  sfx.event();
+}
+function winBoss(){
+  S.state='dead';
+  S.wonBoss=true;
+  sfx.over();
+  const v=Math.floor(S.liang);
+  if(v>S.best){ S.best=v; store.set('deepsea_best',v); }
+  $('#rLiang').textContent=v+' 梁值';
+  $('#rTitle').textContent='海洋霸主';
+  $('#rComment').textContent='评价：DeepSeek 吃掉了所有公司，成为海洋霸主。但正式版仍在灰度测试。';
+  const sc=$('#rScale'); sc.innerHTML='';
+  const el=document.createElement('div');
+  el.className='scale-row cur';
+  el.innerHTML='<span>全部 7 家</span><span>已吞并</span>';
+  sc.appendChild(el);
+  $('#hud').classList.add('hidden');
+  $('#reportOverlay').classList.remove('hidden');
+}
 function die(){
   S.state='dead';
+  S.wonBoss=false;
   sfx.over();
   const v=Math.floor(S.liang);
   if(v>S.best){ S.best=v; store.set('deepsea_best',v); }
@@ -686,43 +728,31 @@ function drawBigFish(b){
   ctx.save();
   ctx.translate(b.x,b.y);
   ctx.scale(b.dir,1);
-  const s=b.r/46;
-  // 身体
-  const g=ctx.createLinearGradient(-b.r,b.r*0.4,b.r,-b.r*0.4);
-  g.addColorStop(0,shade(b.color,0.25)); g.addColorStop(1,b.color);
+  // 单色深色剪影（图标在正中间，清晰可见）
+  const g=ctx.createRadialGradient(0,0,b.r*0.1,0,0,b.r*1.05);
+  g.addColorStop(0,shade(b.color,-0.08)); g.addColorStop(1,shade(b.color,0.25));
   ctx.fillStyle=g;
-  ctx.beginPath(); ctx.ellipse(0,0,b.r,b.r*0.55,0,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,0,b.r,b.r*0.58,0,0,TAU); ctx.fill();
   // 尾
   ctx.fillStyle=shade(b.color,0.3);
   ctx.beginPath();
-  ctx.moveTo(-b.r*0.85,0);
-  ctx.lineTo(-b.r*1.45,-b.r*0.5);
-  ctx.lineTo(-b.r*1.45,b.r*0.5);
+  ctx.moveTo(-b.r*0.86,0);
+  ctx.lineTo(-b.r*1.5,-b.r*0.52);
+  ctx.lineTo(-b.r*1.5,b.r*0.52);
   ctx.closePath(); ctx.fill();
   // 鳍
-  ctx.beginPath(); ctx.ellipse(-b.r*0.1,b.r*0.45,b.r*0.32,b.r*0.18,-0.4,0,TAU); ctx.fill();
-  // 肚皮
-  ctx.fillStyle=b.belly;
-  ctx.beginPath(); ctx.ellipse(b.r*0.12,b.r*0.14,b.r*0.62,b.r*0.36,0,0,TAU); ctx.fill();
-  // 眼睛
-  ctx.fillStyle='#101820';
-  ctx.beginPath(); ctx.arc(b.r*0.5,-b.r*0.16,b.r*0.1,0,TAU); ctx.fill();
-  ctx.fillStyle='#fff';
-  ctx.beginPath(); ctx.arc(b.r*0.53,-b.r*0.2,b.r*0.035,0,TAU); ctx.fill();
-  // GLM 机械纹
-  if(b.kind===4){
-    ctx.strokeStyle='rgba(220,235,255,.4)'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(-b.r*0.5,-b.r*0.4); ctx.lineTo(b.r*0.3,b.r*0.4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-b.r*0.3,b.r*0.42); ctx.lineTo(b.r*0.5,-b.r*0.42); ctx.stroke();
-  }
-  // 品牌图标（鱼身）
+  ctx.beginPath(); ctx.ellipse(-b.r*0.08,b.r*0.48,b.r*0.34,b.r*0.2,-0.35,0,TAU); ctx.fill();
+  // 白色描边（剪影感）
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.ellipse(0,0,b.r,b.r*0.58,0,0,TAU); ctx.stroke();
   ctx.scale(b.dir,1);
-  drawIcon(b.name, b.r*0.15, -b.r*0.1, b.r*0.62, 'rgba(255,255,255,.96)');
+  // 品牌图标：正中间
+  drawIcon(b.name, 0, 0, b.size*0.52, 'rgba(255,255,255,.98)');
   // 名牌
-  ctx.font='800 '+Math.max(11,13*s)+'px sans-serif';
+  ctx.font='800 '+Math.max(12,b.size*0.09)+'px sans-serif';
   ctx.textAlign='center';
-  ctx.fillStyle='rgba(255,255,255,.95)';
-  ctx.fillText(b.name, 0, -b.r*0.72);
+  ctx.fillStyle='#ffd76a';
+  ctx.fillText(b.name, 0, b.r*0.88);
   ctx.restore();
 }
 function shade(hex,t){
@@ -750,72 +780,47 @@ function drawSpecial(sp){
 }
 function drawWhale(){
   const ph=phaseOf(S.liang);
-  const sc=PHASE_SCALE[ph];
+  const D=playerD();
   const x=S.x, y=S.y;
   ctx.save();
   ctx.translate(x,y);
   // 圣光（phase 2+）
   if(ph>=2){
-    const gg=ctx.createRadialGradient(0,0,0,0,0,sc*64);
+    const R=playerD()/2;
+    const gg=ctx.createRadialGradient(0,0,0,0,0,R*2.2);
     gg.addColorStop(0,`rgba(255,215,106,${0.28+ph*0.05})`); gg.addColorStop(1,'rgba(255,215,106,0)');
-    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(0,0,sc*64,0,TAU); ctx.fill();
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(0,0,R*2.2,0,TAU); ctx.fill();
   }
   // 光环文字（phase 3+）
   if(ph>=3){
     ctx.save();
-    ctx.font='900 '+Math.round(15+sc*4)+'px serif';
+    const R=playerD()/2;
+    ctx.font='900 '+Math.round(15+R*0.12)+'px serif';
     ctx.textAlign='center';
     ctx.fillStyle=ph>=4?'rgba(255,190,60,.95)':'rgba(255,215,106,.9)';
-    ctx.fillText(ph>=4?'梁 神':'梁 圣', 0, -sc*52);
+    ctx.fillText(ph>=4?'梁 神':'梁 圣', 0, -R-18);
     ctx.restore();
   }
-  ctx.scale(sc,sc);
   // 受伤闪烁
   if(S.invT>0&&Math.floor(S.t*9)%2===0) ctx.globalAlpha=0.45;
-  // 尾
-  ctx.fillStyle='#2a63a8';
-  ctx.save();
-  ctx.rotate(Math.sin(S.t*5)*0.12);
-  ctx.beginPath();
-  ctx.moveTo(-30,0); ctx.lineTo(-48,-17); ctx.lineTo(-48,17);
-  ctx.closePath(); ctx.fill();
-  ctx.restore();
-  // 身体
-  const g=ctx.createLinearGradient(0,-34,0,26);
-  g.addColorStop(0,'#6fb1ff'); g.addColorStop(.55,'#3f7fd0'); g.addColorStop(1,'#245a9e');
-  ctx.fillStyle=g;
-  ctx.beginPath(); ctx.ellipse(0,0,36,27,0,0,TAU); ctx.fill();
-  // 肚皮
-  ctx.fillStyle='#dceeff';
-  ctx.beginPath(); ctx.ellipse(4,10,24,14,0,0,TAU); ctx.fill();
-  // DeepSeek 图标（身体上）
-  drawIcon('DeepSeek', -2, 8, 26, '#3f7fd0');
-  // 鳍
-  ctx.fillStyle='#2a63a8';
-  ctx.beginPath(); ctx.ellipse(-2,20,16,7,0.35,0,TAU); ctx.fill();
-  // 眼睛
-  ctx.fillStyle='#0d1b2e';
-  ctx.beginPath(); ctx.arc(16,-8,5.4,0,TAU); ctx.fill();
-  ctx.fillStyle='#fff';
-  ctx.beginPath(); ctx.arc(18,-10,2,0,TAU); ctx.fill();
-  // 嘴（微笑）
-  ctx.strokeStyle='#0d1b2e'; ctx.lineWidth=2; ctx.lineCap='round';
-  ctx.beginPath(); ctx.arc(20,-2,7,-0.3,0.9); ctx.stroke();
-  // 气孔水花
-  ctx.fillStyle='rgba(220,240,255,.8)';
-  for(let i=0;i<3;i++){
-    const bb=(S.t*0.8+i/3)%1;
-    ctx.beginPath(); ctx.arc(-20,-30-bb*16,2.4*(1-bb)+1,0,TAU); ctx.fill();
-  }
+  // DeepSeek 圆形图标（主角本体）
+  const R=D/2;
+  const bg=ctx.createRadialGradient(-R*0.3,-R*0.3,R*0.1,0,0,R);
+  bg.addColorStop(0,'#2f6fbe'); bg.addColorStop(1,'#123a5e');
+  ctx.fillStyle=bg;
+  ctx.beginPath(); ctx.arc(0,0,R,0,TAU); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=2.4;
+  ctx.beginPath(); ctx.arc(0,0,R,0,TAU); ctx.stroke();
+  drawIcon('DeepSeek', 0, 0, D*0.62, '#ffffff');
   // phase 5：发布气泡
   if(ph>=5){
-    ctx.fillStyle='rgba(8,34,60,.9)';
-    roundRect(-64,-66,108,30,10); ctx.fill();
+    ctx.fillStyle='rgba(8,34,60,.92)';
+    roundRect(-64,-R-46,128,34,10); ctx.fill();
     ctx.font='700 11px sans-serif'; ctx.textAlign='center';
     ctx.fillStyle='#ffd76a';
-    ctx.fillText('V4 发布中…',-10,-54);
+    ctx.fillText('V4 发布中…',0,-R-33);
     ctx.fillStyle='#8fb4d8';
-    ctx.fillText('发布时间：即将',-10,-38);
+    ctx.fillText('发布时间：即将',0,-R-17);
   }
   ctx.restore();
 }
@@ -845,6 +850,22 @@ function drawParticles(){
   }
   ctx.globalAlpha=1;
 }
+function drawQuote(){
+  if(!S.quote) return;
+  const k=Math.min(1,S.quoteT/0.5);
+  ctx.save();
+  ctx.globalAlpha=k;
+  // 暗条
+  ctx.fillStyle='rgba(4,20,38,.78)';
+  const bw=Math.min(W*0.9,640), bh=64;
+  roundRect((W-bw)/2,H*0.2,bw,bh,16); ctx.fill();
+  ctx.strokeStyle='rgba(255,215,106,.6)'; ctx.lineWidth=1.6;
+  roundRect((W-bw)/2,H*0.2,bw,bh,16); ctx.stroke();
+  ctx.font='800 17px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#ffd76a';
+  ctx.fillText('「'+S.quote+'」', W/2, H*0.2+40);
+  ctx.restore();
+}
 function render(t){
   ctx.save();
   if(S.shake>0){
@@ -857,6 +878,7 @@ function render(t){
   for(const b of S.bigs) drawBigFish(b);
   drawWhale();
   drawParticles();
+  drawQuote();
   ctx.restore();
 }
 
