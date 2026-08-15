@@ -163,6 +163,29 @@ body{
 .w-lb-dur{font-size:12px; letter-spacing:.12em; color:var(--primary); margin:-6px 0 10px}
 .lb-row .dur{flex:none; font-size:11.5px; color:#ffd9a0; margin-left:2px}
 .w-lb-link{margin-top:14px}
+/* 选关 */
+.lv-card{padding:28px 32px; border-radius:28px; max-width:min(760px, 94vw); max-height:88vh; overflow:auto;
+  background:rgba(15,20,38,.84); border:1px solid var(--line);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.lv-title{font-size:26px; letter-spacing:.3em; text-align:center; margin-bottom:8px}
+.lv-sub{font-size:12.5px; letter-spacing:.14em; color:var(--muted); text-align:center; margin-bottom:20px}
+.lv-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:20px}
+.lv-cell{position:relative; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:14px 6px 12px; border-radius:16px; cursor:pointer; border:1px solid var(--line);
+  background:rgba(255,255,255,.05); color:var(--txt); font-family:inherit;
+  transition:transform .15s ease, background .2s ease, border-color .2s ease; overflow:hidden}
+.lv-cell:hover{background:rgba(255,255,255,.11); transform:translateY(-2px)}
+.lv-cell:active{transform:scale(.95)}
+.lv-cell .lv-no{font-size:11px; letter-spacing:.1em; color:var(--muted)}
+.lv-cell .lv-name{font-size:14px; letter-spacing:.1em; font-weight:600}
+.lv-cell.done{border-color:rgba(126,232,176,.45)}
+.lv-cell.done .lv-check{position:absolute; top:6px; right:8px; font-size:12px; color:var(--ok)}
+.lv-cell.locked{opacity:.38; cursor:not-allowed; filter:grayscale(.6)}
+.lv-cell.locked:hover{transform:none; background:rgba(255,255,255,.05)}
+.lv-cell.locked .lv-lock{position:absolute; top:8px; right:9px; font-size:12px; color:rgba(255,255,255,.5)}
+@media (max-width:760px){ .lv-grid{grid-template-columns:repeat(4,1fr)} }
+@media (max-width:420px){ .lv-grid{grid-template-columns:repeat(3,1fr)} }
 .w-lb-link .lb-btn{margin-top:0}
 
 /* howto */
@@ -218,6 +241,9 @@ body{
     <button class="icon-btn" id="btnReset" aria-label="重置" title="重置 (R)">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
     </button>
+    <button class="icon-btn" id="btnHome" aria-label="回到标题" title="回到标题">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </button>
     <button class="icon-btn" id="btnLbHud" aria-label="功名榜" title="功名榜">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 8.3l6.1-.7L12 2z"/></svg>
     </button>
@@ -241,6 +267,7 @@ body{
     <div class="t-dots rise d4" id="titleDots"></div>
     <div class="t-foot rise d4" id="tFoot">灯未亮 · 戏未开</div>
     <button class="btn lb-btn rise d4" id="btnLb">功 名 榜</button>
+    <button class="btn lb-btn rise d4" id="btnLevels" style="margin-left:10px">选 关</button>
   </div>
 </div>
 
@@ -304,6 +331,16 @@ body{
       <p>把每一道影都放回原位，幕布落下，一出好戏完成。</p>
     </div>
     <div class="how-close"><button class="btn primary" id="btnCloseHow">明白了</button></div>
+  </div>
+</div>
+
+<!-- Level select -->
+<div id="levelOverlay" class="screen hidden">
+  <div class="lv-card rise">
+    <div class="lv-title serif">选 关</div>
+    <div class="lv-sub" id="lvSub">已通关 0 / 14 幕</div>
+    <div class="lv-grid" id="lvGrid"></div>
+    <div class="how-close"><button class="btn primary" id="btnLvClose">关 幕</button></div>
   </div>
 </div>
 
@@ -1070,7 +1107,8 @@ function win(){
   setTimeout(()=>ringFx(cx,cy,'rgba(255,217,160,.9)'), 260);
   setTimeout(()=>ringFx(cx,cy,'rgba(233,184,255,.9)'), 520);
   confettiBurst();
-  try{ localStorage.setItem('shadowplay_progress', String(Math.min(S.idx+1, LEVELS.length))); }catch(e){}
+  try{ localStorage.setItem('shadowplay_progress', String(Math.max(progress, Math.min(S.idx+1, LEVELS.length)))); }catch(e){}
+  progress = Math.max(progress, Math.min(S.idx+1, LEVELS.length));
   setTimeout(()=>{
     S.state='win';
     $('#hud').classList.add('hidden');
@@ -1413,7 +1451,43 @@ function openLeaderboard(){
   LB.refresh();
   $('#lbOverlay').classList.remove('hidden');
 }
+function openLevelSelect(){
+  const grid=$('#lvGrid'); grid.innerHTML='';
+  $('#lvSub').textContent='已通关 '+Math.min(progress,LEVELS.length)+' / '+LEVELS.length+' 幕 · 通关一幕后解锁下一幕';
+  for(let i=0;i<LEVELS.length;i++){
+    const unlocked = i <= progress;      // 已通关 progress 幕 → 解锁第 progress+1 幕（0-based：i<=progress）
+    const done = i < progress;
+    const cell=document.createElement('button');
+    cell.className='lv-cell'+(unlocked?'':' locked')+(done?' done':'');
+    cell.innerHTML='<span class="lv-no">第 '+(i+1)+' 幕</span><span class="lv-name">'+LEVELS[i].name+'</span>'
+      +(done?'<span class="lv-check">✓</span>':'')
+      +(unlocked?'':'<span class="lv-lock">🔒</span>');
+    if(unlocked){
+      cell.addEventListener('click', ()=>{
+        $('#levelOverlay').classList.add('hidden');
+        $('#titleScreen').classList.add('hidden');
+        loadLevel(i);
+      });
+    }
+    grid.appendChild(cell);
+  }
+  $('#levelOverlay').classList.remove('hidden');
+}
 $('#btnLb').addEventListener('click', openLeaderboard);
+$('#btnLevels').addEventListener('click', openLevelSelect);
+$('#btnLvClose').addEventListener('click', ()=> $('#levelOverlay').classList.add('hidden'));
+$('#levelOverlay').addEventListener('click', e=>{ if(e.target===$('#levelOverlay')) $('#levelOverlay').classList.add('hidden'); });
+// 回标题
+$('#btnHome').addEventListener('click', ()=>{
+  $('#levelOverlay').classList.add('hidden');
+  $('#winOverlay').classList.add('hidden');
+  $('#lbOverlay').classList.add('hidden');
+  $('#hud').classList.add('hidden');
+  S.state='title';
+  updateTitle();
+  LB.refresh();
+  $('#titleScreen').classList.remove('hidden');
+});
 $('#btnLbHud').addEventListener('click', openLeaderboard);
 $('#btnLbFromWin').addEventListener('click', openLeaderboard);
 $('#btnLbClose').addEventListener('click', ()=> $('#lbOverlay').classList.add('hidden'));
