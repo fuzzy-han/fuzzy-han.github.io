@@ -275,7 +275,7 @@ body{
       </div>
       <div class="w-lb-ok hidden" id="wLbOk">✓ 已登上功名榜</div>
     </div>
-    <div class="w-end serif hidden" id="wEnd">— 全剧终 · 十幕光影，皆归其位 —</div>
+    <div class="w-end serif hidden" id="wEnd">— 全剧终 · 十一幕光影，皆归其位 —</div>
   </div>
 </div>
 
@@ -514,6 +514,15 @@ const LEVELS = [
     {type:'rect',  w:1.0, h:1.0, sol:{a:-0.6,b:1.45}, rot:0, elev:0, scatter:{a:3.3,b:1.6},  startRot:80},
     {type:'circle',w:1.7, h:1.7, sol:{a:1.6,b:-1.5},  rot:0, elev:0, scatter:{a:-3.4,b:2.4},  startRot:0},
   ]},
+{ name:'黑洞', poem:'光亦难逃，影自逆转',
+  tip:'黑洞会翻转影子——把纸偶放到虚框的另一侧',
+  light:{a:0,b:-1.0,locked:true},
+  bh:{a:0,b:0.4, R:2.8, r:0.9},
+  pieces:[
+    {type:'circle', w:2.0, h:2.0, sol:{a:-2.0,b:-1.4}, rot:0, elev:0, scatter:{a:-4.2,b:1.2}, startRot:0},
+    {type:'arch',   w:2.8, h:1.7, sol:{a:2.8,b:1.2},  rot:0, elev:0, scatter:{a:3.4,b:-2.0}, startRot:0},
+    {type:'tri',    w:2.4, h:2.0, sol:{a:-3.2,b:1.6}, rot:0, elev:0, scatter:{a:4.0,b:1.8}, startRot:120},
+  ]},
 ];
 
 // ---------- 光影几何 ----------
@@ -534,11 +543,36 @@ try{ progress = parseInt(localStorage.getItem('shadowplay_progress')||'0',10)||0
 
 function shadowOf(p){
   const s=sScale(p.elev), L=S.light;
-  return { fx: L.fx + s*(p.fx-L.fx), fy: L.fy + s*(p.fy-L.fy), s };
+  let fx = L.fx + s*(p.fx-L.fx), fy = L.fy + s*(p.fy-L.fy);
+  if(S.bh){
+    const d = Math.hypot((p.fx-S.bh.fx)*board.w, (p.fy-S.bh.fy)*board.h);
+    if(d < S.bh.R){ fx = 2*S.bh.fx - fx; fy = 2*S.bh.fy - fy; }
+  }
+  return { fx, fy, s };
 }
 function pinnedPose(p){
   const g=p.ghost, L=S.light, s=sScale(g.elev);
-  return { fx: L.fx + (g.fx-L.fx)/s, fy: L.fy + (g.fy-L.fy)/s, rot:g.rot };
+  const P1 = { fx: L.fx + (g.fx-L.fx)/s, fy: L.fy + (g.fy-L.fy)/s };
+  if(!S.bh) return { fx:P1.fx, fy:P1.fy, rot:g.rot };
+  // 黑洞：候选 1 = 正常放置；候选 2 = 翻转放置（影子关于黑洞对称后落框），取自洽者
+  const d1 = Math.hypot((P1.fx-S.bh.fx)*board.w, (P1.fy-S.bh.fy)*board.h);
+  if(d1 >= S.bh.R) return { fx:P1.fx, fy:P1.fy, rot:g.rot };
+  const G2 = { fx: 2*S.bh.fx - g.fx, fy: 2*S.bh.fy - g.fy };
+  const P2 = { fx: L.fx + (G2.fx-L.fx)/s, fy: L.fy + (G2.fy-L.fy)/s };
+  const d2 = Math.hypot((P2.fx-S.bh.fx)*board.w, (P2.fy-S.bh.fy)*board.h);
+  if(d2 < S.bh.R) return { fx:P2.fx, fy:P2.fy, rot:g.rot };
+  return d1<=d2 ? { fx:P1.fx, fy:P1.fy, rot:g.rot } : { fx:P2.fx, fy:P2.fy, rot:g.rot };
+}
+function ghostOf(sol, elev, light0){
+  // 影子位置（含黑洞翻转：影响半径内的纸偶，影子关于黑洞中心对称）
+  const s=sScale(elev);
+  let gx = light0.fx + s*(sol.fx-light0.fx);
+  let gy = light0.fy + s*(sol.fy-light0.fy);
+  if(S.bh){
+    const d = Math.hypot((sol.fx-S.bh.fx)*board.w, (sol.fy-S.bh.fy)*board.h);
+    if(d < S.bh.R){ gx = 2*S.bh.fx - gx; gy = 2*S.bh.fy - gy; }
+  }
+  return { fx:gx, fy:gy };
 }
 function buildGeometry(){
   if(!S.L) return;
@@ -546,15 +580,18 @@ function buildGeometry(){
   S.light0 = at(L.light.a, L.light.b);
   if(L.light.locked){ S.light = {...S.light0}; S.lightLocked=true; }
   else S.lightLocked=false;
+  // 黑洞（resize 时重算像素半径）
+  if(L.bh){
+    const b=at(L.bh.a, L.bh.b);
+    S.bh = { fx:b.fx, fy:b.fy, R:L.bh.R*u, r:(L.bh.r||0.9)*u };
+  } else S.bh = null;
   for(let i=0;i<L.pieces.length;i++){
     const sp=L.pieces[i], p=S.pieces[i];
     if(!p) continue; // 关卡尚未构建时跳过（buildGeometry 先于 buildLevel 的 pieces 重建）
     const sol=at(sp.sol.a, sp.sol.b);
-    const s=sScale(sp.elev);
+    const g=ghostOf(sol, sp.elev, S.light0);
     p.sol=sol;
-    p.ghost={ fx: S.light0.fx + s*(sol.fx-S.light0.fx),
-              fy: S.light0.fy + s*(sol.fy-S.light0.fy),
-              rot: sp.rot, elev: sp.elev };
+    p.ghost={ fx:g.fx, fy:g.fy, rot: sp.rot, elev: sp.elev };
   }
 }
 function buildLevel(i){
@@ -565,8 +602,8 @@ function buildLevel(i){
   else { S.light={...l0}; S.lightLocked=true; }
   S.pieces = L.pieces.map((sp,ci)=>{
     const sol=at(sp.sol.a, sp.sol.b);
-    const s=sScale(sp.elev);
-    const ghost={ fx:l0.fx+s*(sol.fx-l0.fx), fy:l0.fy+s*(sol.fy-l0.fy), rot:sp.rot, elev:sp.elev };
+    const g=ghostOf(sol, sp.elev, l0);
+    const ghost={ fx:g.fx, fy:g.fy, rot:sp.rot, elev:sp.elev };
     let fx,fy;
     if(sp.anchored){ fx=sol.fx; fy=sol.fy; }
     else{
@@ -714,14 +751,19 @@ function drawGhost(p){
   ctx.restore();
 }
 function drawShadow(p){
-  const sh=shadowOf(p), W=p.wU, H=p.hU;
+  const sh=shadowOf(p);
   ctx.save();
-  ctx.shadowColor='transparent'; ctx.shadowBlur=0; // 防御：sprite 展开不携带任何 shadow
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
   ctx.translate(sh.fx*board.w, sh.fy*board.h);
   ctx.rotate(p.rot*RAD);
   ctx.scale(u*sh.s, u*sh.s);
-  ctx.globalAlpha=0.20; ctx.drawImage(p.sp.halo, -W/2,-H/2,W,H);
-  ctx.globalAlpha=0.5;  ctx.drawImage(p.sp.core, -W/2,-H/2,W,H);
+  // 矢量多层软边：与虚框使用同一 shapePath，边缘精确对齐
+  const path=shapePath(p), rule=fillRule(p);
+  ctx.fillStyle='#fff';
+  ctx.save(); ctx.scale(1.06,1.06); ctx.globalAlpha=0.08; ctx.fill(path, rule); ctx.restore();
+  ctx.save(); ctx.scale(1.03,1.03); ctx.globalAlpha=0.14; ctx.fill(path, rule); ctx.restore();
+  ctx.save(); ctx.scale(1.01,1.01); ctx.globalAlpha=0.22; ctx.fill(path, rule); ctx.restore();
+  ctx.globalAlpha=0.42; ctx.fill(path, rule);
   ctx.globalAlpha=1;
   ctx.restore();
 }
@@ -819,6 +861,35 @@ function drawOrb(t){
   ctx.beginPath(); ctx.arc(lx,ly,14,0,TAU); ctx.stroke();
   ctx.restore();
 }
+function drawBlackhole(t){
+  const bh=S.bh; if(!bh) return;
+  const x=bh.fx*board.w, y=bh.fy*board.h;
+  // 影响半径（虚线圆）
+  ctx.save();
+  ctx.setLineDash([3,7]);
+  ctx.strokeStyle='rgba(255,200,130,0.22)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(x,y,bh.R,0,TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  // 吸积盘光晕
+  const g=ctx.createRadialGradient(x,y,0,x,y,bh.r*3.4);
+  g.addColorStop(0,'rgba(10,8,26,0.95)');
+  g.addColorStop(0.35,'rgba(40,28,70,0.45)');
+  g.addColorStop(0.65,'rgba(140,90,60,0.14)');
+  g.addColorStop(1,'rgba(255,190,110,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,bh.r*3.4,0,TAU); ctx.fill();
+  // 事件视界（纯黑圆盘）
+  ctx.beginPath(); ctx.arc(x,y,bh.r,0,TAU);
+  ctx.fillStyle='#04050d'; ctx.fill();
+  ctx.strokeStyle='rgba(255,215,140,0.55)'; ctx.lineWidth=1.6; ctx.stroke();
+  // 吸积盘旋转光弧
+  ctx.lineWidth=2.6; ctx.lineCap='round';
+  for(let i=0;i<3;i++){
+    const a0=t*0.5+i*TAU/3;
+    ctx.strokeStyle=`rgba(255,${190+i*20},120,0.28)`;
+    ctx.beginPath(); ctx.arc(x,y,bh.r*1.35,a0,a0+TAU/4); ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawLightHint(t){
   if(S.hintUntil<=S.t || !S.hintLight) return;
   const lx=S.light0.fx*board.w, ly=S.light0.fy*board.h;
@@ -844,6 +915,7 @@ function drawScene(opts){
   }
   if(o.pool!==false) drawPool();
   if(o.shadows!==false) for(const p of S.pieces) drawShadow(p);
+  if(o.bh!==false) drawBlackhole(S.t);
   if(o.ghosts!==false) for(const p of S.pieces) drawGhost(p);
   if(o.pieces!==false) for(const p of S.pieces) drawPiece(p, S.t);
   if(o.orb!==false) drawOrb(S.t);
@@ -865,13 +937,16 @@ function drawDemoScene(t){
   const g=ctx.createRadialGradient(px,py,0,px,py,R);
   g.addColorStop(0,'rgba(255,246,222,0.16)'); g.addColorStop(.4,'rgba(255,244,220,0.07)'); g.addColorStop(1,'rgba(255,244,220,0)');
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,R,0,TAU); ctx.fill();
-  // 影子
+  // 影子（矢量）
   const s=sScale(P.elev);
   ctx.save();
   ctx.translate(lx+s*(P.fx-lx)*board.w, ly+s*(P.fy-ly)*board.h);
   ctx.rotate(P.rot*RAD); ctx.scale(u*s,u*s);
-  ctx.globalAlpha=0.2; ctx.drawImage(P.sp.halo,-P.wU/2,-P.hU/2,P.wU,P.hU);
-  ctx.globalAlpha=0.5;  ctx.drawImage(P.sp.core,-P.wU/2,-P.hU/2,P.wU,P.hU);
+  const dpath=shapePath(P), drule=fillRule(P);
+  ctx.fillStyle='#fff';
+  ctx.save(); ctx.scale(1.05,1.05); ctx.globalAlpha=0.12; ctx.fill(dpath, drule); ctx.restore();
+  ctx.save(); ctx.scale(1.02,1.02); ctx.globalAlpha=0.18; ctx.fill(dpath, drule); ctx.restore();
+  ctx.globalAlpha=0.45; ctx.fill(dpath, drule);
   ctx.globalAlpha=1; ctx.restore();
   // 纸偶
   P.rot=t*22; P.fx=0.5+0.35*u/board.w*Math.sin(t*0.3); P.fy=0.56;
@@ -952,7 +1027,7 @@ function win(){
     $('#wEnd').classList.toggle('hidden', !last);
     $('#wLb').classList.toggle('hidden', !last);
     $('#wLbOk').classList.add('hidden');
-    if(!last && LB_CLOUD.supabase) setTimeout(()=>toast('已通关 '+(S.idx+1)+'/10 幕 · 通关全剧即可登上功名榜'), 1400);
+    if(!last && LB_CLOUD.supabase) setTimeout(()=>toast('已通关 '+(S.idx+1)+'/'+LEVELS.length+' 幕 · 通关全剧即可登上功名榜'), 1400);
     if(last){
       // 通关用时（秒）
       const dur = Math.max(1, Math.round((Date.now() - (S.gamestart||Date.now()))/1000));
@@ -1228,7 +1303,7 @@ function toggleMute(){
   if(!muted) tone(660,.15,'sine',.1);
 }
 function setToastTips(i){
-  const tips={3:'拖动手柄旋转纸偶：白柄在纸偶上方', 4:'滚轮或按钮可升高纸偶——影子会更大更远', 5:'灯动影移：光往哪走，影往哪逃'};
+  const tips={3:'拖动手柄旋转纸偶：白柄在纸偶上方', 4:'滚轮或按钮可升高纸偶——影子会更大更远', 5:'灯动影移：光往哪走，影往哪逃', 10:'黑洞翻转影子：往虚框的另一侧放纸偶，影子会反向而行'};
   if(tips[i]) setTimeout(()=>toast(tips[i]), 2600);
 }
 function loadLevel(i){
@@ -1334,38 +1409,53 @@ const LB = {
     if(LB_CLOUD.restUrl) return fetch(LB_CLOUD.restUrl, {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
     return Promise.resolve(null);
   },
-  cloudPush(){
-    if(typeof fetch==='undefined') return Promise.resolve();
+  cloudPush(rec){
+    if(typeof fetch==='undefined') return Promise.resolve(false);
+    const r = rec || {name:this.name, ts:Date.now(), dur: S.lastDuration||0};
     const sb = LB_CLOUD.supabase;
     if(sb) return fetch(sb.url+'/rest/v1/leaderboard', {method:'POST', headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify({name:this.name, ts:Date.now(), dur: S.lastDuration || 0})}).catch(()=>{});
+      body: JSON.stringify(r)}).then(res=>res.ok).catch(()=>false);
     const kv = LB_CLOUD.kvdbBucket;
     const payload = JSON.stringify({entries: this.entries(), updatedAt: Date.now()});
-    if(kv) return fetch('https://kvdb.io/'+kv+'/leaderboard', {method:'PUT', body: payload}).catch(()=>{});
+    if(kv) return fetch('https://kvdb.io/'+kv+'/leaderboard', {method:'PUT', body: payload}).then(res=>res.ok).catch(()=>false);
     if(LB_CLOUD.restUrl) return fetch(LB_CLOUD.restUrl, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name:this.name, ts:Date.now()})}).catch(()=>{});
-    return Promise.resolve();
+      body: JSON.stringify(r)}).then(res=>res.ok).catch(()=>false);
+    return Promise.resolve(false);
   },
   entries(){
+    // 权威 = 云端（所有浏览器一致）；本地仅补充「尚未同步成功」的记录（离线/失败重试）
+    // 按名字去重保留最新（云端 ts 升序 → 最后 set 的为最新）
     const m=new Map();
-    for(const e of (Array.isArray(this.local)?this.local:[])) if(e && typeof e.name==='string') m.set(e.name, e);
     for(const e of (Array.isArray(this.cloudList)?this.cloudList:[])) if(e && typeof e.name==='string') m.set(e.name, e);
+    for(const e of (Array.isArray(this.local)?this.local:[])) if(e && e.pending && typeof e.name==='string') m.set(e.name, e);
     return [...m.values()].sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(0,200);
   },
-  async init(){ try{ this.load(); this.cloudList = (await this.cloudGet())?.entries || []; }catch(e){ this.cloudList=[]; } this.refresh(); },
+  markSynced(rec){
+    const i=this.local.findIndex(e=>e.name===rec.name && e.ts===rec.ts && e.pending);
+    if(i>=0){ this.local[i].pending=false; this.save(); }
+  },
+  async init(){
+    try{ this.load(); this.cloudList = (await this.cloudGet())?.entries || []; }catch(e){ this.cloudList=[]; }
+    // 机会性重推未同步记录（离线时提交的数据，联网后补推）
+    const pend=(Array.isArray(this.local)?this.local:[]).filter(e=>e.pending);
+    for(const r of pend){ if(await this.cloudPush(r)) this.markSynced(r); }
+    this.refresh();
+  },
   async add(rawName){
     try{
     const name=(rawName||'').trim().slice(0,12)||'无名氏';
     const dur = S.lastDuration || 0;
+    const rec = {name, ts:Date.now(), dur};
     this.name=name; this.save();
-    this.local.push({name, ts:Date.now(), dur}); this.save();
-    await this.cloudPush();
+    this.local.push({...rec, pending:true}); this.save();
+    const ok = await this.cloudPush(rec);
+    if(ok) this.markSynced(rec);
     this.refresh();
     const n=this.entries().length;
     $('#wLbOk').textContent='✓ 已登上功名榜，你是第 '+n+' 位影人';
     $('#wLbOk').classList.remove('hidden');
     $('#btnLbAdd').disabled=true;
-    toast('名列功名榜 · 第 '+n+' 位影人');
+    toast(ok ? ('名列功名榜 · 第 '+n+' 位影人') : '已记录 · 云端暂不可达，联网后自动同步');
     }catch(e){ toast('留名失败，请重试'); }
   },
   refresh(){
