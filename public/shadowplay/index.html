@@ -1290,7 +1290,10 @@ const LB = {
   cloudGet(){
     if(typeof fetch==='undefined') return Promise.resolve(null);
     const sb = LB_CLOUD.supabase;
-    if(sb) return fetch(sb.url+'/rest/v1/leaderboard?select=name,ts&order=ts', {headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key}}).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(sb) return fetch(sb.url+'/rest/v1/leaderboard?select=name,ts&order=ts', {headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key}})
+      .then(r=>r.ok?r.json():null)
+      .then(arr=>Array.isArray(arr)?{entries:arr}:null)
+      .catch(()=>null);
     const kv = LB_CLOUD.kvdbBucket;
     if(kv) return fetch('https://kvdb.io/'+kv+'/leaderboard', {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
     if(LB_CLOUD.restUrl) return fetch(LB_CLOUD.restUrl, {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
@@ -1310,12 +1313,13 @@ const LB = {
   },
   entries(){
     const m=new Map();
-    for(const e of this.local) m.set(e.name, e);
-    for(const e of this.cloudList) m.set(e.name, e);
-    return [...m.values()].sort((a,b)=>a.ts-b.ts).slice(0,200);
+    for(const e of (Array.isArray(this.local)?this.local:[])) if(e && typeof e.name==='string') m.set(e.name, e);
+    for(const e of (Array.isArray(this.cloudList)?this.cloudList:[])) if(e && typeof e.name==='string') m.set(e.name, e);
+    return [...m.values()].sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(0,200);
   },
-  async init(){ this.load(); this.cloudList = (await this.cloudGet())?.entries || []; this.refresh(); },
+  async init(){ try{ this.load(); this.cloudList = (await this.cloudGet())?.entries || []; }catch(e){ this.cloudList=[]; } this.refresh(); },
   async add(rawName){
+    try{
     const name=(rawName||'').trim().slice(0,12)||'无名氏';
     this.name=name; this.save();
     this.local.push({name, ts:Date.now()}); this.save();
@@ -1326,8 +1330,10 @@ const LB = {
     $('#wLbOk').classList.remove('hidden');
     $('#btnLbAdd').disabled=true;
     toast('名列功名榜 · 第 '+n+' 位影人');
+    }catch(e){ toast('留名失败，请重试'); }
   },
   refresh(){
+    try{
     const n=this.entries().length;
     $('#lbSubCount').textContent=String(n);
     const list=$('#lbList'); list.innerHTML='';
@@ -1343,6 +1349,7 @@ const LB = {
     });
     const foot=$('#tFoot');
     if(foot) foot.textContent = n>0 ? ('已有 '+n+' 位影人通关全剧') : (progress>0 ? ('已演至第 '+Math.min(progress,LEVELS.length)+' 幕') : '灯未亮 · 戏未开');
+    }catch(e){}
   },
 };
 
