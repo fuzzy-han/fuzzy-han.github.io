@@ -1121,11 +1121,13 @@ function win(){
     $('#wLbOk').classList.add('hidden');
     if(!last && LB_CLOUD.supabase) setTimeout(()=>toast('已通关 '+(S.idx+1)+'/'+LEVELS.length+' 幕 · 通关全剧即可登上功名榜'), 1400);
     if(last){
-      // 通关用时（秒）
-      const dur = Math.max(1, Math.round((Date.now() - (S.gamestart||Date.now()))/1000));
+      // 通关用时（秒）= 实际游玩时间累计
+      try{ S.playMs = parseInt(localStorage.getItem('shadowplay_playtime')||'0',10)||0; }catch(e){ S.playMs=0; }
+      const dur = Math.max(1, Math.round(S.playMs/1000));
       S.lastDuration = dur;
       const lbl=$('#lbDurationHint'); if(lbl) lbl.textContent='本次通关用时 '+fmtTime(dur);
-      try{ localStorage.setItem('shadowplay_gamestart', String(Date.now())); }catch(e){} // 新一轮重新计时
+      try{ localStorage.setItem('shadowplay_playtime', '0'); }catch(e){} // 通关清零，新一轮重新计时
+      S.playMs=0;
     }
     const inp=$('#lbNameInput'); if(inp){ inp.value=LB.name; }
     const addBtn=$('#btnLbAdd'); if(addBtn) addBtn.disabled=false;
@@ -1419,12 +1421,6 @@ function loadLevel(i){
 function startGame(){
   sfx.unlock();
   $('#titleScreen').classList.add('hidden');
-  // 记录本次通关旅程起始时间（跨会话累计）
-  try{
-    const now=Date.now();
-    if(!localStorage.getItem('shadowplay_gamestart')) localStorage.setItem('shadowplay_gamestart', String(now));
-    S.gamestart = parseInt(localStorage.getItem('shadowplay_gamestart'),10) || now;
-  }catch(e){ S.gamestart = Date.now(); }
   loadLevel(Math.min(progress, LEVELS.length-1));
 }
 function resetLevel(){
@@ -1529,7 +1525,7 @@ const LB = {
   cloudGet(){
     if(typeof fetch==='undefined') return Promise.resolve(null);
     const sb = LB_CLOUD.supabase;
-    if(sb) return fetch(sb.url+'/rest/v1/leaderboard?select=name,ts&order=ts', {headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key}})
+    if(sb) return fetch(sb.url+'/rest/v1/leaderboard?select=name,ts,duration&order=ts', {headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key}})
       .then(r=>r.ok?r.json():null)
       .then(arr=>Array.isArray(arr)?{entries:arr}:null)
       .catch(()=>null);
@@ -1540,7 +1536,7 @@ const LB = {
   },
   cloudPush(rec){
     if(typeof fetch==='undefined') return Promise.resolve(false);
-    const r = rec || {name:this.name, ts:Date.now(), dur: S.lastDuration||0};
+    const r = rec || {name:this.name, ts:Date.now(), duration: S.lastDuration||0};
     const sb = LB_CLOUD.supabase;
     if(sb) return fetch(sb.url+'/rest/v1/leaderboard', {method:'POST', headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key,'Content-Type':'application/json','Prefer':'return=minimal'},
       body: JSON.stringify(r)}).then(res=>res.ok).catch(()=>false);
@@ -1574,7 +1570,7 @@ const LB = {
     try{
     const name=(rawName||'').trim().slice(0,12)||'无名氏';
     const dur = S.lastDuration || 0;
-    const rec = {name, ts:Date.now(), dur};
+    const rec = {name, ts:Date.now(), duration: dur};
     this.name=name; this.save();
     this.local.push({...rec, pending:true}); this.save();
     const ok = await this.cloudPush(rec);
@@ -1598,7 +1594,8 @@ const LB = {
       row.className='lb-row'+(i<3?' r'+(i+1):'');
       const d=new Date(e.ts);
       const when=(d.getMonth()+1)+'月'+d.getDate()+'日';
-      const dur = e.dur ? ('<span class="dur">用时 '+fmtTime(e.dur)+'</span>') : '';
+      const dsec = e.duration || e.dur || 0;
+      const dur = dsec ? ('<span class="dur">用时 '+fmtTime(dsec)+'</span>') : '';
       row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="name"></span>'+dur+'<span class="when">'+when+'</span><span class="no">第 '+(i+1)+' 位</span>';
       row.querySelector('.name').textContent=e.name;
       list.appendChild(row);
@@ -1660,6 +1657,14 @@ function frame(now){
     ctx.beginPath(); ctx.moveTo(hl.x1,hl.y1); ctx.lineTo(hl.x2,hl.y2); ctx.stroke();
     ctx.restore();
   } else S.hintLine=null;
+  // 游玩时间累计（仅游戏进行中计时）
+  if(S.state==='play'){
+    S.playMs = (S.playMs||0) + dt*1000;
+    if(!S.playSaveT || t-S.playSaveT>3){
+      S.playSaveT=t;
+      try{ localStorage.setItem('shadowplay_playtime', String(Math.round(S.playMs))); }catch(e){}
+    }
+  }
   if(S.state==='title'){
     drawDemoScene(t);
   } else {
@@ -1681,6 +1686,7 @@ S.demo=null;
 buildDemo();
 updateTitle();
 resize();
+try{ S.playMs = parseInt(localStorage.getItem('shadowplay_playtime')||'0',10)||0; }catch(e){ S.playMs=0; }
 LB.init();
 requestAnimationFrame(frame);
 </script>
