@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="theme-color" content="#0d1220"/>
+<title>影戏 ShadowPlay · 光影拼图</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230d1220'/><circle cx='32' cy='28' r='13' fill='%23ffd9a0'/><path d='M12 58a20 20 0 0 1 40 0' fill='%23a8c5ff'/></svg>"/>
+<style>
+:root{
+  --primary:#a8c5ff; --on-primary:#0b1526;
+  --ok:#7ee8b0;
+  --bg:#0d1220;
+  --surface:rgba(255,255,255,.07); --surface-hi:rgba(255,255,255,.12);
+  --txt:#e8eefc; --muted:#9aa7c7; --line:rgba(255,255,255,.10);
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--txt); overflow:hidden;
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+}
+.serif{font-family:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC",Georgia,"Times New Roman",serif}
+#scene{position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab}
+#scene.grabbing{cursor:grabbing}
+
+/* ---------- buttons ---------- */
+.btn{
+  position:relative; overflow:hidden; border:none; cursor:pointer;
+  padding:14px 36px; border-radius:999px; font-size:15px; letter-spacing:.08em;
+  font-family:inherit; color:var(--txt); background:var(--surface);
+  border:1px solid var(--line); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  transition:transform .18s ease, background .25s ease, box-shadow .25s ease;
+}
+.btn:hover{background:var(--surface-hi)}
+.btn:active{transform:scale(.96)}
+.btn:focus-visible{outline:2px solid var(--primary); outline-offset:3px}
+.btn.primary{background:var(--primary); color:var(--on-primary); font-weight:600; border-color:transparent;
+  box-shadow:0 10px 34px rgba(140,170,255,.28)}
+.btn.primary:hover{background:#bcd3ff; box-shadow:0 12px 40px rgba(140,170,255,.4)}
+.ripple{position:absolute; border-radius:50%; background:rgba(255,255,255,.38); transform:scale(0);
+  animation:rip .62s ease-out forwards; pointer-events:none}
+@keyframes rip{to{transform:scale(1); opacity:0}}
+
+.icon-btn{
+  position:relative; overflow:hidden; width:46px; height:46px; border-radius:50%; cursor:pointer;
+  display:grid; place-items:center; color:var(--txt); background:var(--surface);
+  border:1px solid var(--line); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  transition:background .25s ease, transform .18s ease;
+}
+.icon-btn:hover{background:var(--surface-hi)}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+.icon-btn svg{width:22px; height:22px}
+
+/* ---------- HUD ---------- */
+.hud{
+  position:fixed; z-index:20; top:max(14px, env(safe-area-inset-top)); left:0; right:0;
+  display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+  padding:0 max(16px, env(safe-area-inset-left));
+  transition:opacity .4s ease, visibility .4s ease;
+}
+.chip{
+  display:flex; flex-direction:column; gap:9px; padding:11px 18px 12px;
+  border-radius:18px; background:rgba(12,17,32,.62); border:1px solid var(--line);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
+.chip-main{display:flex; align-items:baseline; gap:10px}
+.chip-no{font-size:14px; color:var(--primary); letter-spacing:.1em}
+.chip-name{font-size:16px; font-weight:600; letter-spacing:.14em}
+.dots{display:flex; gap:7px; align-items:center}
+.dot{width:9px; height:9px; border-radius:50%; border:1.5px solid rgba(255,255,255,.42); background:transparent; transition:all .3s ease}
+.dot.placed{background:var(--primary); border-color:var(--primary); box-shadow:0 0 8px rgba(168,197,255,.7)}
+.dot.anchor{border-style:dashed}
+.dot.match{background:var(--ok); border-color:var(--ok); box-shadow:0 0 8px rgba(126,232,176,.8)}
+.tools{display:flex; gap:8px}
+
+/* ---------- overlays ---------- */
+.screen{
+  position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 130% at 50% 28%, rgba(13,18,32,.30), rgba(13,18,32,.85));
+  transition:opacity .45s ease, visibility .45s ease;
+}
+.hidden{opacity:0 !important; visibility:hidden !important; pointer-events:none !important}
+.rise{animation:rise .85s cubic-bezier(.2,.85,.25,1) both}
+.rise.d1{animation-delay:.08s} .rise.d2{animation-delay:.16s} .rise.d3{animation-delay:.26s} .rise.d4{animation-delay:.36s}
+@keyframes rise{from{opacity:0; transform:translateY(30px)} to{opacity:1; transform:none}}
+
+/* title */
+.title-wrap{text-align:center; padding:0 20px; max-width:720px}
+.t-badge{
+  display:inline-block; font-size:12px; letter-spacing:.42em; color:var(--muted);
+  border:1px solid var(--line); border-radius:999px; padding:8px 20px 8px 26px;
+  background:rgba(255,255,255,.05); backdrop-filter:blur(10px); margin-bottom:26px;
+}
+.t-title{
+  font-size:clamp(64px, 14vw, 148px); font-weight:600; letter-spacing:.22em; text-indent:.22em; line-height:1.05;
+  background:linear-gradient(180deg,#f6f9ff 15%, #c3d4f6 55%, #8fa6dd 88%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 10px 34px rgba(140,170,255,.35));
+  margin-bottom:8px;
+}
+.t-sub{font-size:clamp(14px,2.2vw,17px); letter-spacing:.32em; color:var(--muted); margin-bottom:44px}
+.t-btns{display:flex; gap:16px; justify-content:center; flex-wrap:wrap}
+.t-foot{margin-top:34px; font-size:12.5px; letter-spacing:.2em; color:rgba(154,167,199,.75)}
+.t-dots{display:flex; justify-content:center; gap:6px; margin-top:14px}
+.t-dots i{width:7px; height:7px; border-radius:50%; background:rgba(168,197,255,.55)}
+
+/* intro */
+.intro-card{text-align:center; padding:0 24px}
+.i-no{font-size:13px; letter-spacing:.5em; color:var(--primary); margin-bottom:18px}
+.i-name{font-size:clamp(44px,8vw,76px); font-weight:600; letter-spacing:.3em; text-indent:.3em; margin-bottom:18px}
+.i-line{width:64px; height:1px; margin:0 auto 20px; background:linear-gradient(90deg,transparent,var(--primary),transparent)}
+.i-poem{font-size:clamp(17px,3vw,22px); letter-spacing:.22em; color:#dfe8ff; margin-bottom:14px}
+.i-tip{font-size:13px; letter-spacing:.14em; color:var(--muted)}
+
+/* win */
+.win-card{
+  text-align:center; padding:26px 34px 30px; border-radius:28px;
+  background:rgba(15,20,38,.72); border:1px solid var(--line);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 80px rgba(0,0,0,.5); max-width:min(560px, 92vw);
+}
+#preview{width:100%; height:auto; border-radius:18px; background:rgba(8,11,24,.6); margin-bottom:22px; display:block}
+.w-no{font-size:13px; letter-spacing:.4em; color:var(--primary); margin-bottom:10px}
+.w-poem{font-size:clamp(22px,4vw,30px); letter-spacing:.24em; margin-bottom:24px}
+.w-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.w-end{font-size:14px; letter-spacing:.18em; color:var(--ok); margin-top:18px}
+
+/* howto */
+.how-card{
+  padding:30px 34px; border-radius:28px; max-width:min(520px, 92vw); max-height:86vh; overflow:auto;
+  background:rgba(15,20,38,.78); border:1px solid var(--line);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
+.h-title{font-size:26px; letter-spacing:.3em; text-align:center; margin-bottom:22px}
+.h-row{display:flex; gap:16px; align-items:flex-start; padding:13px 4px; border-bottom:1px dashed rgba(255,255,255,.08)}
+.h-row:last-of-type{border-bottom:none}
+.h-row svg{flex:none; width:26px; height:26px; margin-top:2px; color:var(--primary)}
+.h-row p{font-size:14px; line-height:1.75; letter-spacing:.04em; color:#cdd8f2}
+.h-row b{color:#fff; font-weight:600}
+.how-close{display:flex; justify-content:center; margin-top:22px}
+
+/* toast */
+#toast{
+  position:fixed; z-index:60; left:50%; bottom:max(9%, env(safe-area-inset-bottom));
+  transform:translateX(-50%); padding:11px 22px; border-radius:999px;
+  background:rgba(15,21,40,.92); border:1px solid var(--line);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  font-size:13.5px; letter-spacing:.06em; color:var(--txt); white-space:nowrap;
+  box-shadow:0 10px 34px rgba(0,0,0,.4);
+  transition:opacity .3s ease, transform .3s ease, visibility .3s ease;
+}
+#toast.hidden{transform:translateX(-50%) translateY(8px)}
+
+@media (max-width:600px){
+  .chip-name{font-size:14px} .chip-no{font-size:12px}
+  .icon-btn{width:42px; height:42px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<canvas id="scene" role="img" aria-label="影戏光影拼图舞台"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hud hidden">
+  <div class="chip">
+    <div class="chip-main"><span class="chip-no serif" id="actNo">第 1 幕</span><span class="chip-name" id="actName">初光</span></div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div class="tools">
+    <button class="icon-btn" id="btnHint" aria-label="提示" title="提示 (H)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4.5 3 5.75V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.25c1.8-1.25 3-3.35 3-5.75a7 7 0 0 0-7-7zm-3 17h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/></svg>
+    </button>
+    <button class="icon-btn" id="btnReset" aria-label="重置" title="重置 (R)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+    </button>
+    <button class="icon-btn" id="btnSound" aria-label="声音" title="声音 (M)">
+      <svg viewBox="0 0 24 24" fill="currentColor" id="svgSoundOn"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" id="svgSoundOff" style="display:none"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.9 8.9 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H7v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L20.73 21 22 19.73 4.27 3z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Title -->
+<div id="titleScreen" class="screen">
+  <div class="title-wrap">
+    <div class="t-badge rise">SHADOW PLAY · 光影拼图</div>
+    <h1 class="t-title rise d1 serif">影 戏</h1>
+    <div class="t-sub rise d2">把散落的纸偶，拼回它的影子</div>
+    <div class="t-btns rise d3">
+      <button class="btn primary" id="btnStart">开始游戏</button>
+      <button class="btn" id="btnHowto">玩法说明</button>
+    </div>
+    <div class="t-dots rise d4" id="titleDots"></div>
+    <div class="t-foot rise d4" id="tFoot">灯未亮 · 戏未开</div>
+  </div>
+</div>
+
+<!-- Level intro -->
+<div id="introOverlay" class="screen hidden">
+  <div class="intro-card">
+    <div class="i-no serif" id="iNo">第 1 幕</div>
+    <div class="i-name serif" id="iName">初光</div>
+    <div class="i-line"></div>
+    <div class="i-poem serif" id="iPoem">点亮第一道影</div>
+    <div class="i-tip" id="iTip">将纸偶拖到它的影子上</div>
+  </div>
+</div>
+
+<!-- Win -->
+<div id="winOverlay" class="screen hidden">
+  <div class="win-card rise">
+    <canvas id="preview" width="1080" height="600"></canvas>
+    <div class="w-no serif" id="wNo">第 4 幕 · 完成</div>
+    <div class="w-poem serif" id="wPoem">扶摇直上</div>
+    <div class="w-btns">
+      <button class="btn" id="btnReplay">再演一次</button>
+      <button class="btn primary" id="btnNext">下一幕</button>
+    </div>
+    <div class="w-end serif hidden" id="wEnd">— 全剧终 · 十幕光影，皆归其位 —</div>
+  </div>
+</div>
+
+<!-- How-to -->
+<div id="howtoOverlay" class="screen hidden">
+  <div class="how-card rise">
+    <div class="h-title serif">玩法</div>
+    <div class="h-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20M6 6l-4 6 4 6M18 6l4 6-4 6"/></svg>
+      <p><b>拖动纸偶</b>，让它的影子落进虚框里。影子跟着灯光走，先想好光，再放纸偶。</p>
+    </div>
+    <div class="h-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 2v6h-6"/></svg>
+      <p>选中纸偶后，<b>拖动白色圆柄</b>旋转它的角度，对准虚框的方向。</p>
+    </div>
+    <div class="h-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l8 8H4l8-8zM12 20V9"/></svg>
+      <p>部分纸偶可以<b>升高</b>：选中后滚动滚轮，或点纸偶下方的按钮。升高之后，影子会更大、更远。</p>
+    </div>
+    <div class="h-row">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4.5 3 5.75V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.25c1.8-1.25 3-3.35 3-5.75a7 7 0 0 0-7-7zm-3 17h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/></svg>
+      <p><b>拖动光球</b>——光往哪走，影往哪逃。有些纸偶被钉住不能动，它们是灯光的「坐标」。</p>
+    </div>
+    <div class="h-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6.5 6.5 0 0 0-6.5 6.5c0 3.6 4.4 9.2 6.5 11.5 2.1-2.3 6.5-7.9 6.5-11.5A6.5 6.5 0 0 0 12 3z"/><circle cx="12" cy="9.5" r="2"/></svg>
+      <p>把每一道影都放回原位，幕布落下，一出好戏完成。</p>
+    </div>
+    <div class="how-close"><button class="btn primary" id="btnCloseHow">明白了</button></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   影戏 ShadowPlay —— 光影皮影解谜
+   Material Design 美学：表面、高度、阴影、光，皆为玩法
+   ============================================================ */
+
+// ---------- utils ----------
+const $ = s => document.querySelector(s);
+const TAU = Math.PI*2, RAD = Math.PI/180;
+const clamp = (v,a,b)=> v<a?a : v>b?b : v;
+const lerp = (a,b,t)=> a+(b-a)*t;
+const rand = (a,b)=> a+Math.random()*(b-a);
+const angDiff = (a,b)=>{ let d=(b-a)%360; if(d>180)d-=360; if(d<-180)d+=360; return d; };
+const distPx = (x1,y1,x2,y2)=> Math.hypot(x1-x2, y1-y2);
+const hex2rgb = h=>{ const n=parseInt(h.slice(1),16); return [n>>16&255, n>>8&255, n&255]; };
+const mix = (c1,c2,t)=> c1.map((v,i)=> Math.round(v+(c2[i]-v)*t));
+const css = rgb=> `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+const lighten = (c,t)=> css(mix(hex2rgb(c),[255,255,255],t));
+const shade   = (c,t)=> css(mix(hex2rgb(c),[8,12,26],t));
+
+// ---------- audio (WebAudio 合成) ----------
+let AC=null, master=null, muted=false;
+try{ muted = localStorage.getItem('shadowplay_muted')==='1'; }catch(e){}
+function ac(){
+  if(!AC){ const C = window.AudioContext||window.webkitAudioContext; if(!C) return null;
+    AC=new C(); master=AC.createGain(); master.gain.value=0.5; master.connect(AC.destination); }
+  if(AC.state==='suspended') AC.resume();
+  return AC;
+}
+function tone(f, dur=0.25, type='sine', vol=0.12, delay=0, slide=0){
+  if(muted) return; const a=ac(); if(!a) return;
+  const t0=a.currentTime+delay, o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t0);
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide), t0+dur);
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(vol, t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+0.05);
+}
+const sfx = {
+  place(){ tone(560,.16,'sine',.10); },
+  snap(){ tone(880,.22,'sine',.13); tone(1318,.2,'sine',.08,.06); },
+  lightSnap(){ tone(660,.2,'sine',.12); tone(990,.18,'sine',.07,.05); },
+  unlock(){ tone(440,.2,'sine',.1); tone(660,.25,'sine',.08,.08); },
+  error(){ tone(150,.12,'sawtooth',.05); },
+  win(){ [523.25,659.25,783.99,1046.5].forEach((f,i)=> tone(f,.7,'sine',.11,i*.13));
+         tone(261.63,1.8,'triangle',.05,0); },
+};
+
+// ---------- canvas ----------
+const canvas=$('#scene'), ctx=canvas.getContext('2d');
+let board={w:0,h:0}, u=16;
+function resize(){
+  board.w=window.innerWidth; board.h=window.innerHeight;
+  canvas.width=board.w*devicePixelRatio; canvas.height=board.h*devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  u=Math.min(board.w,board.h)/14;
+  if(S.pieces.length) S.pieces.forEach(p=> p.sp=bake(p));
+  if(S.demo) S.demo.sp=bake(S.demo);
+  buildGeometry();
+}
+window.addEventListener('resize', resize);
+
+// ---------- shapes & sprites ----------
+function shapePath(p){
+  const w=p.wU, h=p.hU, path=new Path2D();
+  switch(p.type){
+    case 'rect': {
+      const r=Math.min(w,h)*0.22;
+      path.moveTo(-w/2+r, -h/2);
+      path.arcTo(w/2, -h/2, w/2, h/2, r);
+      path.arcTo(w/2, h/2, -w/2, h/2, r);
+      path.arcTo(-w/2, h/2, -w/2, -h/2, r);
+      path.arcTo(-w/2, -h/2, w/2, -h/2, r);
+      path.closePath(); break;
+    }
+    case 'circle': path.arc(0,0,w/2,0,TAU); break;
+    case 'tri':
+      path.moveTo(0,-h/2); path.lineTo(w/2,h/2); path.lineTo(-w/2,h/2); path.closePath(); break;
+    case 'arch': {
+      const r=w/2, cy=-h/2+r;
+      path.moveTo(-r,h/2); path.lineTo(-r,cy); path.arc(0,cy,r,Math.PI,0); path.lineTo(r,h/2);
+      path.closePath(); break;
+    }
+    case 'ring': {
+      const r=w/2, ri=r*0.46;
+      path.arc(0,0,r,0,TAU); path.arc(0,0,ri,0,TAU); break;
+    }
+  }
+  return path;
+}
+const fillRule = p=> p.type==='ring' ? 'evenodd' : 'nonzero';
+function bake(p){
+  const k=2.2*u, pad=Math.ceil(26);
+  const W=Math.ceil(p.wU*k)+pad*2, H=Math.ceil(p.hU*k)+pad*2;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const c=cv.getContext('2d');
+  c.translate(W/2,H/2); c.scale(k,k);
+  c.fillStyle='#fff'; c.fill(shapePath(p), fillRule(p));
+  // 柔边光晕：多层放大叠加（不用 ctx.filter，兼容所有浏览器且无 GPU 挂死问题）
+  const halo=document.createElement('canvas'); halo.width=W; halo.height=H;
+  const ch=halo.getContext('2d');
+  ch.translate(W/2,H/2); ch.scale(k,k);
+  const path2=shapePath(p);
+  for(const [sc,al] of [[1.02,.16],[1.05,.13],[1.09,.10],[1.14,.07],[1.20,.05],[1.28,.03]]){
+    ch.globalAlpha=al; ch.save(); ch.scale(sc,sc); ch.fill(path2, fillRule(p)); ch.restore();
+  }
+  ch.globalAlpha=1;
+  return {core:cv, halo};
+}
+
+// ---------- levels ----------
+// 坐标系统：sol 为"解位"（纸偶归位后的位置），ghost 为该纸偶在正确灯光下的影子位置。
+// a/b 以 u 为单位（u = min(w,h)/14），(0,0) 对应舞台中心偏下。
+const LEVELS = [
+{ name:'初光', poem:'点亮第一道影',
+  tip:'将纸偶拖到它的影子上',
+  light:{a:0,b:0,locked:true},
+  pieces:[
+    {type:'rect', w:2.4, h:1.3, sol:{a:0,b:0.6}, rot:0, elev:0, scatter:{a:3.2,b:-2.6}, startRot:55},
+  ]},
+{ name:'成双', poem:'一对形影相随',
+  tip:'先放圆，再放方，影子会告诉你对不对',
+  light:{a:0,b:0,locked:true},
+  pieces:[
+    {type:'rect',  w:2.2, h:1.2, sol:{a:-1.1,b:0.7}, rot:0, elev:0, scatter:{a:-3.2,b:-1.6}, startRot:-30},
+    {type:'circle',w:2.0, h:2.0, sol:{a:1.1,b:-1.1}, rot:0, elev:0, scatter:{a:3.0,b:1.2}, startRot:0},
+  ]},
+{ name:'远山', poem:'山衔落日，暮色四合',
+  tip:'旋转纸偶：拖动选中后出现的白色圆柄',
+  light:{a:0,b:0,locked:true},
+  pieces:[
+    {type:'arch',  w:2.8, h:1.7, sol:{a:-1.6,b:1.2}, rot:0, elev:0, scatter:{a:4.4,b:-3.0}, startRot:0},
+    {type:'tri',   w:2.4, h:2.0, sol:{a:1.5,b:0.5},  rot:0, elev:0, scatter:{a:-3.0,b:-1.8}, startRot:150},
+    {type:'circle',w:1.6, h:1.6, sol:{a:0.1,b:-1.3}, rot:0, elev:0, scatter:{a:3.2,b:2.2}, startRot:0},
+  ]},
+{ name:'纸鸢', poem:'扶摇直上',
+  tip:'两个三角一上一下，拼出风筝的菱身',
+  light:{a:0,b:0,locked:true},
+  pieces:[
+    {type:'tri',  w:2.1, h:1.8, sol:{a:0,b:-1.0},   rot:0,   elev:0, scatter:{a:-3.1,b:1.4},  startRot:120},
+    {type:'tri',  w:2.1, h:1.8, sol:{a:0,b:1.0},    rot:180, elev:0, scatter:{a:3.1,b:-0.4},  startRot:30},
+    {type:'rect', w:0.5, h:2.2, sol:{a:0,b:3.0},    rot:0,   elev:0, scatter:{a:3.2,b:1.8},  startRot:150},
+  ]},
+{ name:'浮生', poem:'登阶而上，步步高升',
+  tip:'选中纸偶后滚动滚轮，或点它下方的按钮，调整高度',
+  light:{a:0,b:0,locked:true},
+  pieces:[
+    {type:'rect', w:2.3, h:1.2, sol:{a:-1.2,b:0.6}, rot:0, elev:0, scatter:{a:3.0,b:-2.2}, startRot:40},
+    {type:'rect', w:2.3, h:1.2, sol:{a:1.3,b:0.5},  rot:0, elev:1, adj:true, elevs:[0,1], scatter:{a:-3.4,b:-1.0}, startRot:-20},
+  ]},
+{ name:'寻光', poem:'灯下见影，影随灯行',
+  tip:'灯动影移：光往哪走，影往哪逃',
+  light:{a:0.2,b:-0.4,locked:false}, lightStart:{a:-3.2,b:1.8},
+  pieces:[
+    {type:'rect',  w:2.4, h:1.3, sol:{a:-0.4,b:1.0}, rot:0, elev:2, anchored:true},
+    {type:'circle',w:2.0, h:2.0, sol:{a:0.6,b:-1.0}, rot:0, elev:0, scatter:{a:-3.4,b:-2.4}, startRot:0},
+  ]},
+{ name:'月门', poem:'圆月当空，门影初成',
+  tip:'让两座钉住的影同时回到框里，灯光的位置就对了',
+  light:{a:0,b:-0.5,locked:false}, lightStart:{a:-2.6,b:1.6},
+  pieces:[
+    {type:'arch',  w:2.8, h:1.7, sol:{a:0,b:1.2},   rot:0, elev:1, anchored:true},
+    {type:'rect',  w:2.2, h:0.6, sol:{a:0,b:3.2},   rot:0, elev:1, anchored:true},
+    {type:'circle',w:2.0, h:2.0, sol:{a:0,b:-1.4},  rot:0, elev:0, scatter:{a:-3.2,b:-1.2}, startRot:0},
+    {type:'rect',  w:0.8, h:0.5, sol:{a:2.0,b:1.6}, rot:0, elev:0, scatter:{a:3.2,b:2.6}, startRot:90},
+  ]},
+{ name:'月晕', poem:'月晕而风，础润而雨',
+  tip:'圆月套着光晕——先放月亮，再把晕环套上去',
+  light:{a:0,b:0,locked:true},
+  pieces:[
+    {type:'circle',w:1.1, h:1.1, sol:{a:0,b:-1.2}, rot:0, elev:0, scatter:{a:3.4,b:1.8},  startRot:0},
+    {type:'ring',  w:2.6, h:2.6, sol:{a:0,b:-1.2}, rot:0, elev:0, scatter:{a:-3.4,b:-1.6}, startRot:0},
+    {type:'arch',  w:2.8, h:1.8, sol:{a:0,b:1.3},  rot:0, elev:0, scatter:{a:-3.2,b:1.4},  startRot:0},
+  ]},
+{ name:'叠影', poem:'海上生明月，天涯共此时',
+  tip:'月亮被钉在海上——先找灯光，再放小船',
+  light:{a:0.6,b:0.2,locked:false}, lightStart:{a:-2.8,b:1.8},
+  pieces:[
+    {type:'ring',  w:2.8, h:2.8, sol:{a:-0.3,b:-1.2}, rot:0, elev:1, anchored:true},
+    {type:'arch',  w:3.4, h:1.9, sol:{a:0.2,b:1.2},   rot:0, elev:0, scatter:{a:-3.4,b:0.6}, startRot:0},
+    {type:'rect',  w:2.2, h:0.8, sol:{a:1.4,b:1.7},   rot:0, elev:0, scatter:{a:3.4,b:-0.8}, startRot:60},
+    {type:'tri',   w:1.6, h:1.3, sol:{a:1.8,b:1.0},   rot:0, elev:0, scatter:{a:-3.2,b:2.4}, startRot:140},
+  ]},
+{ name:'终幕', poem:'人间烟火，灯火可亲',
+  tip:'两座坐标灯下重逢——然后，把屋顶、门与太阳放回家',
+  light:{a:-0.5,b:-0.3,locked:false}, lightStart:{a:-2.9,b:1.5},
+  pieces:[
+    {type:'rect',  w:2.8, h:1.8, sol:{a:-0.6,b:1.0},  rot:0, elev:1, anchored:true},
+    {type:'circle',w:1.6, h:1.6, sol:{a:2.3,b:1.5},   rot:0, elev:2, anchored:true},
+    {type:'tri',   w:3.0, h:1.4, sol:{a:-0.6,b:-0.55},rot:0, elev:0, scatter:{a:-3.2,b:-2.2}, startRot:120},
+    {type:'rect',  w:1.0, h:1.0, sol:{a:-0.6,b:1.45}, rot:0, elev:0, scatter:{a:3.3,b:1.6},  startRot:80},
+    {type:'circle',w:1.7, h:1.7, sol:{a:1.6,b:-1.5},  rot:0, elev:0, scatter:{a:-3.4,b:2.4},  startRot:0},
+  ]},
+];
+
+// ---------- 光影几何 ----------
+const LIGHT_H = 4.6, ELEV_STEP = 0.6;
+const sScale = e => LIGHT_H/(LIGHT_H - e*ELEV_STEP);
+const at = (a,b)=> ({ fx: 0.5 + a*u/board.w, fy: 0.52 + b*u/board.h });
+
+// ---------- state ----------
+const S = {
+  state:'title', idx:0, L:null,
+  pieces:[], anchors:[], free:[],
+  light:{fx:0.5,fy:0.52}, light0:{fx:0.5,fy:0.52}, lightLocked:true,
+  winOnce:false, demo:null, hintUntil:0, hintLight:false,
+  t:0, mouse:{x:0.5,y:0.5},
+};
+let progress = 0;
+try{ progress = parseInt(localStorage.getItem('shadowplay_progress')||'0',10)||0; }catch(e){}
+
+function shadowOf(p){
+  const s=sScale(p.elev), L=S.light;
+  return { fx: L.fx + s*(p.fx-L.fx), fy: L.fy + s*(p.fy-L.fy), s };
+}
+function pinnedPose(p){
+  const g=p.ghost, L=S.light, s=sScale(g.elev);
+  return { fx: L.fx + (g.fx-L.fx)/s, fy: L.fy + (g.fy-L.fy)/s, rot:g.rot };
+}
+function buildGeometry(){
+  if(!S.L) return;
+  const L=S.L;
+  S.light0 = at(L.light.a, L.light.b);
+  if(L.light.locked){ S.light = {...S.light0}; S.lightLocked=true; }
+  else S.lightLocked=false;
+  for(let i=0;i<L.pieces.length;i++){
+    const sp=L.pieces[i], p=S.pieces[i];
+    if(!p) continue; // 关卡尚未构建时跳过（buildGeometry 先于 buildLevel 的 pieces 重建）
+    const sol=at(sp.sol.a, sp.sol.b);
+    const s=sScale(sp.elev);
+    p.sol=sol;
+    p.ghost={ fx: S.light0.fx + s*(sol.fx-S.light0.fx),
+              fy: S.light0.fy + s*(sol.fy-S.light0.fy),
+              rot: sp.rot, elev: sp.elev };
+  }
+}
+function buildLevel(i){
+  const L=LEVELS[i]; S.L=L; S.idx=i;
+  buildGeometry();
+  const l0=S.light0;
+  if(!L.light.locked){ S.light = at(L.lightStart.a, L.lightStart.b); S.lightLocked=false; }
+  else { S.light={...l0}; S.lightLocked=true; }
+  S.pieces = L.pieces.map((sp,ci)=>{
+    const sol=at(sp.sol.a, sp.sol.b);
+    const s=sScale(sp.elev);
+    const ghost={ fx:l0.fx+s*(sol.fx-l0.fx), fy:l0.fy+s*(sol.fy-l0.fy), rot:sp.rot, elev:sp.elev };
+    let fx,fy;
+    if(sp.anchored){ fx=sol.fx; fy=sol.fy; }
+    else{
+      fx=clamp(ghost.fx + sp.scatter.a*u/board.w, 0.07, 0.93);
+      fy=clamp(ghost.fy + sp.scatter.b*u/board.h, 0.09, 0.91);
+    }
+    return {
+      type:sp.type, wU:sp.w, hU:sp.h,
+      sol, ghost,
+      elev:sp.elev, elevs:sp.elevs||[sp.elev], adj:!!sp.adj, anchored:!!sp.anchored,
+      fx, fy, rot:(sp.rot + (sp.startRot||0))%360,
+      placed:false, selected:false, ci,
+      sp:bake({type:sp.type,wU:sp.w,hU:sp.h}),
+    };
+  });
+  S.anchors=S.pieces.filter(p=>p.anchored);
+  S.free=S.pieces.filter(p=>!p.anchored);
+  S.winOnce=false; S.hintUntil=0; S.hintLight=false; S.covs=null; S.covT=0;
+  updateDots();
+  $('#actNo').textContent='第 '+(i+1)+' 幕';
+  $('#actName').textContent=L.name;
+}
+
+// ---------- particles ----------
+const parts=[];
+function sparkBurst(x,y,col,n=8){
+  for(let i=0;i<n;i++) parts.push({type:'spark', x,y, vx:rand(-180,180), vy:rand(-220,60),
+    life:0, max:rand(.6,1.1), size:rand(1.5,3.5), col, g:620});
+}
+function ringFx(x,y,col='rgba(168,197,255,.8)'){
+  parts.push({type:'ring', x,y, r:8, maxR:rand(90,150), life:0, max:0.8, col});
+}
+function confettiBurst(){
+  const cols=['#ffb4ab','#a8c5ff','#a9e5c9','#ffd9a0','#e8b8ff','#9fe8e0','#ffc4d9'];
+  for(let i=0;i<70;i++) parts.push({type:'conf', x:rand(0,board.w), y:rand(-80,-10),
+    vx:rand(-60,60), vy:rand(60,220), rot:rand(0,TAU), vr:rand(-6,6),
+    w:rand(6,11), h:rand(4,7), life:0, max:rand(1.8,3.2), col:cols[i%cols.length], g:240});
+}
+function updateParts(dt){
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i]; p.life+=dt;
+    if(p.life>=p.max){ parts.splice(i,1); continue; }
+    if(p.type==='spark'){ p.vy+=p.g*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; }
+    else if(p.type==='conf'){ p.vy+=p.g*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt; }
+    else if(p.type==='ring'){ p.r+=(p.maxR-p.r)*dt*3; }
+    else { p.x+=p.vx*dt; p.y+=p.vy*dt; }
+  }
+}
+function drawParts(t){
+  for(const p of parts){
+    const k=1-p.life/p.max;
+    if(p.type==='spark'){
+      ctx.globalAlpha=k; ctx.fillStyle=p.col;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size*k+0.5,0,TAU); ctx.fill();
+    } else if(p.type==='conf'){
+      ctx.globalAlpha=Math.min(1,k*1.4); ctx.save();
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.col;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+    } else if(p.type==='ring'){
+      ctx.globalAlpha=k*0.8; ctx.strokeStyle=p.col; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,TAU); ctx.stroke();
+    } else {
+      ctx.globalAlpha=k; ctx.fillStyle='#ffe9b8';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size*k,0,TAU); ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+}
+
+// ---------- 背景氛围 ----------
+const BLOBS=[
+  {c:'rgba(90,70,190,', ax:.28, ay:.22, r:.46, sp:.11, ph:0},
+  {c:'rgba(40,110,150,', ax:.74, ay:.18, r:.38, sp:.09, ph:2.1},
+  {c:'rgba(120,60,150,', ax:.62, ay:.72, r:.44, sp:.13, ph:4.2},
+  {c:'rgba(30,90,110,',  ax:.20, ay:.68, r:.34, sp:.08, ph:1.2},
+  {c:'rgba(70,60,160,',  ax:.48, ay:.95, r:.42, sp:.10, ph:3.3},
+];
+const dust=[];
+for(let i=0;i<36;i++) dust.push({fx:Math.random(), fy:Math.random(), sp:rand(.01,.03), ph:rand(0,TAU), sz:rand(1,2.4)});
+
+function drawBG(t){
+  const g=ctx.createLinearGradient(0,0,0,board.h);
+  g.addColorStop(0,'#171d38'); g.addColorStop(.5,'#0e1326'); g.addColorStop(1,'#0b0e1c');
+  ctx.fillStyle=g; ctx.fillRect(0,0,board.w,board.h);
+  const mx=(S.mouse.x-0.5)*0.02, my=(S.mouse.y-0.5)*0.02;
+  for(const b of BLOBS){
+    const bx=(b.ax+0.1*Math.sin(t*b.sp+b.ph)+mx)*board.w;
+    const by=(b.ay+0.07*Math.cos(t*b.sp*0.8+b.ph*1.7)+my)*board.h;
+    const r=b.r*board.w*0.5;
+    const bg=ctx.createRadialGradient(bx,by,0,bx,by,r);
+    bg.addColorStop(0,b.c+'0.10)'); bg.addColorStop(1,b.c+'0)');
+    ctx.fillStyle=bg; ctx.fillRect(bx-r,by-r,r*2,r*2);
+  }
+  // 微尘
+  ctx.fillStyle='#cfe0ff';
+  for(const d of dust){
+    const dx=(d.fx+0.004*Math.sin(t*d.sp*3+d.ph))*board.w;
+    const dy=(d.fy+0.004*Math.cos(t*d.sp*2.6+d.ph*2))*board.h;
+    ctx.globalAlpha=0.05+0.08*(0.5+0.5*Math.sin(t*1.6+d.ph*7));
+    ctx.beginPath(); ctx.arc(dx,dy,d.sz,0,TAU); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // 舞台地板微光
+  const fg=ctx.createRadialGradient(board.w*0.5, board.h*0.66, 0, board.w*0.5, board.h*0.66, board.w*0.62);
+  fg.addColorStop(0,'rgba(150,165,255,0.05)'); fg.addColorStop(1,'rgba(150,165,255,0)');
+  ctx.fillStyle=fg; ctx.fillRect(0,0,board.w,board.h);
+}
+function drawVignette(){
+  const g=ctx.createRadialGradient(board.w/2,board.h/2, board.w*0.35, board.w/2,board.h/2, board.w*0.78);
+  g.addColorStop(0,'rgba(3,5,12,0)'); g.addColorStop(1,'rgba(3,5,12,0.5)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,board.w,board.h);
+}
+
+// ---------- 渲染：光池 / 虚框 / 影子 / 纸偶 / 光球 ----------
+function drawPool(){
+  const lx=S.light.fx*board.w, ly=S.light.fy*board.h, R=5.6*u;
+  const g=ctx.createRadialGradient(lx,ly,0,lx,ly,R);
+  g.addColorStop(0,'rgba(255,246,222,0.16)');
+  g.addColorStop(.35,'rgba(255,244,220,0.08)');
+  g.addColorStop(1,'rgba(255,244,220,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(lx,ly,R,0,TAU); ctx.fill();
+}
+function drawGhost(p){
+  const g=p.ghost, s=sScale(g.elev);
+  const lx=S.light.fx*board.w, ly=S.light.fy*board.h;
+  const gx=g.fx*board.w, gy=g.fy*board.h;
+  const br=clamp(1.15 - distPx(lx,ly,gx,gy)/(4*u), 0, 1);
+  ctx.save();
+  ctx.translate(gx,gy); ctx.rotate(g.rot*RAD); ctx.scale(u*s,u*s);
+  const path=shapePath(p);
+  ctx.fillStyle=`rgba(168,197,255,${0.05+0.11*br})`;
+  ctx.fill(path, fillRule(p));
+  ctx.setLineDash([0.16,0.16]);
+  ctx.lineWidth=1.7/u;
+  ctx.strokeStyle=`rgba(207,223,255,${0.32+0.5*br})`;
+  ctx.stroke(path);
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+function drawShadow(p){
+  const sh=shadowOf(p), W=p.wU, H=p.hU;
+  ctx.save();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0; // 防御：sprite 展开不携带任何 shadow
+  ctx.translate(sh.fx*board.w, sh.fy*board.h);
+  ctx.rotate(p.rot*RAD);
+  ctx.scale(u*sh.s, u*sh.s);
+  ctx.globalAlpha=0.20; ctx.drawImage(p.sp.halo, -W/2,-H/2,W,H);
+  ctx.globalAlpha=0.5;  ctx.drawImage(p.sp.core, -W/2,-H/2,W,H);
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+function drawPiece(p, t){
+  const px=p.fx*board.w, py=p.fy*board.h;
+  const col=PIECE_COLORS[p.ci];
+  ctx.save();
+  ctx.translate(px,py); ctx.rotate(p.rot*RAD); ctx.scale(u,u);
+  const W=p.wU, H=p.hU, path=shapePath(p);
+  // 厚度（侧面）
+  if(p.elev>0){
+    ctx.save(); ctx.translate(0, 0.17*p.elev);
+    ctx.fillStyle=shade(col,0.45); ctx.fill(path, fillRule(p)); ctx.restore();
+  }
+  // 软投影（注意：shadow 状态不属于 save/restore，用完必须显式清除）
+  ctx.save();
+  ctx.shadowColor='rgba(2,5,16,.55)'; ctx.shadowBlur=11/u; ctx.shadowOffsetY=5/u;
+  const grad=ctx.createLinearGradient(-W/2,-H/2,W/2,H/2);
+  grad.addColorStop(0, lighten(col,0.22)); grad.addColorStop(.55,col); grad.addColorStop(1, shade(col,0.10));
+  ctx.fillStyle=grad; ctx.fill(path, fillRule(p));
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
+  ctx.restore();
+  // 高光（注意：globalAlpha 不属于 save/restore 状态，用 rgba 填充避免泄漏）
+  ctx.save(); ctx.clip(path, fillRule(p));
+  ctx.fillStyle='rgba(255,255,255,0.13)';
+  ctx.fillRect(-W/2,-H/2,W,H/2.4);
+  ctx.restore();
+  // 选中描边
+  if(p.selected && !p.placed){
+    ctx.strokeStyle='rgba(205,224,255,.95)'; ctx.lineWidth=2.4/u;
+    ctx.stroke(path, fillRule(p));
+  }
+  // 归位标记（半径与角内缩随纸偶尺寸缩放，避免小纸偶被标记盖住）
+  if(p.placed){
+    const markR=Math.min(0.3, Math.min(W,H)*0.2);
+    const off=Math.min(0.42, Math.min(W,H)/2 - markR*1.1);
+    const kx=W/2-off, ky=-H/2+off;
+    const pulse=1+0.08*Math.sin(t*3);
+    ctx.beginPath(); ctx.arc(kx,ky,markR*pulse,0,TAU);
+    ctx.fillStyle='rgba(168,197,255,.95)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=1.4/u;
+    ctx.beginPath(); ctx.moveTo(kx-markR*0.4,ky); ctx.lineTo(kx-markR*0.1,ky+markR*0.4); ctx.lineTo(kx+markR*0.5,ky-markR*0.35);
+    ctx.stroke();
+  }
+  // 锚定标记
+  if(p.anchored){
+    const markR=Math.min(0.3, Math.min(W,H)*0.2);
+    const off=Math.min(0.42, Math.min(W,H)/2 - markR*1.1);
+    const kx=-W/2+off, ky=-H/2+off;
+    ctx.beginPath(); ctx.arc(kx,ky,markR,0,TAU);
+    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.65)'; ctx.lineWidth=1.6/u; ctx.stroke();
+    ctx.beginPath(); ctx.arc(kx,ky,markR*0.4,0,TAU); ctx.fillStyle='rgba(255,255,255,.8)'; ctx.fill();
+  }
+  // 旋转手柄
+  if(p.selected && !p.anchored && !p.placed){
+    const hx=0, hy=-H/2-1.05;
+    ctx.beginPath(); ctx.arc(hx,hy,0.52,0,TAU);
+    ctx.fillStyle='rgba(255,255,255,.94)'; ctx.fill();
+    ctx.strokeStyle='rgba(120,140,200,.5)'; ctx.lineWidth=1.6/u; ctx.stroke();
+    ctx.beginPath(); ctx.arc(hx,hy,0.13,0,TAU);
+    ctx.fillStyle='#5b6b92'; ctx.fill();
+  }
+  // 升高按钮
+  if(p.selected && !p.anchored && !p.placed && p.adj){
+    const bx=0, by=H/2+0.95;
+    ctx.beginPath(); ctx.arc(bx,by,0.5,0,TAU);
+    ctx.fillStyle='rgba(18,26,48,.94)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.4/u; ctx.stroke();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.moveTo(bx,by-0.16); ctx.lineTo(bx+0.17,by+0.12); ctx.lineTo(bx-0.17,by+0.12); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawOrb(t){
+  const lx=S.light.fx*board.w, ly=S.light.fy*board.h;
+  const pulse=1+0.07*Math.sin(t*2.6);
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  const g1=ctx.createRadialGradient(lx,ly,0,lx,ly,1.9*u*pulse);
+  g1.addColorStop(0,'rgba(255,238,196,0.30)'); g1.addColorStop(1,'rgba(255,238,196,0)');
+  ctx.fillStyle=g1; ctx.beginPath(); ctx.arc(lx,ly,1.9*u*pulse,0,TAU); ctx.fill();
+  const g2=ctx.createRadialGradient(lx,ly,0,lx,ly,9);
+  g2.addColorStop(0,'rgba(255,252,240,1)'); g2.addColorStop(.7,'rgba(255,240,210,.9)'); g2.addColorStop(1,'rgba(255,236,200,0)');
+  ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(lx,ly,9*pulse,0,TAU); ctx.fill();
+  ctx.restore();
+  // 锁定环 / 拖拽环
+  ctx.save();
+  if(S.lightLocked){
+    ctx.setLineDash([3,5]); ctx.strokeStyle='rgba(255,255,255,.30)'; ctx.lineWidth=1.2;
+  } else {
+    ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(255,255,255,.45)';
+    ctx.lineDashOffset=-t*8; ctx.lineWidth=1.4;
+  }
+  ctx.beginPath(); ctx.arc(lx,ly,14,0,TAU); ctx.stroke();
+  ctx.restore();
+}
+function drawLightHint(t){
+  if(S.hintUntil<=S.t || !S.hintLight) return;
+  const lx=S.light0.fx*board.w, ly=S.light0.fy*board.h;
+  const a=0.5+0.5*Math.sin(t*6);
+  ctx.save();
+  ctx.globalAlpha=0.35+0.45*a;
+  ctx.strokeStyle='#ffd9a0'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(lx,ly,16+8*a,0,TAU); ctx.stroke();
+  ctx.restore();
+}
+
+const PIECE_COLORS=['#ffb4ab','#a8c5ff','#a9e5c9','#ffd9a0','#e8b8ff','#9fe8e0','#ffc4d9'];
+
+// ---------- 场景 ----------
+function drawScene(opts){
+  const o=opts||{};
+  if(o.bg!==false) drawBG(S.t);
+  if(o.floor!==false){
+    // 舞台
+    const fg=ctx.createRadialGradient(board.w*0.5, board.h*0.6, 0, board.w*0.5, board.h*0.6, board.w*0.55);
+    fg.addColorStop(0,'rgba(160,175,255,0.045)'); fg.addColorStop(1,'rgba(160,175,255,0)');
+    ctx.fillStyle=fg; ctx.fillRect(0,0,board.w,board.h);
+  }
+  if(o.pool!==false) drawPool();
+  if(o.ghosts!==false) for(const p of S.pieces) drawGhost(p);
+  if(o.shadows!==false) for(const p of S.pieces) drawShadow(p);
+  if(o.pieces!==false) for(const p of S.pieces) drawPiece(p, S.t);
+  if(o.orb!==false) drawOrb(S.t);
+  drawLightHint(S.t);
+  if(o.particles!==false) drawParts(S.t);
+  if(o.vig!==false) drawVignette();
+}
+
+// 标题页演示场景
+function buildDemo(){
+  S.demo={type:'rect', wU:2.4, hU:1.4, elev:1, rot:0, fx:0.5, fy:0.56, ci:1, sp:bake({type:'rect',wU:2.4,hU:1.4})};
+}
+function drawDemoScene(t){
+  drawBG(t);
+  const P=S.demo;
+  const lx=0.5+3.2*u/board.w*Math.cos(t*0.42), ly=0.42+2.2*u/board.h*Math.sin(t*0.42);
+  // 光池
+  const px=lx*board.w, py=ly*board.h, R=5.6*u;
+  const g=ctx.createRadialGradient(px,py,0,px,py,R);
+  g.addColorStop(0,'rgba(255,246,222,0.16)'); g.addColorStop(.4,'rgba(255,244,220,0.07)'); g.addColorStop(1,'rgba(255,244,220,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,R,0,TAU); ctx.fill();
+  // 影子
+  const s=sScale(P.elev);
+  ctx.save();
+  ctx.translate(lx+s*(P.fx-lx)*board.w, ly+s*(P.fy-ly)*board.h);
+  ctx.rotate(P.rot*RAD); ctx.scale(u*s,u*s);
+  ctx.globalAlpha=0.2; ctx.drawImage(P.sp.halo,-P.wU/2,-P.hU/2,P.wU,P.hU);
+  ctx.globalAlpha=0.5;  ctx.drawImage(P.sp.core,-P.wU/2,-P.hU/2,P.wU,P.hU);
+  ctx.globalAlpha=1; ctx.restore();
+  // 纸偶
+  P.rot=t*22; P.fx=0.5+0.35*u/board.w*Math.sin(t*0.3); P.fy=0.56;
+  drawPiece(P, t);
+  // 光球
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  const g2=ctx.createRadialGradient(px,py,0,px,py,1.9*u);
+  g2.addColorStop(0,'rgba(255,238,196,0.28)'); g2.addColorStop(1,'rgba(255,238,196,0)');
+  ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(px,py,1.9*u,0,TAU); ctx.fill();
+  ctx.restore();
+  drawVignette();
+}
+
+// ---------- 胜利检测 ----------
+let maskA=null, maskB=null;
+function anchoredCov(){
+  if(!S.anchors.length) return [];
+  const sc=0.33, mw=Math.max(1,Math.floor(board.w*sc)), mh=Math.max(1,Math.floor(board.h*sc));
+  if(!maskA || maskA.width!==mw){ maskA=document.createElement('canvas'); maskB=document.createElement('canvas');
+    maskA.width=mw; maskA.height=mh; maskB.width=mw; maskB.height=mh;
+    maskA.ctx=maskA.getContext('2d',{willReadFrequently:true});
+    maskB.ctx=maskB.getContext('2d',{willReadFrequently:true});
+  }
+  const out=[];
+  for(const p of S.anchors){
+    const cA=maskA.ctx, cB=maskB.ctx;
+    cA.clearRect(0,0,mw,mh); cB.clearRect(0,0,mw,mh);
+    const g=p.ghost, gs=sScale(g.elev), path=shapePath(p);
+    cA.save(); cA.translate(g.fx*board.w*sc, g.fy*board.h*sc);
+    cA.rotate(g.rot*RAD); cA.scale(u*gs*sc, u*gs*sc);
+    cA.fill(path, fillRule(p)); cA.restore();
+    const sh=shadowOf(p);
+    cB.save(); cB.translate(sh.fx*board.w*sc, sh.fy*board.h*sc);
+    cB.rotate(p.rot*RAD); cB.scale(u*sh.s*sc, u*sh.s*sc);
+    cB.fill(path, fillRule(p)); cB.restore();
+    // 统计（仅 ghost 包围盒）
+    const hw=Math.ceil(p.wU/2*u*gs*sc), hh=Math.ceil(p.hU/2*u*gs*sc);
+    const cx=Math.round(g.fx*board.w*sc), cy=Math.round(g.fy*board.h*sc);
+    const x0=clamp(cx-hw,0,mw-1), x1=clamp(cx+hw,0,mw-1), y0=clamp(cy-hh,0,mh-1), y1=clamp(cy+hh,0,mh-1);
+    const dA=cA.getImageData(x0,y0,x1-x0+1,y1-y0+1).data;
+    const dB=cB.getImageData(x0,y0,x1-x0+1,y1-y0+1).data;
+    let target=0, over=0;
+    for(let i=0;i<dA.length;i+=4){ if(dA[i+3]>128){ target++; if(dB[i+3]>128) over++; } }
+    out.push(target>0 ? over/target : 0);
+  }
+  return out;
+}
+function checkWin(){
+  if(S.winOnce || S.state!=='play') return;
+  if(!S.free.every(p=>p.placed)) return;
+  if(S.anchors.length){
+    if(!S.covs || !S.covs.every(c=>c>=0.92)) return;
+  }
+  win();
+}
+function win(){
+  S.winOnce=true;
+  sfx.win();
+  const cx=board.w/2, cy=board.h*0.52;
+  for(const p of S.pieces){ const g=p.ghost; ringFx(g.fx*board.w, g.fy*board.h); }
+  setTimeout(()=>ringFx(cx,cy,'rgba(255,217,160,.9)'), 260);
+  setTimeout(()=>ringFx(cx,cy,'rgba(233,184,255,.9)'), 520);
+  confettiBurst();
+  try{ localStorage.setItem('shadowplay_progress', String(Math.min(S.idx+1, LEVELS.length))); }catch(e){}
+  setTimeout(()=>{
+    S.state='win';
+    $('#hud').classList.add('hidden');
+    const last=S.idx===LEVELS.length-1;
+    $('#wNo').textContent='第 '+(S.idx+1)+' 幕 · 完成';
+    $('#wPoem').textContent=S.L.poem;
+    $('#btnNext').textContent=last ? '回到序幕' : '下一幕';
+    $('#wEnd').classList.toggle('hidden', !last);
+    renderPreview();
+    $('#winOverlay').classList.remove('hidden');
+  }, 620);
+}
+
+// ---------- 预览渲染 ----------
+function renderPreview(){
+  const pv=$('#preview'), pc=pv.getContext('2d');
+  const saved={w:board.w,h:board.h};
+  board={w:540,h:300}; u=Math.min(board.w,board.h)/14;
+  // 冻结纸偶到正确姿态
+  const frozen=[];
+  for(const p of S.pieces){ frozen.push({fx:p.fx,fy:p.fy,rot:p.rot,elev:p.elev});
+    if(!p.anchored && p.placed){ const pp=pinnedPose(p); p.fx=pp.fx; p.fy=pp.fy; p.rot=pp.rot; }
+  }
+  pc.setTransform(2,0,0,2,0,0);
+  pc.clearRect(0,0,540,300);
+  drawScene({bg:true, particles:false, vig:true});
+  for(let i=0;i<S.pieces.length;i++){ const f=frozen[i], p=S.pieces[i]; p.fx=f.fx; p.fy=f.fy; p.rot=f.rot; p.elev=f.elev; }
+  board=saved; u=Math.min(board.w,board.h)/14;
+}
+
+// ---------- 输入 ----------
+let drag=null, hoverPiece=null;
+const evtPos=e=>{ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; };
+function lightPx(){ return {x:S.light.fx*board.w, y:S.light.fy*board.h}; }
+function hitPiece(pos){
+  for(let i=S.pieces.length-1;i>=0;i--){
+    const p=S.pieces[i];
+    const r=Math.max(p.wU,p.hU)/2*u + 12;
+    if(distPx(pos.x,pos.y, p.fx*board.w, p.fy*board.h) < r) return p;
+  }
+  return null;
+}
+function handlePos(p){
+  const hx=0, hy=-p.hU/2-1.05;
+  const ang=(p.rot-90)*RAD, r=Math.hypot(hx,hy)*u;
+  const a=Math.atan2(hy,hx)+p.rot*RAD;
+  return {x:p.fx*board.w+Math.cos(a)*r, y:p.fy*board.h+Math.sin(a)*r};
+}
+function badgePos(p){
+  const by=p.hU/2+0.95;
+  return {x:p.fx*board.w+Math.sin(p.rot*RAD)*by*u, y:p.fy*board.h+Math.cos(p.rot*RAD)*by*u};
+}
+function select(p){
+  for(const q of S.pieces) q.selected=false;
+  p.selected=true;
+}
+function cycleElev(p){
+  if(p.anchored || p.placed) return;
+  const i=p.elevs.indexOf(p.elev);
+  p.elev=p.elevs[(i+1)%p.elevs.length];
+  sfx.unlock();
+}
+function placePiece(p){
+  const pp=pinnedPose(p);
+  p.fx=pp.fx; p.fy=pp.fy; p.rot=pp.rot; p.elev=p.ghost.elev;
+  p.placed=true;
+  sfx.snap();
+  sparkBurst(p.ghost.fx*board.w, p.ghost.fy*board.h, PIECE_COLORS[p.ci]);
+  ringFx(p.ghost.fx*board.w, p.ghost.fy*board.h);
+  updateDots();
+  checkWin();
+}
+function snapCheck(p){
+  if(p.anchored || p.placed) return;
+  const g=p.ghost, pp=pinnedPose(p);
+  const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
+  const rotOk=Math.abs(angDiff(p.rot, g.rot))<=12;
+  const elevOk=p.elev===g.elev;
+  if(d<0.95*u && rotOk && elevOk) placePiece(p);
+}
+function rotAssist(p){
+  const g=p.ghost, pp=pinnedPose(p);
+  const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
+  if(d<1.3*u && Math.abs(angDiff(p.rot,g.rot))<=30) p.rot+=angDiff(g.rot,p.rot)*0.2;
+}
+function toast(msg, ms=2600){
+  const el=$('#toast'); el.textContent=msg; el.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.add('hidden'), ms);
+}
+let toastOnceKey=null;
+function toastOnce(msg){
+  if(toastOnceKey===msg) return;
+  toastOnceKey=msg; toast(msg);
+}
+
+canvas.addEventListener('pointerdown', e=>{
+  if(S.state!=='play') return;
+  ac();
+  const pos=evtPos(e);
+  // 升高按钮
+  const sel=S.pieces.find(p=>p.selected&&!p.anchored&&!p.placed&&p.adj);
+  if(sel && distPx(pos.x,pos.y, badgePos(sel).x, badgePos(sel).y) < 0.62*u){ cycleElev(sel); return; }
+  // 旋转手柄
+  const sel2=S.pieces.find(p=>p.selected&&!p.anchored&&!p.placed);
+  if(sel2 && distPx(pos.x,pos.y, handlePos(sel2).x, handlePos(sel2).y) < 0.68*u){
+    drag={mode:'rot', id:e.pointerId, piece:sel2};
+    canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
+    return;
+  }
+  // 光球
+  const lp=lightPx();
+  if(distPx(pos.x,pos.y, lp.x, lp.y) < 40){
+    if(S.lightLocked){ toastOnce('此幕灯光已固定，只需摆放纸偶'); return; }
+    drag={mode:'orb', id:e.pointerId, lx:S.light.fx, ly:S.light.fy};
+    canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
+    return;
+  }
+  // 纸偶
+  const p=hitPiece(pos);
+  if(p){
+    select(p);
+    if(p.anchored){ toastOnce('钉住的纸偶不能移动——它是灯光的坐标'); return; }
+    drag={mode:'piece', id:e.pointerId, piece:p, ox:pos.x-p.fx*board.w, oy:pos.y-p.fy*board.h,
+         sx:pos.x, sy:pos.y, wasPlaced:p.placed};
+    canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
+  }
+});
+canvas.addEventListener('pointermove', e=>{
+  const pos=evtPos(e);
+  S.mouse.x=pos.x/board.w; S.mouse.y=pos.y/board.h;
+  if(drag && e.pointerId===drag.id){
+    if(drag.mode==='piece'){
+      const p=drag.piece;
+      // 真正拖动后（>5px）才解除归位，轻点不会拆掉
+      if(drag.wasPlaced && (distPx(pos.x,pos.y,drag.sx,drag.sy)>5)){ p.placed=false; drag.wasPlaced=false; updateDots(); }
+      p.fx=clamp((pos.x-drag.ox)/board.w, 0.04, 0.96);
+      p.fy=clamp((pos.y-drag.oy)/board.h, 0.06, 0.94);
+      rotAssist(p); snapCheck(p);
+    } else if(drag.mode==='rot'){
+      const p=drag.piece;
+      const cx=p.fx*board.w, cy=p.fy*board.h;
+      const a2=Math.atan2(pos.y-cy, pos.x-cx)*180/Math.PI;
+      p.rot=Math.round((a2+90+360)%360/5)*5;
+      // 旋转时也做吸附
+      const pp=pinnedPose(p);
+      const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
+      if(d<0.95*u && Math.abs(angDiff(p.rot,p.ghost.rot))<=12 && p.elev===p.ghost.elev) placePiece(p);
+    } else if(drag.mode==='orb'){
+      const w=board.w, h=board.h;
+      const nx=clamp(drag.lx + (pos.x-drag.sx)/w, 0.02, 0.98);
+      const ny=clamp(drag.ly + (pos.y-drag.sy)/h, 0.04, 0.96);
+      S.light.fx=nx; S.light.fy=ny;
+      if(Math.random()<0.35) parts.push({type:'mote', x:pos.x+rand(-8,8), y:pos.y+rand(-8,8),
+        vx:rand(-14,14), vy:rand(-26,-6), size:rand(1.2,2.4), life:0, max:rand(.5,.9)});
+      // 灯光磁吸（d>0 防止重复触发音效）
+      const d=Math.hypot((nx-S.light0.fx)*w, (ny-S.light0.fy)*h);
+      if(d>0 && d<0.32*u){
+        S.light.fx=S.light0.fx; S.light.fy=S.light0.fy;
+        sfx.lightSnap();
+        const lx=S.light0.fx*w, ly=S.light0.fy*h;
+        sparkBurst(lx,ly,'#ffd9a0',10); ringFx(lx,ly,'rgba(255,217,160,.8)');
+      }
+    }
+    return;
+  }
+  // hover 光标
+  if(S.state==='play'){
+    const h=hitPiece(pos);
+    const lp=lightPx();
+    const overOrb=!S.lightLocked && distPx(pos.x,pos.y,lp.x,lp.y)<40;
+    canvas.style.cursor = overOrb||h ? 'grab' : 'default';
+    hoverPiece=h;
+  }
+});
+function endDrag(e){
+  if(!drag || e.pointerId!==drag.id) return;
+  const wasPiece=drag.mode==='piece';
+  drag=null;
+  canvas.classList.remove('grabbing');
+  canvas.style.cursor='default';
+  if(wasPiece) checkWin();
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('wheel', e=>{
+  if(S.state!=='play') return;
+  const pos=evtPos(e);
+  const p=hitPiece(pos);
+  if(p && !p.anchored && !p.placed && p.adj){ e.preventDefault(); cycleElev(p); }
+}, {passive:false});
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+
+window.addEventListener('keydown', e=>{
+  if(S.state==='play'){
+    if(e.key==='h'||e.key==='H'){ hint(); return; }
+    if(e.key==='m'||e.key==='M'){ toggleMute(); return; }
+    const p=S.pieces.find(q=>q.selected);
+    if(!p || p.anchored) return;
+    const step=e.shiftKey?0.08:0.35;
+    if(e.key==='ArrowLeft'){ p.fx-=step*u/board.w; }
+    else if(e.key==='ArrowRight'){ p.fx+=step*u/board.w; }
+    else if(e.key==='ArrowUp'){ p.fy-=step*u/board.h; }
+    else if(e.key==='ArrowDown'){ p.fy+=step*u/board.h; }
+    else if(e.key==='r'||e.key==='R'){ p.rot=(p.rot+(e.shiftKey?-1:1)*15+360)%360; }
+    else if(e.key==='e'||e.key==='E'){ if(p.adj && !p.placed) cycleElev(p); }
+    else return;
+    e.preventDefault();
+    if(!p.placed) snapCheck(p);
+  } else if(S.state==='title' && (e.key==='Enter'||e.key===' ')){
+    e.preventDefault(); startGame();
+  }
+});
+
+// ---------- 提示 ----------
+function hint(){
+  if(S.state!=='play' || S.hintUntil>S.t) return;
+  S.hintUntil=S.t+3.2;
+  // 1) 灯光不对时提示灯光位置
+  if(!S.lightLocked && S.anchors.length){
+    const covs=anchoredCov();
+    if(covs.some(c=>c<0.9)){
+      S.hintLight=true;
+      toast('把灯光拖到金色标记处');
+      setTimeout(()=>{ S.hintLight=false; }, 3000);
+      return;
+    }
+  }
+  S.hintLight=false;
+  // 2) 提示未归位的纸偶
+  const p=S.free.find(q=>!q.placed);
+  if(p){
+    toast('顺着金线，把纸偶放回它的影子');
+    S.hintPiece=p; S.hintPieceUntil=S.t+3.2;
+    sparkBurst(p.ghost.fx*board.w, p.ghost.fy*board.h, '#ffd9a0', 6);
+    // 连线标记
+    S.hintLine={x1:(p.fx*board.w+p.ghost.fx*board.w)/2, y1:(p.fy*board.h+p.ghost.fy*board.h)/2,
+                x2:p.ghost.fx*board.w, y2:p.ghost.fy*board.h, until:S.t+3.2};
+  } else {
+    toast('所有纸偶都已归位，只剩灯光了');
+  }
+}
+
+// ---------- DOM / 流程 ----------
+function updateDots(){
+  const el=$('#dots'); el.innerHTML='';
+  for(const p of S.pieces){
+    const d=document.createElement('span');
+    d.className='dot'+(p.anchored?' anchor':'')+(p.placed?' placed':'');
+    d.title=p.anchored?'锚定纸偶':'纸偶';
+    el.appendChild(d);
+  }
+}
+function updateDotMatches(covs){
+  const dots=$('#dots').children;
+  let j=0;
+  for(let i=0;i<S.pieces.length;i++){
+    const p=S.pieces[i];
+    if(p.anchored){ if(covs[j]>=0.92) dots[i].classList.add('match'); else dots[i].classList.remove('match'); j++; }
+  }
+}
+function toggleMute(){
+  muted=!muted;
+  try{ localStorage.setItem('shadowplay_muted', muted?'1':'0'); }catch(e){}
+  $('#svgSoundOn').style.display=muted?'none':'';
+  $('#svgSoundOff').style.display=muted?'':'none';
+  if(!muted) tone(660,.15,'sine',.1);
+}
+function setToastTips(i){
+  const tips={3:'拖动手柄旋转纸偶：白柄在纸偶上方', 4:'滚轮或按钮可升高纸偶——影子会更大更远', 5:'灯动影移：光往哪走，影往哪逃'};
+  if(tips[i]) setTimeout(()=>toast(tips[i]), 2600);
+}
+function loadLevel(i){
+  buildLevel(i);
+  const L=LEVELS[i];
+  $('#iNo').textContent='第 '+(i+1)+' 幕';
+  $('#iName').textContent=L.name;
+  $('#iPoem').textContent=L.poem;
+  $('#iTip').textContent=L.tip;
+  $('#winOverlay').classList.add('hidden');
+  $('#hud').classList.remove('hidden');
+  $('#introOverlay').classList.remove('hidden');
+  S.state='intro';
+  setTimeout(()=>{
+    $('#introOverlay').classList.add('hidden');
+    S.state='play';
+    setToastTips(i);
+  }, 2100);
+}
+function startGame(){
+  sfx.unlock();
+  $('#titleScreen').classList.add('hidden');
+  loadLevel(Math.min(progress, LEVELS.length-1));
+}
+function resetLevel(){
+  buildLevel(S.idx);
+  $('#winOverlay').classList.add('hidden');
+  S.state='play';
+  toast('已重置本幕');
+}
+
+function attachRipple(btn){
+  btn.addEventListener('pointerdown', e=>{
+    const r=btn.getBoundingClientRect(), d=Math.max(r.width,r.height)*1.2;
+    const s=document.createElement('span'); s.className='ripple';
+    s.style.width=s.style.height=d+'px';
+    s.style.left=(e.clientX-r.left-d/2)+'px'; s.style.top=(e.clientY-r.top-d/2)+'px';
+    btn.appendChild(s); setTimeout(()=>s.remove(),650);
+  });
+}
+document.querySelectorAll('.btn,.icon-btn').forEach(attachRipple);
+
+$('#btnStart').addEventListener('click', startGame);
+$('#btnHowto').addEventListener('click', ()=> $('#howtoOverlay').classList.remove('hidden'));
+$('#btnCloseHow').addEventListener('click', ()=> $('#howtoOverlay').classList.add('hidden'));
+$('#howtoOverlay').addEventListener('click', e=>{ if(e.target===$('#howtoOverlay')) $('#howtoOverlay').classList.add('hidden'); });
+$('#btnHint').addEventListener('click', hint);
+$('#btnReset').addEventListener('click', resetLevel);
+$('#btnSound').addEventListener('click', toggleMute);
+$('#btnReplay').addEventListener('click', ()=>{ $('#winOverlay').classList.add('hidden'); loadLevel(S.idx); });
+$('#btnNext').addEventListener('click', ()=>{
+  $('#winOverlay').classList.add('hidden');
+  const next=S.idx+1;
+  if(next>=LEVELS.length) loadLevel(0); else loadLevel(next);
+});
+
+// 标题页
+function updateTitle(){
+  const dots=$('#titleDots'); dots.innerHTML='';
+  for(let i=0;i<LEVELS.length;i++){
+    const d=document.createElement('i');
+    if(i<progress) d.style.background='var(--primary)';
+    dots.appendChild(d);
+  }
+  $('#tFoot').textContent = progress>0 ? ('已演至第 '+Math.min(progress,LEVELS.length)+' 幕') : '灯未亮 · 戏未开';
+}
+
+// ---------- 主循环 ----------
+let last=performance.now();
+function frame(now){
+  const t=now/1000; const dt=Math.min(0.05,(now-last)/1000); last=now; S.t=t;
+  updateParts(dt);
+  // 被钉住的纸偶跟随灯光
+  if(S.state==='play' || S.state==='intro' || S.state==='win'){
+    for(const p of S.free){
+      if(p.placed){
+        const pp=pinnedPose(p);
+        p.fx=lerp(p.fx, pp.fx, 0.35); p.fy=lerp(p.fy, pp.fy, 0.35);
+        p.rot+=angDiff(pp.rot,p.rot)*0.35;
+      }
+    }
+  }
+  // 提示连线
+  if(S.hintLine && S.hintLine.until>S.t){
+    const hl=S.hintLine, a=0.4+0.4*Math.sin(t*7);
+    ctx.save();
+    ctx.strokeStyle=`rgba(255,217,160,${a})`; ctx.lineWidth=2; ctx.setLineDash([5,7]);
+    ctx.beginPath(); ctx.moveTo(hl.x1,hl.y1); ctx.lineTo(hl.x2,hl.y2); ctx.stroke();
+    ctx.restore();
+  } else S.hintLine=null;
+  if(S.state==='title'){
+    drawDemoScene(t);
+  } else {
+    drawScene({});
+    // 锚定进度点亮（覆盖率计算节流到 ~8fps，避免 GC 压力）
+    if(S.state==='play' && S.anchors.length && !S.winOnce){
+      if(!S.covT || t-S.covT>0.12){
+        S.covT=t; S.covs=anchoredCov();
+        updateDotMatches(S.covs);
+      }
+      checkWin();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------- boot ----------
+S.demo=null;
+buildDemo();
+updateTitle();
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
