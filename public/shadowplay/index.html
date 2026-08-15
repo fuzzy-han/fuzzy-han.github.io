@@ -575,7 +575,7 @@ function buildLevel(i){
   });
   S.anchors=S.pieces.filter(p=>p.anchored);
   S.free=S.pieces.filter(p=>!p.anchored);
-  S.winOnce=false; S.hintUntil=0; S.hintLight=false; S.covs=null; S.covT=0;
+  S.winOnce=false; S.hintUntil=0; S.hintLight=false; S.covs=null; S.covT=0; S.nearHinted={};
   updateDots();
   $('#actNo').textContent='第 '+(i+1)+' 幕';
   $('#actName').textContent=L.name;
@@ -692,7 +692,14 @@ function drawGhost(p){
   ctx.fill(path, fillRule(p));
   ctx.setLineDash([0.16,0.16]);
   ctx.lineWidth=1.7/u;
-  ctx.strokeStyle=`rgba(207,223,255,${0.32+0.5*br})`;
+  if(p.near && !p.placed){
+    // 接近但未归位：金色脉冲提示（角度或高度不对）
+    const pulse=0.55+0.45*Math.sin(S.t*5);
+    ctx.strokeStyle=`rgba(255,217,160,${pulse})`;
+    ctx.lineWidth=2.6/u;
+  } else {
+    ctx.strokeStyle=`rgba(207,223,255,${0.32+0.5*br})`;
+  }
   ctx.stroke(path);
   ctx.setLineDash([]);
   ctx.restore();
@@ -1001,7 +1008,7 @@ function snapCheck(p){
   if(p.anchored || p.placed) return;
   const g=p.ghost, pp=pinnedPose(p);
   const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
-  const rotOk=Math.abs(angDiff(p.rot, g.rot))<=12;
+  const rotOk=Math.abs(angDiff(p.rot, g.rot))<=45;
   const elevOk=p.elev===g.elev;
   if(d<0.95*u && rotOk && elevOk) placePiece(p);
 }
@@ -1264,9 +1271,12 @@ $('#btnNext').addEventListener('click', ()=>{
 });
 
 // ---------- 排行榜（功名榜） ----------
-// 云榜：填入后端 URL 后自动启用（GET 返回 {entries:[{name,ts}]}，POST {name,ts} 写入）；
-// 留空 = 纯本地模式。本地榜永远可用。
-const LB_CLOUD_URL = '';
+// 云榜配置（任选其一，全空 = 纯本地模式，本地榜永远可用）：
+//   A) supabase：Supabase 免费项目（anon key 设计为公开，RLS 控制权限）
+//      { url:'https://xxxx.supabase.co', key:'eyJ...' } —— 读写 leaderboard 表
+//   B) kvdbBucket：kvdb.io 免费匿名 KV（CORS ✓）——填入 bucket id 即全球同步
+//   C) restUrl：任意 REST 后端（GET 返回 {entries:[{name,ts}]}；POST {name,ts} 写入）
+const LB_CLOUD = { supabase: { url:'https://lpynpobfvhbywcxlerai.supabase.co', key:'sb_publishable__JcjXpl6qlWwhHgn6b1W7w_bJC4Ez4T' }, kvdbBucket: '', restUrl: '' };
 const LB = {
   local: [], name: '', cloudList: [],
   load(){
@@ -1278,13 +1288,25 @@ const LB = {
     try{ localStorage.setItem('shadowplay_lb_name', this.name); }catch(e){}
   },
   cloudGet(){
-    if(!LB_CLOUD_URL) return Promise.resolve(null);
-    return fetch(LB_CLOUD_URL, {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(typeof fetch==='undefined') return Promise.resolve(null);
+    const sb = LB_CLOUD.supabase;
+    if(sb) return fetch(sb.url+'/rest/v1/leaderboard?select=name,ts&order=ts', {headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key}}).then(r=>r.ok?r.json():null).catch(()=>null);
+    const kv = LB_CLOUD.kvdbBucket;
+    if(kv) return fetch('https://kvdb.io/'+kv+'/leaderboard', {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(LB_CLOUD.restUrl) return fetch(LB_CLOUD.restUrl, {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
+    return Promise.resolve(null);
   },
   cloudPush(){
-    if(!LB_CLOUD_URL) return Promise.resolve();
-    return fetch(LB_CLOUD_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+    if(typeof fetch==='undefined') return Promise.resolve();
+    const sb = LB_CLOUD.supabase;
+    if(sb) return fetch(sb.url+'/rest/v1/leaderboard', {method:'POST', headers:{'apikey':sb.key,'Authorization':'Bearer '+sb.key,'Content-Type':'application/json','Prefer':'return=minimal'},
       body: JSON.stringify({name:this.name, ts:Date.now()})}).catch(()=>{});
+    const kv = LB_CLOUD.kvdbBucket;
+    const payload = JSON.stringify({entries: this.entries(), updatedAt: Date.now()});
+    if(kv) return fetch('https://kvdb.io/'+kv+'/leaderboard', {method:'PUT', body: payload}).catch(()=>{});
+    if(LB_CLOUD.restUrl) return fetch(LB_CLOUD.restUrl, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name:this.name, ts:Date.now()})}).catch(()=>{});
+    return Promise.resolve();
   },
   entries(){
     const m=new Map();
@@ -1340,6 +1362,23 @@ let last=performance.now();
 function frame(now){
   const t=now/1000; const dt=Math.min(0.05,(now-last)/1000); last=now; S.t=t;
   updateParts(dt);
+  // 接近提示：纸偶在虚框附近但未归位 → 标记（虚框金色脉冲 + 首次提示）
+  if(S.state==='play'){
+    if(!S.nearHinted) S.nearHinted={};
+    for(const p of S.free){
+      if(p.placed){ p.near=false; continue; }
+      const pp=pinnedPose(p);
+      const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
+      p.near = d < 1.6*u;
+      if(p.near && !S.nearHinted[p.ci]){
+        const rotBad=Math.abs(angDiff(p.rot, p.ghost.rot))>45;
+        const elevBad=p.adj && p.elev!==p.ghost.elev;
+        if(rotBad) toast('拖动白色圆柄，旋转纸偶对准虚框');
+        else if(elevBad) toast('滚动滚轮或点下方按钮，升高纸偶');
+        S.nearHinted[p.ci]=true;
+      }
+    }
+  }
   // 被钉住的纸偶跟随灯光
   if(S.state==='play' || S.state==='intro' || S.state==='win'){
     for(const p of S.free){
