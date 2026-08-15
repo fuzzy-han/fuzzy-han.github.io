@@ -128,6 +128,38 @@ body{
 .w-poem{font-size:clamp(22px,4vw,30px); letter-spacing:.24em; margin-bottom:24px}
 .w-btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
 .w-end{font-size:14px; letter-spacing:.18em; color:var(--ok); margin-top:18px}
+/* 功名榜 */
+.lb-btn{margin-top:16px; padding:10px 26px; font-size:13.5px}
+.lb-card{padding:30px 34px; border-radius:28px; max-width:min(460px, 92vw); max-height:84vh; overflow:auto;
+  background:rgba(15,20,38,.82); border:1px solid var(--line);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.lb-title{font-size:26px; letter-spacing:.3em; text-align:center; margin-bottom:8px}
+.lb-sub{font-size:12.5px; letter-spacing:.14em; color:var(--muted); text-align:center; margin-bottom:20px}
+.lb-sub b{color:var(--primary)}
+.lb-list{display:flex; flex-direction:column; gap:8px; margin-bottom:22px}
+.lb-row{display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:14px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.07)}
+.lb-row .rank{flex:none; width:34px; height:34px; border-radius:50%; display:grid; place-items:center;
+  font-size:13px; font-weight:700; background:rgba(168,197,255,.14); color:var(--primary); letter-spacing:0}
+.lb-row.r1 .rank{background:linear-gradient(135deg,#ffe9a8,#f0c04f); color:#5a4308; box-shadow:0 4px 14px rgba(240,192,79,.4)}
+.lb-row.r2 .rank{background:linear-gradient(135deg,#e8eef6,#b9c6d8); color:#3a4a63}
+.lb-row.r3 .rank{background:linear-gradient(135deg,#f3c9a8,#d99a5b); color:#5f3a16}
+.lb-row .name{flex:1; font-size:14.5px; letter-spacing:.08em; color:#e8eefc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lb-row .when{flex:none; font-size:11.5px; color:var(--muted)}
+.lb-row .no{flex:none; font-size:11px; color:var(--muted)}
+.lb-empty{text-align:center; color:var(--muted); font-size:13.5px; letter-spacing:.1em; padding:26px 0}
+/* 留名区 */
+.w-lb{margin-top:6px; margin-bottom:22px; padding:16px 18px; border-radius:18px;
+  background:rgba(255,255,255,.05); border:1px dashed rgba(168,197,255,.4)}
+.w-lb-label{font-size:13px; letter-spacing:.16em; color:#dfe8ff; margin-bottom:12px}
+.w-lb-row{display:flex; gap:10px; justify-content:center}
+.w-lb-row input{flex:1; min-width:0; padding:11px 16px; border-radius:999px; border:1px solid var(--line);
+  background:rgba(8,11,24,.7); color:var(--txt); font-size:14px; letter-spacing:.06em; outline:none; font-family:inherit;
+  transition:border-color .2s ease, box-shadow .2s ease}
+.w-lb-row input:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(168,197,255,.18)}
+.w-lb-row input::placeholder{color:rgba(154,167,199,.55)}
+.w-lb-ok{font-size:13px; letter-spacing:.14em; color:var(--ok); margin-top:10px}
 
 /* howto */
 .how-card{
@@ -201,6 +233,7 @@ body{
     </div>
     <div class="t-dots rise d4" id="titleDots"></div>
     <div class="t-foot rise d4" id="tFoot">灯未亮 · 戏未开</div>
+    <button class="btn lb-btn rise d4" id="btnLb">功 名 榜</button>
   </div>
 </div>
 
@@ -224,6 +257,14 @@ body{
     <div class="w-btns">
       <button class="btn" id="btnReplay">再演一次</button>
       <button class="btn primary" id="btnNext">下一幕</button>
+    </div>
+    <div class="w-lb hidden" id="wLb">
+      <div class="w-lb-label serif">全剧终 · 灯影归位 —— 留名功名榜</div>
+      <div class="w-lb-row">
+        <input id="lbNameInput" maxlength="12" placeholder="你的名字" autocomplete="off"/>
+        <button class="btn primary" id="btnLbAdd">留名上榜</button>
+      </div>
+      <div class="w-lb-ok hidden" id="wLbOk">✓ 已登上功名榜</div>
     </div>
     <div class="w-end serif hidden" id="wEnd">— 全剧终 · 十幕光影，皆归其位 —</div>
   </div>
@@ -254,6 +295,16 @@ body{
       <p>把每一道影都放回原位，幕布落下，一出好戏完成。</p>
     </div>
     <div class="how-close"><button class="btn primary" id="btnCloseHow">明白了</button></div>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<div id="lbOverlay" class="screen hidden">
+  <div class="lb-card rise">
+    <div class="lb-title serif">功名榜</div>
+    <div class="lb-sub">已有 <b id="lbSubCount">0</b> 位影人通关全剧</div>
+    <div class="lb-list" id="lbList"></div>
+    <div class="how-close"><button class="btn primary" id="btnLbClose">关 幕</button></div>
   </div>
 </div>
 
@@ -379,13 +430,13 @@ const LEVELS = [
   tip:'将纸偶拖到它的影子上',
   light:{a:0,b:0,locked:true},
   pieces:[
-    {type:'rect', w:2.4, h:1.3, sol:{a:0,b:0.6}, rot:0, elev:0, scatter:{a:3.2,b:-2.6}, startRot:55},
+    {type:'rect', w:2.4, h:1.3, sol:{a:0,b:0.6}, rot:0, elev:0, scatter:{a:3.2,b:-2.6}, startRot:18},
   ]},
 { name:'成双', poem:'一对形影相随',
   tip:'先放圆，再放方，影子会告诉你对不对',
   light:{a:0,b:0,locked:true},
   pieces:[
-    {type:'rect',  w:2.2, h:1.2, sol:{a:-1.1,b:0.7}, rot:0, elev:0, scatter:{a:-3.2,b:-1.6}, startRot:-30},
+    {type:'rect',  w:2.2, h:1.2, sol:{a:-1.1,b:0.7}, rot:0, elev:0, scatter:{a:-3.2,b:-1.6}, startRot:-18},
     {type:'circle',w:2.0, h:2.0, sol:{a:1.1,b:-1.1}, rot:0, elev:0, scatter:{a:3.0,b:1.2}, startRot:0},
   ]},
 { name:'远山', poem:'山衔落日，暮色四合',
@@ -408,7 +459,7 @@ const LEVELS = [
   tip:'选中纸偶后滚动滚轮，或点它下方的按钮，调整高度',
   light:{a:0,b:0,locked:true},
   pieces:[
-    {type:'rect', w:2.3, h:1.2, sol:{a:-1.2,b:0.6}, rot:0, elev:0, scatter:{a:3.0,b:-2.2}, startRot:40},
+    {type:'rect', w:2.3, h:1.2, sol:{a:-1.2,b:0.6}, rot:0, elev:0, scatter:{a:3.0,b:-2.2}, startRot:25},
     {type:'rect', w:2.3, h:1.2, sol:{a:1.3,b:0.5},  rot:0, elev:1, adj:true, elevs:[0,1], scatter:{a:-3.4,b:-1.0}, startRot:-20},
   ]},
 { name:'寻光', poem:'灯下见影，影随灯行',
@@ -425,7 +476,7 @@ const LEVELS = [
     {type:'arch',  w:2.8, h:1.7, sol:{a:0,b:1.2},   rot:0, elev:1, anchored:true},
     {type:'rect',  w:2.2, h:0.6, sol:{a:0,b:3.2},   rot:0, elev:1, anchored:true},
     {type:'circle',w:2.0, h:2.0, sol:{a:0,b:-1.4},  rot:0, elev:0, scatter:{a:-3.2,b:-1.2}, startRot:0},
-    {type:'rect',  w:0.8, h:0.5, sol:{a:2.0,b:1.6}, rot:0, elev:0, scatter:{a:3.2,b:2.6}, startRot:90},
+    {type:'rect',  w:0.8, h:0.5, sol:{a:2.0,b:1.6}, rot:0, elev:0, scatter:{a:3.2,b:2.6}, startRot:25},
   ]},
 { name:'月晕', poem:'月晕而风，础润而雨',
   tip:'圆月套着光晕——先放月亮，再把晕环套上去',
@@ -878,6 +929,10 @@ function win(){
     $('#wPoem').textContent=S.L.poem;
     $('#btnNext').textContent=last ? '回到序幕' : '下一幕';
     $('#wEnd').classList.toggle('hidden', !last);
+    $('#wLb').classList.toggle('hidden', !last);
+    $('#wLbOk').classList.add('hidden');
+    const inp=$('#lbNameInput'); if(inp){ inp.value=LB.name; }
+    const addBtn=$('#btnLbAdd'); if(addBtn) addBtn.disabled=false;
     renderPreview();
     $('#winOverlay').classList.remove('hidden');
   }, 620);
@@ -953,7 +1008,7 @@ function snapCheck(p){
 function rotAssist(p){
   const g=p.ghost, pp=pinnedPose(p);
   const d=Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h);
-  if(d<1.3*u && Math.abs(angDiff(p.rot,g.rot))<=30) p.rot+=angDiff(g.rot,p.rot)*0.2;
+  if(d<1.3*u && Math.abs(angDiff(p.rot,g.rot))<=30) p.rot+=angDiff(p.rot,g.rot)*0.25;
 }
 function toast(msg, ms=2600){
   const el=$('#toast'); el.textContent=msg; el.classList.remove('hidden');
@@ -979,22 +1034,23 @@ canvas.addEventListener('pointerdown', e=>{
     canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
     return;
   }
-  // 光球
+  // 光球（纸偶优先：点中纸偶时即使靠近光球也拖纸偶）
   const lp=lightPx();
-  if(distPx(pos.x,pos.y, lp.x, lp.y) < 40){
-    if(S.lightLocked){ toastOnce('此幕灯光已固定，只需摆放纸偶'); return; }
-    drag={mode:'orb', id:e.pointerId, lx:S.light.fx, ly:S.light.fy};
+  const onOrb = distPx(pos.x,pos.y, lp.x, lp.y) < 40;
+  const p=hitPiece(pos);
+  if(onOrb && !S.lightLocked && !p){
+    drag={mode:'orb', id:e.pointerId, lx:S.light.fx, ly:S.light.fy, sx:pos.x, sy:pos.y};
     canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
     return;
   }
-  // 纸偶
-  const p=hitPiece(pos);
   if(p){
     select(p);
     if(p.anchored){ toastOnce('钉住的纸偶不能移动——它是灯光的坐标'); return; }
     drag={mode:'piece', id:e.pointerId, piece:p, ox:pos.x-p.fx*board.w, oy:pos.y-p.fy*board.h,
          sx:pos.x, sy:pos.y, wasPlaced:p.placed};
     canvas.setPointerCapture(e.pointerId); canvas.classList.add('grabbing');
+  } else if(onOrb && S.lightLocked){
+    toastOnce('此幕灯光已固定，只需摆放纸偶');
   }
 });
 canvas.addEventListener('pointermove', e=>{
@@ -1005,6 +1061,11 @@ canvas.addEventListener('pointermove', e=>{
       const p=drag.piece;
       // 真正拖动后（>5px）才解除归位，轻点不会拆掉
       if(drag.wasPlaced && (distPx(pos.x,pos.y,drag.sx,drag.sy)>5)){ p.placed=false; drag.wasPlaced=false; updateDots(); }
+      // 已归位的纸偶被拖离吸附区 → 解除归位（避免被 frame 拉回产生振荡）
+      if(p.placed){
+        const pp=pinnedPose(p);
+        if(Math.hypot((p.fx-pp.fx)*board.w, (p.fy-pp.fy)*board.h) > 1.2*u){ p.placed=false; updateDots(); }
+      }
       p.fx=clamp((pos.x-drag.ox)/board.w, 0.04, 0.96);
       p.fy=clamp((pos.y-drag.oy)/board.h, 0.06, 0.94);
       rotAssist(p); snapCheck(p);
@@ -1183,6 +1244,13 @@ document.querySelectorAll('.btn,.icon-btn').forEach(attachRipple);
 
 $('#btnStart').addEventListener('click', startGame);
 $('#btnHowto').addEventListener('click', ()=> $('#howtoOverlay').classList.remove('hidden'));
+$('#btnLb').addEventListener('click', ()=>{ LB.refresh(); $('#lbOverlay').classList.remove('hidden'); });
+$('#btnLbClose').addEventListener('click', ()=> $('#lbOverlay').classList.add('hidden'));
+$('#lbOverlay').addEventListener('click', e=>{ if(e.target===$('#lbOverlay')) $('#lbOverlay').classList.add('hidden'); });
+$('#btnLbAdd').addEventListener('click', ()=>{
+  const inp=$('#lbNameInput'); LB.add(inp.value);
+});
+$('#lbNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') LB.add(e.target.value); });
 $('#btnCloseHow').addEventListener('click', ()=> $('#howtoOverlay').classList.add('hidden'));
 $('#howtoOverlay').addEventListener('click', e=>{ if(e.target===$('#howtoOverlay')) $('#howtoOverlay').classList.add('hidden'); });
 $('#btnHint').addEventListener('click', hint);
@@ -1194,6 +1262,67 @@ $('#btnNext').addEventListener('click', ()=>{
   const next=S.idx+1;
   if(next>=LEVELS.length) loadLevel(0); else loadLevel(next);
 });
+
+// ---------- 排行榜（功名榜） ----------
+// 云榜：填入后端 URL 后自动启用（GET 返回 {entries:[{name,ts}]}，POST {name,ts} 写入）；
+// 留空 = 纯本地模式。本地榜永远可用。
+const LB_CLOUD_URL = '';
+const LB = {
+  local: [], name: '', cloudList: [],
+  load(){
+    try{ this.local = JSON.parse(localStorage.getItem('shadowplay_lb')||'[]')||[]; }catch(e){ this.local=[]; }
+    try{ this.name = localStorage.getItem('shadowplay_lb_name')||''; }catch(e){ this.name=''; }
+  },
+  save(){
+    try{ localStorage.setItem('shadowplay_lb', JSON.stringify(this.local.slice(-200))); }catch(e){}
+    try{ localStorage.setItem('shadowplay_lb_name', this.name); }catch(e){}
+  },
+  cloudGet(){
+    if(!LB_CLOUD_URL) return Promise.resolve(null);
+    return fetch(LB_CLOUD_URL, {headers:{'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);
+  },
+  cloudPush(){
+    if(!LB_CLOUD_URL) return Promise.resolve();
+    return fetch(LB_CLOUD_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name:this.name, ts:Date.now()})}).catch(()=>{});
+  },
+  entries(){
+    const m=new Map();
+    for(const e of this.local) m.set(e.name, e);
+    for(const e of this.cloudList) m.set(e.name, e);
+    return [...m.values()].sort((a,b)=>a.ts-b.ts).slice(0,200);
+  },
+  async init(){ this.load(); this.cloudList = (await this.cloudGet())?.entries || []; this.refresh(); },
+  async add(rawName){
+    const name=(rawName||'').trim().slice(0,12)||'无名氏';
+    this.name=name; this.save();
+    this.local.push({name, ts:Date.now()}); this.save();
+    await this.cloudPush();
+    this.refresh();
+    const n=this.entries().length;
+    $('#wLbOk').textContent='✓ 已登上功名榜，你是第 '+n+' 位影人';
+    $('#wLbOk').classList.remove('hidden');
+    $('#btnLbAdd').disabled=true;
+    toast('名列功名榜 · 第 '+n+' 位影人');
+  },
+  refresh(){
+    const n=this.entries().length;
+    $('#lbSubCount').textContent=String(n);
+    const list=$('#lbList'); list.innerHTML='';
+    if(!n){ list.innerHTML='<div class="lb-empty">灯未亮 · 戏未开<br/>通关全剧者，方可留名</div>'; }
+    else this.entries().forEach((e,i)=>{
+      const row=document.createElement('div');
+      row.className='lb-row'+(i<3?' r'+(i+1):'');
+      const d=new Date(e.ts);
+      const when=(d.getMonth()+1)+'月'+d.getDate()+'日';
+      row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="name"></span><span class="when">'+when+'</span><span class="no">第 '+(i+1)+' 位</span>';
+      row.querySelector('.name').textContent=e.name;
+      list.appendChild(row);
+    });
+    const foot=$('#tFoot');
+    if(foot) foot.textContent = n>0 ? ('已有 '+n+' 位影人通关全剧') : (progress>0 ? ('已演至第 '+Math.min(progress,LEVELS.length)+' 幕') : '灯未亮 · 戏未开');
+  },
+};
 
 // 标题页
 function updateTitle(){
@@ -1217,7 +1346,7 @@ function frame(now){
       if(p.placed){
         const pp=pinnedPose(p);
         p.fx=lerp(p.fx, pp.fx, 0.35); p.fy=lerp(p.fy, pp.fy, 0.35);
-        p.rot+=angDiff(pp.rot,p.rot)*0.35;
+        p.rot+=angDiff(p.rot,pp.rot)*0.35;
       }
     }
   }
@@ -1250,6 +1379,7 @@ S.demo=null;
 buildDemo();
 updateTitle();
 resize();
+LB.init();
 requestAnimationFrame(frame);
 </script>
 </body>
