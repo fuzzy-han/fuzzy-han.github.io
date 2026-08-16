@@ -305,6 +305,7 @@ kbd{background:#fff3d1; border:1.5px solid rgba(217,180,104,.8); border-bottom-w
     <div class="lb-list" id="overLb"></div>
     <div class="card-btns">
       <button class="btn red" id="btnAgain">再来一局！</button>
+      <button class="btn hidden" id="btnEndless">无尽模式继续</button>
       <button class="btn" id="btnHome">回主页</button>
     </div>
   </div>
@@ -361,6 +362,7 @@ kbd{background:#fff3d1; border:1.5px solid rgba(217,180,104,.8); border-bottom-w
     <div class="hint-row"><b>小队</b>　每集 <b>8 个奶瓶</b> 孵化一只迷你龙跟在身后，加成分数；被撞时先牺牲迷你龙代替掉心！</div>
     <div class="hint-row"><b>擦身</b>　贴着障碍躲过＝擦身连击，分数翻倍涨！</div>
     <div class="hint-row"><b>追击战</b>　每 800m 黑化巨龙来袭，躲火球活下来拿大奖！</div>
+    <div class="hint-row"><b>通关</b>　跑满 <b>3000 米</b>抵达传说终点即通关（之后可选无尽模式继续跑）。</div>
     <div class="card-btns"><button class="btn primary" id="btnHelpClose">冲鸭！</button></div>
   </div>
 </div>
@@ -448,6 +450,7 @@ const sfx={
   boss(){ noiseHit(.8,.3,300); beep(70,.9,'sawtooth',.2,0,-20); },
   bossWin(){ [523,659,784,1046,1318].forEach((f,i)=>beep(f,.4,'sine',.12,i*.1)); },
   over(){ [523,392,330,262].forEach((f,i)=>beep(f,.4,'triangle',.12,i*.16)); },
+  win(){ [523,659,784,1046,1318].forEach((f,i)=>beep(f,.45,'sine',.13,i*.12)); },
   start(){ beep(523,.12,'sine',.14); beep(659,.12,'sine',.14,.1); beep(784,.2,'sine',.14,.2); },
   stage(){ [659,784,988].forEach((f,i)=>beep(f,.2,'triangle',.1,i*.12)); },
   mission(){ [659,784,1046,1318].forEach((f,i)=>beep(f,.16,'triangle',.12,i*.08)); },
@@ -621,7 +624,7 @@ const LB={
   async load(){
     if(typeof fetch==='undefined') return;
     try{
-      const r=await fetch(this.url+'/rest/v1/nailong_scores?select=name,score,dist,ts&order=score.desc&limit=10',
+      const r=await fetch(this.url+'/rest/v1/nailong_scores?select=name,score,dist,ts&order=score.desc&limit=10&name=not.like.'+encodeURIComponent('🚀*'),
         {headers:{apikey:this.key,'Authorization':'Bearer '+this.key}});
       if(r.ok){ const arr=await r.json(); if(Array.isArray(arr)){ this.rows=arr; this.cloudOk=true; } }
     }catch(e){}
@@ -693,7 +696,7 @@ function resetRun(){
   S.stage=0; S.stageT=0;
   S.bubble=null; S.bubbleT=0;
   S.stats={distRun:0, milkRun:0, grazesRun:0, skillsRun:0, followersHatched:0, maxCombo:0, bossEscapes:0};
-  S.newBest=false; S.submitted=false;
+  S.newBest=false; S.submitted=false; S.won=false; S.endless=false;
   S.energy=ups.shield0?3:3;
   if(ups.shield0) S.skills.shield.on=true;
   spawnDecor();
@@ -803,6 +806,7 @@ function impact(col){ S.impact={t:0.12,col}; }
 
 // ---------- 碰撞 ----------
 const AIR_TYPES=['bar','drone','barFull'];
+const GOAL=3000; // 通关目标：跑满 3000 米抵达传说终点
 const GROUND_HIT=0.30, AIR_CLEAR=0.92; // 地面障碍：起跳后立刻进入安全高度(宽容)；空中障碍需滑铲躲过
 function obstacleAir(o){ return AIR_TYPES.includes(o.type); }
 function playerY(){ return S.sliding?-0.35:S.py; }
@@ -901,7 +905,7 @@ function update(dt){
   }
   // 巨龙追击战
   const boss=S.boss;
-  if(!boss.active&&S.dist>=boss.next){
+  if(!boss.active&&S.dist>=boss.next&&S.dist<GOAL-100){
     boss.active=true; boss.warn=1.8; boss.t=0; boss.spawnT=1.2;
     S.letterbox=0.42; flashLine(1.4); impact('#f00');
     sfx.boss(); bubble('黑化巨龙来袭！！快跑！',2600);
@@ -926,6 +930,8 @@ function update(dt){
       sfx.bossWin();
     }
   }
+  // 通关：跑满 3000 米
+  if(!S.won&&!S.boss.active&&S.dist>=GOAL){ winGame(); return; }
   // 障碍碰撞 + 擦身
   for(let i=S.obstacles.length-1;i>=0;i--){
     const o=S.obstacles[i];
@@ -1027,7 +1033,7 @@ function updateEnergy(){
 function updateHud(){
   $('#hudScore').textContent=Math.floor(S.score);
   $('#hudCombo').textContent=S.combo>=2?('COMBO x'+S.combo+(S.comboT<1?'!':'')):'';
-  $('#hudSub').textContent=Math.floor(S.dist)+'m · '+STAGES[S.stage].name+' · '+Math.floor(S.speed*2.2)+'km/h';
+  $('#hudSub').textContent=Math.floor(S.dist)+'/'+GOAL+'m · '+STAGES[S.stage].name+' · '+Math.floor(S.speed*2.2)+'km/h';
   $('#hudMilk').textContent=S.milkRun;
   $('#hudEgg').textContent='🥚 '+S.eggs+'/'+S.hatchNeed;
   $('#hudFoll').textContent='🐉 x'+S.followers;
@@ -1060,13 +1066,14 @@ function pauseGame(){
   $('#pauseOverlay').classList.remove('hidden');
 }
 function resumeGame(){ S.state='play'; $('#pauseOverlay').classList.add('hidden'); S.last=performance.now(); }
-function gameOver(){
-  S.state='over';
-  sfx.over();
+function gameOver(win){
+  S.state=win?'win':'over';
+  if(win) sfx.win(); else sfx.over();
   const sc=Math.floor(S.score);
   S.newBest=false;
   if(sc>S.best){ S.best=sc; store.set('nailong_best',sc); S.newBest=true; }
-  $('#overTitle').textContent='ドーン！跑不动啦！';
+  $('#overTitle').textContent=win?'ゴール!! 通关啦！':'ドーン！跑不动啦！';
+  $('#btnEndless').classList.toggle('hidden',!win);
   $('#overScore').textContent=sc;
   $('#overDist').textContent=Math.floor(S.dist);
   $('#overMilk').textContent=S.milkRun;
@@ -1087,6 +1094,22 @@ function gameOver(){
   $('#skillBar').classList.add('hidden');
   LB.render($('#overLb'), $('#nameInput').value.trim()||null);
   $('#overOverlay').classList.remove('hidden');
+}
+function winGame(){
+  S.won=true;
+  S.score+=500;
+  word('ゴール!! +500',W/2,H*0.4,40,0);
+  bubble('抵达传说终点！！',2600);
+  S.flash=0.7;
+  gameOver(true);
+}
+function continueEndless(){
+  S.state='play'; S.endless=true;
+  $('#overOverlay').classList.add('hidden');
+  $('#hud').classList.remove('hidden');
+  $('#skillBar').classList.remove('hidden');
+  toast('无尽模式：继续狂奔！');
+  S.last=performance.now();
 }
 function backHome(){
   S.state='title';
@@ -1888,6 +1911,7 @@ $('#btnPause').addEventListener('click',()=>{
 });
 $('#btnResume').addEventListener('click',()=>{ sfx.click(); resumeGame(); });
 $('#btnPauseRestart').addEventListener('click',()=>{ sfx.click(); startGame(); });
+$('#btnEndless').addEventListener('click',()=>{ sfx.click(); continueEndless(); });
 $('#btnPauseHome').addEventListener('click',()=>{ sfx.click(); backHome(); });
 $('#btnMute').addEventListener('click',toggleMute);
 $('#btnLb').addEventListener('click',async()=>{

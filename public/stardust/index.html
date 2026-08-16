@@ -581,21 +581,22 @@ function claimMissions(){
 const LB={
   url:'https://lpynpobfvhbywcxlerai.supabase.co',
   key:'sb_publishable__JcjXpl6qlWwhHgn6b1W7w_bJC4Ez4T',
+  TAG:'🚀 ', // 与奶龙快跑共用 nailong_scores 表，用前缀区分两个游戏的记录
   rows:[], cloudOk:false,
   async load(){
     if(typeof fetch==='undefined') return;
     try{
-      const r=await fetch(this.url+'/rest/v1/stardust_scores?select=name,score,dist,ts&order=score.desc&limit=10',
+      const r=await fetch(this.url+'/rest/v1/nailong_scores?select=name,score,dist,ts&order=score.desc&limit=10&name=like.'+encodeURIComponent(this.TAG+'*'),
         {headers:{apikey:this.key,'Authorization':'Bearer '+this.key}});
-      if(r.ok){ const arr=await r.json(); if(Array.isArray(arr)){ this.rows=arr; this.cloudOk=true; } }
+      if(r.ok){ const arr=await r.json(); if(Array.isArray(arr)){ this.rows=arr.map(e=>({...e,name:String(e.name).startsWith(this.TAG)?e.name.slice(this.TAG.length):e.name})); this.cloudOk=true; } }
     }catch(e){}
   },
   async submit(name, score, dist){
     if(typeof fetch==='undefined') return 'nosupport';
     try{
-      const r=await fetch(this.url+'/rest/v1/stardust_scores',
+      const r=await fetch(this.url+'/rest/v1/nailong_scores',
         {method:'POST', headers:{apikey:this.key,'Authorization':'Bearer '+this.key,'Content-Type':'application/json','Prefer':'return=minimal'},
-         body:JSON.stringify({name, score, dist, ts:Date.now()})});
+         body:JSON.stringify({name:this.TAG+name, score, dist, ts:Date.now()})});
       return r.ok ? 'ok' : 'fail';
     }catch(e){ return 'offline'; }
   },
@@ -1558,7 +1559,7 @@ $('#btnSubmit').addEventListener('click',async()=>{
     inp.value='';
     await LB.load(); LB.render($('#overLb'), name);
   } else if(r==='fail'){
-    toast('云端榜单未配置或同步失败，已记录本机');
+    toast('云端暂时不可用，分数已记录本机');
   } else {
     toast('网络不可达，稍后再试');
   }
