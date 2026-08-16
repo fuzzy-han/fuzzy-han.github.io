@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#8fd3ff"/>
+<title>游戏大厅 · 奶龙工坊</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%238fd3ff'/><circle cx='32' cy='30' r='16' fill='%23ffd76a'/><circle cx='27' cy='27' r='3' fill='%234a3b2a'/><circle cx='37' cy='27' r='3' fill='%234a3b2a'/><path d='M28 34q4 3 8 0' stroke='%234a3b2a' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>"/>
+<style>
+:root{
+  --ink:#4a3b2a; --ink-soft:#8a7a60; --paper:#fffdf8;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+body{
+  min-height:100vh;
+  background:linear-gradient(180deg,#8fd3ff 0%,#cdeaff 48%,#eaf7ff 78%,#fdf6e3 100%);
+  color:var(--ink);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  display:flex; flex-direction:column; align-items:center;
+  padding:max(28px,6vh) 20px 40px;
+}
+.wrap{width:100%; max-width:1060px}
+
+/* 头图 */
+.hero{text-align:center; margin-bottom:36px}
+.hero .logo{font-size:clamp(40px,7vw,64px); font-weight:900; letter-spacing:.04em;
+  background:linear-gradient(180deg,#ffd76a 12%,#ffb84e 58%,#ff9d3c 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(255,255,255,.9)) drop-shadow(0 10px 22px rgba(120,80,20,.28));
+  transform:rotate(-1.5deg); display:inline-block}
+.hero .sub{margin-top:10px; font-size:14px; letter-spacing:.4em; color:#5a7a9a}
+.hero .tag{margin-top:14px; display:inline-block; padding:6px 18px; border-radius:999px;
+  background:rgba(255,255,255,.85); font-size:12.5px; font-weight:800; color:#8a6a3a;
+  box-shadow:0 4px 14px rgba(90,110,140,.15)}
+
+/* 游戏卡片 */
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:22px}
+.card{
+  position:relative; display:flex; flex-direction:column; text-decoration:none; color:var(--ink);
+  background:var(--paper); border:1.5px solid rgba(74,59,42,.1); border-radius:28px;
+  padding:26px 24px 22px; overflow:hidden;
+  box-shadow:0 16px 44px rgba(80,100,140,.16), 0 3px 10px rgba(80,100,140,.07);
+  transition:transform .22s cubic-bezier(.2,1.4,.4,1), box-shadow .22s ease;
+}
+.card:hover{transform:translateY(-8px) scale(1.02); box-shadow:0 26px 60px rgba(80,100,140,.24)}
+.card::before{content:''; position:absolute; inset:0 0 auto 0; height:8px;
+  background:linear-gradient(90deg,#ffd76a,#ff9d3c)}
+.card.c2::before{background:linear-gradient(90deg,#7fd8ff,#4d9fff)}
+.card.c3::before{background:linear-gradient(90deg,#7fe0b8,#3fb98a)}
+.card .ic{font-size:64px; line-height:1; margin-bottom:10px; filter:drop-shadow(0 6px 12px rgba(80,100,140,.25))}
+.card h2{font-size:24px; font-weight:900; letter-spacing:.04em; margin-bottom:6px}
+.card .en{font-size:11px; letter-spacing:.3em; color:var(--ink-soft); margin-bottom:12px}
+.card p{font-size:13.5px; line-height:1.9; color:#6a5a42; flex:1}
+.card .tags{display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 18px}
+.card .tags span{font-size:11px; font-weight:800; padding:4px 11px; border-radius:999px;
+  background:#fff3d1; color:#8a6a30}
+.card.c2 .tags span{background:#e3f4ff; color:#2a6a9a}
+.card.c3 .tags span{background:#e2f7ee; color:#22775a}
+.card .go{align-self:center; padding:12px 30px; border-radius:999px; font-size:14.5px; font-weight:900;
+  color:#6b4a10; background:linear-gradient(180deg,#ffeeb0,#ffd76a);
+  box-shadow:0 4px 0 #e8b84e, 0 10px 22px rgba(232,184,78,.3);
+  transition:transform .14s ease}
+.card:hover .go{transform:scale(1.06)}
+.card.c2 .go{color:#fff; background:linear-gradient(180deg,#8fd3ff,#4d9fff); box-shadow:0 4px 0 #3a7fd0, 0 10px 22px rgba(77,159,255,.3)}
+.card.c3 .go{color:#fff; background:linear-gradient(180deg,#8fe6c0,#3fb98a); box-shadow:0 4px 0 #2f9a70, 0 10px 22px rgba(63,185,138,.3)}
+
+footer{margin-top:44px; text-align:center; font-size:12px; letter-spacing:.14em; color:#7a92ab}
+footer a{color:#5a7a9a}
+@media (max-width:640px){
+  .grid{grid-template-columns:1fr}
+  .card .ic{font-size:52px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="logo">🎮 游戏大厅</div>
+    <div class="sub">NAILONG ARCADE</div>
+    <div class="tag">奶龙工坊出品 · 三款小游戏 · 点击开玩</div>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="/shadowplay/">
+      <span class="ic">🎭</span>
+      <h2>影戏 ShadowPlay</h2>
+      <div class="en">SHADOW PUPPET PUZZLE</div>
+      <p>把影子拼成完整图案的皮影戏解谜。14 个关卡，从一扇窗到整台戏——转动、镜像、组合影子，挑战你的空间想象力。</p>
+      <div class="tags"><span>益智解谜</span><span>14 关</span><span>排行榜</span></div>
+      <span class="go">开始游戏</span>
+    </a>
+
+    <a class="card c2" href="/nailong/">
+      <span class="ic">🐉</span>
+      <h2>奶龙快跑 Nailong Run</h2>
+      <div class="en">ANIME ENDLESS RUNNER</div>
+      <p>日漫风三车道跑酷：二段跳、滑铲、龙炎冲刺、时停领域，集奶瓶孵化迷你龙小队，还要从黑化巨龙的追击中逃出生天。</p>
+      <div class="tags"><span>跑酷</span><span>技能</span><span>巨龙追击战</span></div>
+      <span class="go">开跑！</span>
+    </a>
+
+    <a class="card c3" href="/deepsea/">
+      <span class="ic">🐋</span>
+      <h2>DeepSeek：深海模拟</h2>
+      <div class="en">SATIRICAL EAT-FISH SIM</div>
+      <p>吃小鱼长大，比 AI 公司鱼更大就吃掉它——吃完全部七家成为海洋霸主。梁值、灰度测试、近期发布，海里什么都有。</p>
+      <div class="tags"><span>吃鱼模拟</span><span>进化</span><span>黑色幽默</span></div>
+      <span class="go">下潜</span>
+    </a>
+  </div>
+
+  <footer>
+    奶龙工坊 · <a href="/">返回首页</a> · 玩的开心 🐉
+  </footer>
+</div>
+</body>
+</html>
