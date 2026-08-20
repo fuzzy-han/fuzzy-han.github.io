@@ -1149,3 +1149,102 @@ canvas#gameCanvas {
     display: none;
   }
 }
+
+/* ===== 横屏游玩提示 ===== */
+.rotate-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 10, 22, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+.rotate-hint-card {
+  text-align: center;
+  padding: 22px 28px;
+  border-radius: 16px;
+  background: rgba(13, 27, 49, 0.92);
+  border: 1px solid var(--hud-border);
+  box-shadow: var(--hud-glow);
+}
+.rotate-phone {
+  font-size: 40px;
+  margin-bottom: 8px;
+  animation: rotatePhone 1.6s ease-in-out infinite alternate;
+}
+@keyframes rotatePhone {
+  from { transform: rotate(-20deg); }
+  to { transform: rotate(20deg); }
+}
+.rotate-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2f6ff;
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+.rotate-text span {
+  color: #38bdf8;
+  font-size: 12px;
+}
+.rotate-dismiss-btn {
+  border: 1px solid var(--hud-border);
+  background: rgba(56, 189, 248, 0.18);
+  color: #bae6fd;
+  padding: 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+/* ===== 横屏模式（手机横向，5 技能竖排压缩适配） ===== */
+@media (orientation: landscape) and (max-height: 520px) {
+  #hud {
+    padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+  .hud-top {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .hud-card {
+    padding: 5px 9px;
+    border-radius: 10px;
+  }
+  .whale-icon { font-size: 17px; }
+  .metric-label { font-size: 8.5px; }
+  .metric-val { font-size: 13px; }
+  .exp-bar-wrap { width: 84px; }
+  .species-hint { display: none; }
+  .minimap-wrapper { transform: scale(0.7); transform-origin: bottom right; }
+  /* 桌面技能槽压缩（5 个技能防溢出） */
+  .hud-bottom-left { max-width: none; }
+  .skills-bar { flex-wrap: wrap; gap: 6px; max-width: 320px; }
+  .skill-slot { width: 50px; height: 50px; border-radius: 10px; }
+  .skill-icon { font-size: 16px; }
+  .skill-name { font-size: 7.5px; }
+  .skill-key { font-size: 8.5px; }
+  .gauge-container { padding: 5px 9px; }
+  .gauge-label { font-size: 9px; }
+  /* 移动端技能按钮压缩（5 个竖排） */
+  .mobile-skills-cluster {
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    gap: 5px;
+  }
+  .m-skill-btn { width: 44px; height: 44px; border-width: 1.5px; }
+  .m-skill-btn.dash-btn { width: 50px; height: 50px; }
+  .m-btn-icon { font-size: 16px; }
+  .m-skill-btn.dash-btn .m-btn-icon { font-size: 20px; }
+  .m-btn-label { font-size: 7px; }
+  .touch-tip-hint { display: none; }
+  /* 悬浮摇杆压缩 */
+  #joystickBase { width: 70px; height: 70px; }
+  #joystickKnob { width: 28px; height: 28px; }
+  .start-card, .modal-card { max-height: 96vh; overflow-y: auto; }
+}

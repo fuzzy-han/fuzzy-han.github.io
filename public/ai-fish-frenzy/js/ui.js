@@ -84,6 +84,10 @@ class UIManager {
     this.btnTouchFrenzy = document.getElementById('btnTouchFrenzy');
     this.btnTouchPulse = document.getElementById('btnTouchPulse');
 
+    // 横屏游玩提示
+    this.rotateHint = document.getElementById('rotateHint');
+    this.btnRotateDismiss = document.getElementById('btnRotateDismiss');
+
     // Achievements state
     this.unlockedAchievements = new Set(JSON.parse(localStorage.getItem('ai_fish_achievements') || '[]'));
     this.highScore = parseInt(localStorage.getItem('ai_fish_highscore') || '0', 10);
@@ -112,6 +116,17 @@ class UIManager {
     this.btnPause.addEventListener('click', () => {
       if (window.game) window.game.togglePause();
     });
+
+    // 横屏提示：竖屏小屏触屏设备建议横屏；可一键关闭并记住选择
+    if (this.btnRotateDismiss) {
+      this.btnRotateDismiss.addEventListener('click', () => {
+        localStorage.setItem('ai_fish_rotate_dismissed', '1');
+        if (this.rotateHint) this.rotateHint.classList.add('hidden');
+      });
+    }
+    const onOrientation = () => this.updateRotateHint();
+    window.addEventListener('resize', onOrientation);
+    window.addEventListener('orientationchange', () => setTimeout(onOrientation, 200));
 
     this.btnResume.addEventListener('click', () => {
       if (window.game) window.game.togglePause();
@@ -306,6 +321,22 @@ class UIManager {
     setTimeout(() => {
       this.evolutionNotice.classList.add('hidden');
     }, 3200);
+  }
+
+  // 横屏模式：触屏 + 竖屏 + 小屏时提示建议横屏（仅主菜单显示，可关闭并记忆）
+  updateRotateHint() {
+    if (!this.rotateHint) return;
+    try {
+      const dismissed = localStorage.getItem('ai_fish_rotate_dismissed') === '1';
+      const isTouch = ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+      const portrait = window.innerHeight > window.innerWidth;
+      const small = Math.min(window.innerWidth, window.innerHeight) < 620;
+      const inMenu = !window.game || window.game.state === 'MENU';
+      const show = isTouch && portrait && small && !dismissed && inMenu;
+      this.rotateHint.classList.toggle('hidden', !show);
+    } catch (e) {
+      /* 忽略提示异常 */
+    }
   }
 
   unlockAchievement(id) {
