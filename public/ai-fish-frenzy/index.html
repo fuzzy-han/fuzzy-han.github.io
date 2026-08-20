@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <title>DeepSeek 鲸鱼大作战 - AI 大鱼吃小鱼 (AI Fish Frenzy)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+SC:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- In-Game HUD -->
+    <div id="hud" class="hidden">
+      <!-- Top Stats Bar -->
+      <div class="hud-top">
+        <div class="hud-card player-info">
+          <div class="avatar-badge">
+            <span class="whale-icon">🐳</span>
+            <div class="level-indicator" id="playerStageTag">7B 幼鲸</div>
+          </div>
+          <div class="info-metrics">
+            <div class="metric-row">
+              <span class="metric-label">参数量:</span>
+              <span class="metric-val highlight" id="paramCount">1.50 B</span>
+            </div>
+            <div class="exp-bar-wrap">
+              <div class="exp-bar-fill" id="expFill" style="width: 0%;"></div>
+              <span class="exp-text" id="expText">0 / 100</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-card center-metrics">
+          <div class="metric-item">
+            <span class="m-label">吞噬算力 (SCORE)</span>
+            <span class="m-val" id="scoreDisplay">0</span>
+          </div>
+          <div class="metric-item">
+            <span class="m-label">连击 (COMBO)</span>
+            <span class="m-val combo-text" id="comboDisplay">x1</span>
+          </div>
+          <div class="metric-item timer-item">
+            <span class="m-label">存活时间</span>
+            <span class="m-val" id="timerDisplay">00:00</span>
+          </div>
+        </div>
+
+        <div class="hud-card top-actions">
+          <button id="btnSound" class="icon-btn" title="声音开/关">🔊</button>
+          <button id="btnPause" class="icon-btn" title="暂停游戏">⏸️</button>
+        </div>
+      </div>
+
+      <!-- Energy & Stamina Gauge for Skills (Desktop) -->
+      <div class="hud-bottom-left desktop-only">
+        <div class="gauge-container">
+          <div class="gauge-label">
+            <span>⚡ R1 深度思考算力 (STAMINA)</span>
+            <span id="staminaText">100%</span>
+          </div>
+          <div class="gauge-bar">
+            <div class="gauge-fill" id="staminaFill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Desktop Skills Bar -->
+        <div class="skills-bar">
+          <div class="skill-slot" id="skillDash" title="[Space / 右键] R1 深度思考冲刺">
+            <div class="skill-icon">🚀</div>
+            <div class="skill-key">Space</div>
+            <div class="skill-name">R1 冲刺</div>
+            <div class="cooldown-overlay" id="cdDash"></div>
+          </div>
+
+          <div class="skill-slot" id="skillMoe" title="[E 键] MoE 专家分发助手">
+            <div class="skill-icon">✨</div>
+            <div class="skill-key">E</div>
+            <div class="skill-name">MoE 专家</div>
+            <div class="cooldown-overlay" id="cdMoe"></div>
+          </div>
+
+          <div class="skill-slot" id="skillShield" title="[Q 键] 开源无敌护盾">
+            <div class="skill-icon">🛡️</div>
+            <div class="skill-key">Q</div>
+            <div class="skill-name">开源护盾</div>
+            <div class="cooldown-overlay" id="cdShield"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minimap Radar -->
+      <div class="hud-radar-wrap">
+        <div class="minimap-wrapper">
+          <div class="minimap-header">DEEP SEA RADAR</div>
+          <canvas id="minimapCanvas" width="120" height="120"></canvas>
+          <div class="radar-legend">
+            <span class="dot-legend player">● 自身</span>
+            <span class="dot-legend food">● 可吞噬</span>
+            <span class="dot-legend danger">● 危险巨兽</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Touch Layer & Dynamic Joystick -->
+      <div id="touchLayer" class="touch-layer">
+        <!-- Left Side Floating Virtual Joystick -->
+        <div id="touchMoveZone">
+          <div id="floatingJoystick" class="hidden">
+            <div id="joystickBase">
+              <div id="joystickKnob"></div>
+            </div>
+          </div>
+          <div class="touch-tip-hint">👈 滑动屏幕任意左侧游动</div>
+        </div>
+
+        <!-- Right Side Mobile Skill Touch Buttons -->
+        <div class="mobile-skills-cluster">
+          <!-- Mobile Dash Button with Stamina Ring -->
+          <div class="m-skill-wrap">
+            <button id="btnTouchDash" class="m-skill-btn dash-btn">
+              <span class="m-btn-icon">🚀</span>
+              <span class="m-btn-label">R1冲刺</span>
+              <div class="m-btn-stam-bar"><div id="mStaminaFill" style="width: 100%;"></div></div>
+            </button>
+          </div>
+
+          <!-- Mobile MoE Button -->
+          <div class="m-skill-wrap">
+            <button id="btnTouchMoe" class="m-skill-btn moe-btn">
+              <span class="m-btn-icon">✨</span>
+              <span class="m-btn-label">MoE专家</span>
+              <div class="m-cd-overlay" id="mCdMoe"></div>
+            </button>
+          </div>
+
+          <!-- Mobile Shield Button -->
+          <div class="m-skill-wrap">
+            <button id="btnTouchShield" class="m-skill-btn shield-btn">
+              <span class="m-btn-icon">🛡️</span>
+              <span class="m-btn-label">开源护盾</span>
+              <div class="m-cd-overlay" id="mCdShield"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Alerts Container -->
+      <div id="floatingBannerContainer"></div>
+    </div>
+
+    <!-- Start Menu Screen -->
+    <div id="startScreen" class="overlay-modal">
+      <div class="modal-card start-card">
+        <div class="title-wrap">
+          <div class="ai-badge-row">
+            <span class="model-tag deepseek">DeepSeek 🐳</span>
+            <span class="vs-tag">VS</span>
+            <span class="model-tag chatgpt">ChatGPT 🟢</span>
+            <span class="model-tag claude">Claude 🟠</span>
+            <span class="model-tag kimi">Kimi 🌙</span>
+            <span class="model-tag gemini">Gemini ✨</span>
+            <span class="model-tag qwen">Qwen 🐉</span>
+            <span class="model-tag grok">Grok ⚡</span>
+          </div>
+          <h1 class="main-title">DEEPSEEK 鲸鱼大作战</h1>
+          <p class="subtitle">AI 大模型吞噬进化 · 大鱼吃小鱼</p>
+        </div>
+
+        <div class="intro-box">
+          <div class="intro-whale">
+            <div class="whale-preview-glow"></div>
+            <span class="whale-emoji">🐳</span>
+          </div>
+          <div class="intro-desc">
+            <p>🌊 你是一只初生的 <strong>DeepSeek 蓝鲸幼崽</strong>！</p>
+            <p>🟢 吞噬比你小的 <strong>AI 鱼类</strong> 与 <strong>Token 浮游能量</strong>，不断累积参数量与算力；</p>
+            <p>⚠️ 避开深海巨头大模型，开启 <strong>R1 深度思考狂暴冲刺</strong>、<strong>MoE 专家分发</strong> 与 <strong>开源护盾</strong>，最终进化为 <strong>671B 终极 AGI 蓝鲸霸主</strong>！</p>
+          </div>
+        </div>
+
+        <div class="controls-guide">
+          <div class="guide-col">
+            <div class="col-title">📱 手机 / 触屏操作</div>
+            <ul>
+              <li><strong>屏幕左侧任意位置滑动</strong>：呼出动态摇杆游动</li>
+              <li><strong>右侧大图标按钮</strong>：释放 R1冲刺 / MoE / 护盾</li>
+              <li><strong>点触屏幕任意位置</strong>：蓝鲸自动游向指尖</li>
+            </ul>
+          </div>
+          <div class="guide-col">
+            <div class="col-title">🎮 电脑 PC 键鼠</div>
+            <ul>
+              <li><strong>鼠标移动 / WASD</strong>：控制蓝鲸游动</li>
+              <li><strong>空格键 / 鼠标右键</strong>：R1 深度思考加速冲刺</li>
+              <li><strong>E 键</strong>：释放 MoE 助手鱼群搜集食物</li>
+              <li><strong>Q 键</strong>：激活开源无敌护盾</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="btn-action-group">
+          <button id="btnStartGame" class="glow-btn start-btn">
+            <span class="btn-text">🚀 立即潜入深海角逐</span>
+            <span class="btn-sub">TOUCH / CLICK TO START</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause Menu Screen -->
+    <div id="pauseScreen" class="overlay-modal hidden">
+      <div class="modal-card pause-card">
+        <h2>⏸️ 游戏已暂停</h2>
+        <p>深海算力正在休眠...</p>
+        <div class="btn-action-group">
+          <button id="btnResume" class="glow-btn primary-btn">继续对决</button>
+          <button id="btnRestartFromPause" class="glow-btn secondary-btn">重新开始</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evolution Announcement Modal -->
+    <div id="evolutionNotice" class="evolution-popup hidden">
+      <div class="evo-glow"></div>
+      <div class="evo-content">
+        <div class="evo-icon">🎉 🐳</div>
+        <div class="evo-title">模型进化成功！</div>
+        <div class="evo-stage" id="evoStageName">DeepSeek-R1 (671B 满血版)</div>
+        <div class="evo-buff" id="evoBuffText">速度 +20%，捕食半径 +30%，解锁强力冲击波！</div>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="overlay-modal hidden">
+      <div class="modal-card game-over-card">
+        <div class="result-header defeat" id="resultHeader">
+          <span class="result-icon" id="resultIcon">💀</span>
+          <h2 id="resultTitle">算力耗尽 · 被吞噬</h2>
+          <p id="resultReason">被强大的 Closed Source 巨兽吃掉了！</p>
+        </div>
+
+        <div class="score-summary">
+          <div class="summary-item">
+            <span class="s-label">最终参数量</span>
+            <span class="s-val" id="finalParams">0 B</span>
+          </div>
+          <div class="summary-item">
+            <span class="s-label">总吞噬得分</span>
+            <span class="s-val" id="finalScore">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="s-label">历史最高记录</span>
+            <span class="s-val highlight" id="bestScore">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="s-label">吞噬 AI 数量</span>
+            <span class="s-val" id="finalEatenCount">0 只</span>
+          </div>
+        </div>
+
+        <div class="achievements-unlocked" id="endAchievementsWrap">
+          <div class="achieve-title">🏆 获得的 AI 成就</div>
+          <div class="achieve-tags" id="endAchievementsList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div class="btn-action-group">
+          <button id="btnRestart" class="glow-btn restart-btn">
+            <span class="btn-text">🔄 再次挑战 AGI 深海</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/fish.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ai-spawner.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
