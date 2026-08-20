@@ -12,7 +12,14 @@ const ACHIEVEMENTS_DEF = [
   { id: 'eat_grok', title: '极速猎杀', desc: '成功吞噬一只 Grok 鲨鱼', icon: '⚡' },
   { id: 'combo_5', title: '五连超频', desc: '达成 5 连击 Combo', icon: '🔥' },
   { id: 'use_moe', title: '专家集群', desc: '成功释放 MoE 专家分发助手', icon: '✨' },
-  { id: 'use_shield', title: '绝对防御', desc: '激活开源无敌护盾并弹开敌对巨头', icon: '🛡️' }
+  { id: 'use_shield', title: '绝对防御', desc: '激活开源无敌护盾并弹开敌对巨头', icon: '🛡️' },
+  { id: 'use_frenzy', title: '梯度爆炸', desc: '释放梯度爆炸狂暴模式', icon: '🔥' },
+  { id: 'use_pulse', title: '蒸馏冲击波', desc: '释放蒸馏冲击波净化深海', icon: '💜' },
+  { id: 'eat_kimi', title: '月光猎手', desc: '成功吞噬一只 Kimi 鱼', icon: '🌙' },
+  { id: 'eat_gemini', title: '星光吞噬', desc: '成功吞噬一只 Gemini 鱼', icon: '✨' },
+  { id: 'eat_qwen', title: '火龙消化', desc: '成功吞噬一只 Qwen 鱼', icon: '🐉' },
+  { id: 'eat_llama', title: '羊驼烧烤', desc: '成功吞噬一只 Llama 鱼', icon: '🦙' },
+  { id: 'ocean_overlord', title: '海洋霸主', desc: '吞噬全部 7 只 AI 大鱼，成为深海统治者', icon: '👑' }
 ];
 
 class UIManager {
@@ -40,11 +47,19 @@ class UIManager {
     this.cdDash = document.getElementById('cdDash');
     this.cdMoe = document.getElementById('cdMoe');
     this.cdShield = document.getElementById('cdShield');
+    this.cdFrenzy = document.getElementById('cdFrenzy');
+    this.cdPulse = document.getElementById('cdPulse');
 
     // Mobile Skill Overlays & Meters
     this.mStaminaFill = document.getElementById('mStaminaFill');
     this.mCdMoe = document.getElementById('mCdMoe');
     this.mCdShield = document.getElementById('mCdShield');
+    this.mCdFrenzy = document.getElementById('mCdFrenzy');
+    this.mCdPulse = document.getElementById('mCdPulse');
+
+    // 深海图鉴 & 航速
+    this.speciesCount = document.getElementById('speciesCount');
+    this.speedDisplay = document.getElementById('speedDisplay');
 
     // Minimap
     this.minimapCanvas = document.getElementById('minimapCanvas');
@@ -66,6 +81,8 @@ class UIManager {
     this.btnTouchDash = document.getElementById('btnTouchDash');
     this.btnTouchMoe = document.getElementById('btnTouchMoe');
     this.btnTouchShield = document.getElementById('btnTouchShield');
+    this.btnTouchFrenzy = document.getElementById('btnTouchFrenzy');
+    this.btnTouchPulse = document.getElementById('btnTouchPulse');
 
     // Achievements state
     this.unlockedAchievements = new Set(JSON.parse(localStorage.getItem('ai_fish_achievements') || '[]'));
@@ -257,6 +274,28 @@ class UIManager {
         }
       }, { passive: false });
     }
+
+    if (this.btnTouchFrenzy) {
+      this.btnTouchFrenzy.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.game && window.game.player) {
+          window.game.player.triggerFrenzy();
+          this.unlockAchievement('use_frenzy');
+        }
+      }, { passive: false });
+    }
+
+    if (this.btnTouchPulse) {
+      this.btnTouchPulse.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.game && window.game.player) {
+          window.game.player.triggerPulse();
+          this.unlockAchievement('use_pulse');
+        }
+      }, { passive: false });
+    }
   }
 
   showEvolutionNotice(stage) {
@@ -325,11 +364,21 @@ class UIManager {
     // 5. Skill Cooldown Overlays (Desktop & Mobile)
     const moeCdRatio = (player.moeCooldown / player.moeCooldownMax) * 100;
     const shieldCdRatio = (player.shieldCooldown / player.shieldCooldownMax) * 100;
+    const frenzyCdRatio = (player.frenzyCooldown / player.frenzyCooldownMax) * 100;
+    const pulseCdRatio = (player.pulseCooldown / player.pulseCooldownMax) * 100;
 
     if (this.cdMoe) this.cdMoe.style.height = `${moeCdRatio}%`;
     if (this.cdShield) this.cdShield.style.height = `${shieldCdRatio}%`;
+    if (this.cdFrenzy) this.cdFrenzy.style.height = `${frenzyCdRatio}%`;
+    if (this.cdPulse) this.cdPulse.style.height = `${pulseCdRatio}%`;
     if (this.mCdMoe) this.mCdMoe.style.height = `${moeCdRatio}%`;
     if (this.mCdShield) this.mCdShield.style.height = `${shieldCdRatio}%`;
+    if (this.mCdFrenzy) this.mCdFrenzy.style.height = `${frenzyCdRatio}%`;
+    if (this.mCdPulse) this.mCdPulse.style.height = `${pulseCdRatio}%`;
+
+    // 6. 深海图鉴进度 & 航速显示
+    if (this.speciesCount) this.speciesCount.textContent = `${player.eatenSpecies.size}/7`;
+    if (this.speedDisplay) this.speedDisplay.textContent = `${Math.round(player.currentSpeed * 30)}`;
 
     // Check parameter milestones for achievements
     if (player.params >= 7) this.unlockAchievement('reach_7b');
@@ -388,13 +437,20 @@ class UIManager {
     ctx.fill();
   }
 
-  showGameOver(player, killerName = 'Closed Source 巨兽') {
+  showGameOver(player, killerName = 'Closed Source 巨兽', isWin = false) {
     if (player.score > this.highScore) {
       this.highScore = player.score;
       localStorage.setItem('ai_fish_highscore', this.highScore.toString());
     }
 
-    document.getElementById('resultReason').textContent = `被强大的 ${killerName} 吃掉了！不断进化重返深海吧！`;
+    // 胜利（海洋霸主）与失败共用结算面板
+    const header = document.getElementById('resultHeader');
+    header.classList.toggle('victory', isWin);
+    document.getElementById('resultIcon').textContent = isWin ? '🐋' : '💀';
+    document.getElementById('resultTitle').textContent = isWin ? '海洋霸主！' : '算力耗尽 · 被吞噬';
+    document.getElementById('resultReason').textContent = isWin
+      ? '你吞噬了全部 7 只 AI 大鱼（ChatGPT / Claude / Kimi / Gemini / Qwen / Grok / Llama），成为深海绝对统治者！'
+      : `被强大的 ${killerName} 吃掉了！不断进化重返深海吧！`;
     document.getElementById('finalParams').textContent = `${player.params.toFixed(2)} B`;
     document.getElementById('finalScore').textContent = player.score.toLocaleString();
     document.getElementById('bestScore').textContent = this.highScore.toLocaleString();
@@ -412,7 +468,8 @@ class UIManager {
     });
 
     this.gameOverScreen.classList.remove('hidden');
-    window.soundManager.playGameOver();
+    if (isWin) window.soundManager.playVictory();
+    else window.soundManager.playGameOver();
   }
 }
 

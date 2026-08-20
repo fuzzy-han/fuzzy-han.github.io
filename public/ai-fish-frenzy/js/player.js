@@ -54,7 +54,20 @@ class Player extends Fish {
     // Combo system
     this.combo = 1;
     this.comboTimer = 0;
-    
+
+    // 深海图鉴：记录已吞噬的 AI 大鱼种类（吃完全部 7 只 → 海洋霸主）
+    this.eatenSpecies = new Set();
+
+    // 新技能：梯度爆炸狂暴（R）+ 蒸馏冲击波（F）
+    this.frenzyActive = false;
+    this.frenzyDuration = 0;
+    this.frenzyCooldown = 0;
+    this.frenzyCooldownMax = 1500; // 25s @60fps
+    this.pulseCooldown = 0;
+    this.pulseCooldownMax = 1200;  // 20s @60fps
+    this.pulseFlash = 0;
+    this.pulseRadius = 380;
+
     this.updateRadius();
   }
 
@@ -78,10 +91,14 @@ class Player extends Fish {
       window.particleSystem.createEatBurst(entity.x, entity.y, entity.color, 10);
     } else if (entity instanceof Fish) {
       paramGain = entity.params * 0.55;
+      if (this.frenzyActive) paramGain *= 1.3; // 梯度爆炸：蒸馏效率 +30%
       scoreGain = Math.round(entity.params * 150 * this.combo);
       window.soundManager.playEatFish();
       window.particleSystem.createEatBurst(entity.x, entity.y, entity.species.primaryColor, 24, 1.4);
       
+      // 深海图鉴：记录吞噬的大鱼种类
+      this.eatenSpecies.add(entity.speciesKey);
+
       // Floating combat text
       window.particleSystem.addFloatingText(
         entity.x,
@@ -192,10 +209,43 @@ class Player extends Fish {
     this.activateShield(300); // 5s
   }
 
+  // --- 新技能 ---
+
+  // R 键：梯度爆炸狂暴（移速 +60%，蒸馏效率 +30%，8 秒）
+  triggerFrenzy() {
+    if (this.frenzyCooldown > 0) return;
+    this.frenzyCooldown = this.frenzyCooldownMax;
+    this.frenzyActive = true;
+    this.frenzyDuration = 480; // 8s @60fps
+    window.soundManager.playFrenzy();
+    window.particleSystem.createShockwave(this.x, this.y, this.radius * 3, '#fb923c');
+    window.particleSystem.createShockwave(this.x, this.y, this.radius * 4.2, '#f97316');
+    window.particleSystem.addFloatingText(this.x, this.y, '🔥 梯度爆炸狂暴！移速+60% · 蒸馏+30%', '#fb923c', 18);
+  }
+
+  // F 键：蒸馏冲击波（瞬间吞噬范围内小鱼，弹开大鱼）
+  triggerPulse() {
+    if (this.pulseCooldown > 0) return;
+    this.pulseCooldown = this.pulseCooldownMax;
+    this.pulseFlash = 14;
+    window.soundManager.playPulse();
+    window.particleSystem.createShockwave(this.x, this.y, this.pulseRadius + 40, '#a855f7');
+    window.particleSystem.addFloatingText(this.x, this.y, '💜 蒸馏冲击波扩散！', '#c084fc', 18);
+    if (window.game) window.game.applyPulse(this);
+  }
+
   update(worldWidth, worldHeight) {
     // 1. Cooldowns & Timers
     if (this.moeCooldown > 0) this.moeCooldown--;
     if (this.shieldCooldown > 0) this.shieldCooldown--;
+    if (this.frenzyCooldown > 0) this.frenzyCooldown--;
+    if (this.pulseCooldown > 0) this.pulseCooldown--;
+    if (this.pulseFlash > 0) this.pulseFlash--;
+
+    if (this.frenzyDuration > 0) {
+      this.frenzyDuration--;
+      if (this.frenzyDuration <= 0) this.frenzyActive = false;
+    }
 
     if (this.moeDuration > 0) {
       this.moeDuration--;
@@ -249,10 +299,11 @@ class Player extends Fish {
       }
     }
 
-    // 4. Calculate Speed
-    let speed = 3.2 - Math.min(1.2, (this.params / 671) * 0.8);
+    // 4. Calculate Speed（进化阶段越高游速越快，狂暴再提速）
+    let speed = (3.2 - Math.min(1.2, (this.params / 671) * 0.8)) * (1 + this.stageIndex * 0.06);
     if (this.isDashing) speed *= 2.4;
     if (this.speedBuffDuration > 0) speed *= 1.4;
+    if (this.frenzyActive) speed *= 1.6;
     this.currentSpeed = speed;
 
     // 5. Update Base Fish Physics
@@ -299,6 +350,33 @@ class Player extends Fish {
       ctx.strokeStyle = 'rgba(236, 72, 153, 0.3)';
       ctx.setLineDash([8, 8]);
       ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2.5 Render 梯度爆炸狂暴光环
+    if (this.frenzyActive) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius * 1.85, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(251, 146, 60, 0.18)';
+      ctx.fill();
+      ctx.strokeStyle = '#fb923c';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#fb923c';
+      ctx.shadowBlur = 20;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2.6 Render 蒸馏冲击波扩散环
+    if (this.pulseFlash > 0) {
+      const k = 1 - this.pulseFlash / 14;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 40 + k * (this.pulseRadius + 40), 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(192, 132, 252, ${(1 - k).toFixed(2)})`;
+      ctx.lineWidth = 4 + k * 3;
       ctx.stroke();
       ctx.restore();
     }

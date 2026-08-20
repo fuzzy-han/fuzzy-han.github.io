@@ -1113,3 +1113,39 @@ canvas#gameCanvas {
     margin-bottom: 12px;
   }
 }
+
+/* ===== 新增：深海图鉴 + 新技能按钮 ===== */
+.species-chip {
+  min-width: 150px;
+}
+.species-hint {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+}
+.m-skill-btn.frenzy-btn {
+  border-color: #fb923c;
+  box-shadow: 0 0 18px rgba(251, 146, 60, 0.65);
+}
+.m-skill-btn.frenzy-btn:active {
+  background: rgba(251, 146, 60, 0.3);
+}
+.m-skill-btn.pulse-btn {
+  border-color: #c084fc;
+  box-shadow: 0 0 18px rgba(192, 132, 252, 0.65);
+}
+.m-skill-btn.pulse-btn:active {
+  background: rgba(192, 132, 252, 0.3);
+}
+#speedDisplay {
+  color: #38bdf8;
+}
+@media (max-width: 720px) {
+  .species-chip {
+    min-width: 120px;
+  }
+  .species-hint {
+    display: none;
+  }
+}

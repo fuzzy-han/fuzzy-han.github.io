@@ -117,6 +117,14 @@ class GameEngine {
         this.player.triggerShieldSkill();
         this.ui.unlockAchievement('use_shield');
       }
+      if (e.code === 'KeyR') {
+        this.player.triggerFrenzy();
+        this.ui.unlockAchievement('use_frenzy');
+      }
+      if (e.code === 'KeyF') {
+        this.player.triggerPulse();
+        this.ui.unlockAchievement('use_pulse');
+      }
 
       // WASD movement override
       if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
@@ -265,10 +273,49 @@ class GameEngine {
     this.spawner.fishList.splice(index, 1);
     this.ui.unlockAchievement('first_eat');
 
-    // Specific model achievements
+    // Specific model achievements（深海图鉴收集）
     if (fish.speciesKey === 'chatgpt') this.ui.unlockAchievement('eat_chatgpt');
     if (fish.speciesKey === 'claude') this.ui.unlockAchievement('eat_claude');
     if (fish.speciesKey === 'grok') this.ui.unlockAchievement('eat_grok');
+    if (fish.speciesKey === 'kimi') this.ui.unlockAchievement('eat_kimi');
+    if (fish.speciesKey === 'gemini') this.ui.unlockAchievement('eat_gemini');
+    if (fish.speciesKey === 'qwen') this.ui.unlockAchievement('eat_qwen');
+    if (fish.speciesKey === 'llama') this.ui.unlockAchievement('eat_llama');
+
+    // 海洋霸主判定：吃完全部 7 只 AI 大鱼
+    this.checkOceanOverlord();
+  }
+
+  // 蒸馏冲击波：瞬间吞噬范围内比自己小的鱼，弹开大鱼
+  applyPulse(player) {
+    const R = player.pulseRadius;
+    for (let i = this.spawner.fishList.length - 1; i >= 0; i--) {
+      const fish = this.spawner.fishList[i];
+      const dist = Math.hypot(player.x - fish.x, player.y - fish.y);
+      if (dist < R + fish.radius) {
+        if (player.params * 1.0 >= fish.params * 0.8) {
+          this.handlePlayerEatFish(fish, i);
+        } else {
+          // 弹开比自己大的鱼
+          const pushAngle = Math.atan2(fish.y - player.y, fish.x - player.x);
+          fish.x += Math.cos(pushAngle) * 160;
+          fish.y += Math.sin(pushAngle) * 160;
+          fish.targetAngle = pushAngle;
+          fish.changeDirTimer = 90;
+          window.particleSystem.createShockwave(fish.x, fish.y, 60, '#c084fc');
+        }
+      }
+    }
+  }
+
+  // 海洋霸主：吞噬全部 7 种 AI 大鱼
+  checkOceanOverlord() {
+    const ALL = ['chatgpt', 'claude', 'kimi', 'gemini', 'qwen', 'grok', 'llama'];
+    if (ALL.every((k) => this.player.eatenSpecies.has(k))) {
+      this.ui.unlockAchievement('ocean_overlord');
+      this.state = 'GAMEOVER';
+      this.ui.showGameOver(this.player, null, true);
+    }
   }
 
   // --- Main Game Loop ---

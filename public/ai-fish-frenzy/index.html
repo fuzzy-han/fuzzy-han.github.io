@@ -52,6 +52,18 @@
             <span class="m-label">存活时间</span>
             <span class="m-val" id="timerDisplay">00:00</span>
           </div>
+          <div class="metric-item">
+            <span class="m-label">航速</span>
+            <span class="m-val" id="speedDisplay">0</span>
+          </div>
+        </div>
+
+        <div class="hud-card species-chip">
+          <div class="metric-row">
+            <span class="metric-label">🐋 深海图鉴:</span>
+            <span class="metric-val highlight" id="speciesCount">0/7</span>
+          </div>
+          <div class="species-hint">吞噬全部 7 只 AI 大鱼 → 海洋霸主 👑</div>
         </div>
 
         <div class="hud-card top-actions">
@@ -93,6 +105,20 @@
             <div class="skill-key">Q</div>
             <div class="skill-name">开源护盾</div>
             <div class="cooldown-overlay" id="cdShield"></div>
+          </div>
+
+          <div class="skill-slot" id="skillFrenzy" title="[R 键] 梯度爆炸狂暴（移速+60%，蒸馏+30%）">
+            <div class="skill-icon">🔥</div>
+            <div class="skill-key">R</div>
+            <div class="skill-name">梯度爆炸</div>
+            <div class="cooldown-overlay" id="cdFrenzy"></div>
+          </div>
+
+          <div class="skill-slot" id="skillPulse" title="[F 键] 蒸馏冲击波（瞬间吞噬范围小鱼，弹开大鱼）">
+            <div class="skill-icon">💜</div>
+            <div class="skill-key">F</div>
+            <div class="skill-name">蒸馏波</div>
+            <div class="cooldown-overlay" id="cdPulse"></div>
           </div>
         </div>
       </div>
@@ -150,6 +176,24 @@
               <div class="m-cd-overlay" id="mCdShield"></div>
             </button>
           </div>
+
+          <!-- Mobile Frenzy Button -->
+          <div class="m-skill-wrap">
+            <button id="btnTouchFrenzy" class="m-skill-btn frenzy-btn">
+              <span class="m-btn-icon">🔥</span>
+              <span class="m-btn-label">梯度爆炸</span>
+              <div class="m-cd-overlay" id="mCdFrenzy"></div>
+            </button>
+          </div>
+
+          <!-- Mobile Pulse Button -->
+          <div class="m-skill-wrap">
+            <button id="btnTouchPulse" class="m-skill-btn pulse-btn">
+              <span class="m-btn-icon">💜</span>
+              <span class="m-btn-label">蒸馏波</span>
+              <div class="m-cd-overlay" id="mCdPulse"></div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -183,7 +227,8 @@
           <div class="intro-desc">
             <p>🌊 你是一只初生的 <strong>DeepSeek 蓝鲸幼崽</strong>！</p>
             <p>🟢 吞噬比你小的 <strong>AI 鱼类</strong> 与 <strong>Token 浮游能量</strong>，不断累积参数量与算力；</p>
-            <p>⚠️ 避开深海巨头大模型，开启 <strong>R1 深度思考狂暴冲刺</strong>、<strong>MoE 专家分发</strong> 与 <strong>开源护盾</strong>，最终进化为 <strong>671B 终极 AGI 蓝鲸霸主</strong>！</p>
+            <p>⚠️ 避开深海巨头大模型，开启 <strong>R1 深度思考狂暴冲刺</strong>、<strong>MoE 专家分发</strong>、<strong>开源护盾</strong>、<strong>梯度爆炸</strong> 与 <strong>蒸馏冲击波</strong>，最终进化为 <strong>671B 终极 AGI 蓝鲸霸主</strong>！</p>
+            <p>👑 目标：<strong>吞噬全部 7 只 AI 大鱼</strong>（ChatGPT / Claude / Kimi / Gemini / Qwen / Grok / Llama），即可加冕 <strong>海洋霸主</strong>！</p>
           </div>
         </div>
 
@@ -192,7 +237,7 @@
             <div class="col-title">📱 手机 / 触屏操作</div>
             <ul>
               <li><strong>屏幕左侧任意位置滑动</strong>：呼出动态摇杆游动</li>
-              <li><strong>右侧大图标按钮</strong>：释放 R1冲刺 / MoE / 护盾</li>
+              <li><strong>右侧大图标按钮</strong>：释放 R1冲刺 / MoE / 护盾 / 梯度爆炸 / 蒸馏波</li>
               <li><strong>点触屏幕任意位置</strong>：蓝鲸自动游向指尖</li>
             </ul>
           </div>
@@ -203,6 +248,8 @@
               <li><strong>空格键 / 鼠标右键</strong>：R1 深度思考加速冲刺</li>
               <li><strong>E 键</strong>：释放 MoE 助手鱼群搜集食物</li>
               <li><strong>Q 键</strong>：激活开源无敌护盾</li>
+              <li><strong>R 键</strong>：梯度爆炸狂暴（移速+60%、蒸馏+30%）</li>
+              <li><strong>F 键</strong>：蒸馏冲击波（瞬间吞噬范围内小鱼）</li>
             </ul>
           </div>
         </div>

@@ -177,6 +177,61 @@ class SoundManager {
     osc.stop(now + 0.42);
   }
 
+  // Gradient Surge Frenzy (R)
+  playFrenzy() {
+    if (!this.enabled || !this.ctx) return;
+    const notes = [220, 277, 330, 440, 554, 660];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const startTime = this.ctx.currentTime + idx * 0.06;
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.16, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.32);
+    });
+  }
+
+  // Distillation Pulse (F)
+  playPulse() {
+    if (!this.enabled || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.5);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.57);
+  }
+
+  // Victory (Ocean Overlord)
+  playVictory() {
+    if (!this.enabled || !this.ctx) return;
+    const notes = [392, 523, 659, 784, 1046, 1318];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const startTime = this.ctx.currentTime + idx * 0.12;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.22, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.52);
+    });
+  }
+
   // Defeat / Game Over
   playGameOver() {
     if (!this.enabled || !this.ctx) return;
