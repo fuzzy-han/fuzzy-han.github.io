@@ -1,5 +1,5 @@
 /**
- * Interactive Benchmark Matrix & SOTA Radar Chart
+ * Benchmark Matrix & Live SOTA Sprint Race
  */
 
 class BenchmarkController {
@@ -7,20 +7,28 @@ class BenchmarkController {
     this.currentCategory = 'all';
     this.container = document.getElementById('benchBarsContainer');
     this.canvas = document.getElementById('radarCanvas');
+    this.raceBtn = document.getElementById('startRaceBtn');
+
+    this.racers = [
+      { id: 'gemini', name: 'Gemini 3.7 Flash', score: 70.3, speed: 1.0, color: '#ffffff' },
+      { id: 'claude', name: 'Claude 3.7 Sonnet', score: 70.3, speed: 0.96, color: '#d4a359' },
+      { id: 'openai', name: 'OpenAI o3-mini', score: 65.4, speed: 0.88, color: '#10b981' },
+      { id: 'deepseek', name: 'DeepSeek R1', score: 49.2, speed: 0.65, color: '#60a5fa' }
+    ];
 
     this.benchmarks = [
       {
         id: 'swe-bench',
         category: 'coding',
         name: 'SWE-bench Verified',
-        badge: 'Top Frontier Coding',
-        desc: 'Resolves complex real-world GitHub issues end-to-end across large repos.',
+        badge: 'Top Coding Benchmark',
+        desc: 'Resolves complex real-world GitHub issues end-to-end.',
         unit: '%',
         max: 100,
         scores: [
           { model: 'Gemini 3.7 Flash', val: 70.3, highlight: true, class: 'gemini' },
           { model: 'Claude 3.7 Sonnet', val: 70.3, highlight: false, class: 'claude' },
-          { model: 'OpenAI o3-mini (High)', val: 65.4, highlight: false, class: 'openai' },
+          { model: 'OpenAI o3-mini', val: 65.4, highlight: false, class: 'openai' },
           { model: 'DeepSeek R1', val: 49.2, highlight: false, class: 'deepseek' }
         ]
       },
@@ -29,7 +37,7 @@ class BenchmarkController {
         category: 'coding',
         name: 'LiveCodeBench (2024-2025)',
         badge: 'Zero Contamination',
-        desc: 'Evaluates fresh algorithmic coding challenges published after training cutoff.',
+        desc: 'Fresh algorithmic coding problems post-cutoff.',
         unit: '%',
         max: 100,
         scores: [
@@ -42,9 +50,9 @@ class BenchmarkController {
       {
         id: 'gpqa',
         category: 'math',
-        name: 'GPQA Diamond (Graduate Physics/Bio/Chem)',
-        badge: 'Expert Scientific Reasoning',
-        desc: 'Google-proof PhD level questions crafted by domain experts.',
+        name: 'GPQA Diamond (PhD Science)',
+        badge: 'Expert Science & Logic',
+        desc: 'Google-proof PhD level questions by domain experts.',
         unit: '%',
         max: 100,
         scores: [
@@ -55,41 +63,11 @@ class BenchmarkController {
         ]
       },
       {
-        id: 'aime',
-        category: 'math',
-        name: 'AIME 2024 (Math Olympiad)',
-        badge: 'High-School Math Olympiad',
-        desc: 'American Invitational Mathematics Examination competition problems.',
-        unit: '%',
-        max: 100,
-        scores: [
-          { model: 'Gemini 3.7 Flash', val: 80.0, highlight: true, class: 'gemini' },
-          { model: 'OpenAI o3-mini', val: 80.0, highlight: false, class: 'openai' },
-          { model: 'Claude 3.7 Sonnet', val: 79.0, highlight: false, class: 'claude' },
-          { model: 'DeepSeek R1', val: 79.8, highlight: false, class: 'deepseek' }
-        ]
-      },
-      {
-        id: 'mmmu',
-        category: 'multimodal',
-        name: 'MMMU (Multimodal College Exam)',
-        badge: 'Vision & Diagram Understanding',
-        desc: 'College-level multi-discipline visual understanding and diagram reasoning.',
-        unit: '%',
-        max: 100,
-        scores: [
-          { model: 'Gemini 3.7 Flash', val: 72.8, highlight: true, class: 'gemini' },
-          { model: 'Claude 3.7 Sonnet', val: 70.4, highlight: false, class: 'claude' },
-          { model: 'OpenAI o3-mini', val: 68.2, highlight: false, class: 'openai' },
-          { model: 'DeepSeek R1', val: 60.1, highlight: false, class: 'deepseek' }
-        ]
-      },
-      {
         id: 'speed-tps',
         category: 'speed',
         name: 'Output Speed Throughput',
         badge: '150+ tok/s Ultra Stream',
-        desc: 'Streaming output generation speed in production deployment.',
+        desc: 'Streaming output generation speed in production.',
         unit: 'tok/s',
         max: 200,
         scores: [
@@ -106,22 +84,20 @@ class BenchmarkController {
       { name: 'LiveCode', key: 'code' },
       { name: 'GPQA PhD', key: 'gpqa' },
       { name: 'AIME Math', key: 'aime' },
-      { name: 'Multimodal', key: 'mmmu' },
       { name: 'Throughput', key: 'speed' }
     ];
 
     this.radarData = {
-      gemini: [0.94, 0.96, 0.95, 0.95, 0.96, 0.98],
-      claude: [0.94, 0.92, 0.95, 0.93, 0.91, 0.65],
-      openai: [0.88, 0.93, 0.89, 0.95, 0.85, 0.72],
-      deepseek: [0.68, 0.84, 0.80, 0.94, 0.70, 0.45]
+      gemini: [0.95, 0.96, 0.95, 0.95, 0.98],
+      claude: [0.95, 0.92, 0.95, 0.93, 0.65],
+      openai: [0.88, 0.93, 0.89, 0.95, 0.72],
+      deepseek: [0.68, 0.84, 0.80, 0.94, 0.45]
     };
 
     this.init();
   }
 
   init() {
-    // Category tabs
     const catBtns = document.querySelectorAll('.cat-btn');
     catBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -133,8 +109,36 @@ class BenchmarkController {
       });
     });
 
+    if (this.raceBtn) {
+      this.raceBtn.addEventListener('click', () => this.triggerSprintRace());
+    }
+
     this.renderBars();
     this.initRadar();
+  }
+
+  triggerSprintRace() {
+    if (window.soundEngine) window.soundEngine.playLaser();
+    const tracks = document.querySelectorAll('.racer-runner');
+    tracks.forEach((t) => (t.style.width = '0%'));
+
+    if (window.showToast) window.showToast('🏎️ 旗舰 AI 基准冲刺赛启动！');
+
+    setTimeout(() => {
+      tracks.forEach((track) => {
+        const racerId = track.dataset.racer;
+        const racer = this.racers.find((r) => r.id === racerId);
+        if (racer) {
+          const targetWidth = `${racer.score}%`;
+          track.style.width = targetWidth;
+        }
+      });
+
+      setTimeout(() => {
+        if (window.soundEngine) window.soundEngine.playVictory();
+        if (window.showToast) window.showToast('🏆 Gemini 3.7 Flash 率先冲线夺冠！');
+      }, 1900);
+    }, 100);
   }
 
   renderBars() {
@@ -155,7 +159,7 @@ class BenchmarkController {
         rowsHtml += `
           <div class="model-bar-row">
             <div class="model-label ${s.highlight ? 'highlight' : ''}">
-              ${s.highlight ? '✨ ' : ''}${s.model}
+              ${s.highlight ? '● ' : ''}${s.model}
             </div>
             <div class="bar-track">
               <div class="bar-fill ${s.class}" style="width: 0%;" data-target="${percent}%"></div>
@@ -183,13 +187,12 @@ class BenchmarkController {
       this.container.appendChild(card);
     });
 
-    // Trigger smooth fill animation
     setTimeout(() => {
       const fills = document.querySelectorAll('.bar-fill');
       fills.forEach((fill) => {
         fill.style.width = fill.dataset.target;
       });
-    }, 50);
+    }, 40);
   }
 
   initRadar() {
@@ -205,7 +208,7 @@ class BenchmarkController {
 
   resizeRadar() {
     if (!this.canvas) return;
-    const size = Math.min(320, this.canvas.parentElement.clientWidth || 300);
+    const size = Math.min(280, this.canvas.parentElement.clientWidth || 260);
     this.canvas.width = size * window.devicePixelRatio;
     this.canvas.height = size * window.devicePixelRatio;
     this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
@@ -216,15 +219,14 @@ class BenchmarkController {
     if (!this.ctx || !this.size) return;
     const ctx = this.ctx;
     const center = this.size / 2;
-    const radius = this.size * 0.38;
+    const radius = this.size * 0.36;
     const count = this.radarAxes.length;
 
     ctx.clearRect(0, 0, this.size, this.size);
 
-    // Draw concentric polygon grid
-    const levels = 4;
-    for (let l = 1; l <= levels; l++) {
-      const r = (radius / levels) * l;
+    // Subtle concentric polygon rings
+    for (let l = 1; l <= 3; l++) {
+      const r = (radius / 3) * l;
       ctx.beginPath();
       for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 / count) * i - Math.PI / 2;
@@ -234,16 +236,16 @@ class BenchmarkController {
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.stroke();
     }
 
-    // Draw radial axes & labels
-    ctx.font = '10.5px sans-serif';
+    // Axes & text
+    ctx.font = '10px -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#8FA2C8';
+    ctx.fillStyle = '#94a3b8';
 
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 / count) * i - Math.PI / 2;
@@ -253,21 +255,20 @@ class BenchmarkController {
       ctx.beginPath();
       ctx.moveTo(center, center);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.stroke();
 
-      // Label text position
-      const lx = center + Math.cos(angle) * (radius + 18);
-      const ly = center + Math.sin(angle) * (radius + 18);
+      const lx = center + Math.cos(angle) * (radius + 16);
+      const ly = center + Math.sin(angle) * (radius + 16);
       ctx.fillText(this.radarAxes[i].name, lx, ly);
     }
 
     // Draw model polygons
     const models = [
-      { key: 'deepseek', color: '#60A5FA', alpha: 0.15, border: '#3B82F6' },
-      { key: 'claude', color: '#F59E0B', alpha: 0.18, border: '#D97706' },
-      { key: 'openai', color: '#10B981', alpha: 0.18, border: '#059669' },
-      { key: 'gemini', color: '#00F0FF', alpha: 0.4, border: '#00F0FF', glow: true }
+      { key: 'deepseek', color: '#60a5fa', border: '#60a5fa' },
+      { key: 'claude', color: '#d4a359', border: '#d4a359' },
+      { key: 'openai', color: '#10b981', border: '#10b981' },
+      { key: 'gemini', color: '#ffffff', border: '#ffffff', glow: true }
     ];
 
     models.forEach((m) => {
@@ -283,19 +284,9 @@ class BenchmarkController {
       }
       ctx.closePath();
 
-      ctx.fillStyle = m.color;
-      ctx.globalAlpha = m.alpha;
-      ctx.fill();
-
       ctx.strokeStyle = m.border;
-      ctx.lineWidth = m.glow ? 2.5 : 1.5;
-      ctx.globalAlpha = 1;
-      if (m.glow) {
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = '#00F0FF';
-      }
+      ctx.lineWidth = m.glow ? 2 : 1;
       ctx.stroke();
-      ctx.shadowBlur = 0;
     });
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Gemini 3.7 Flash Dynamic Reasoning & Chain-of-Thought Visualizer
+ * Synapse Neural Flow & Dynamic Reasoning Controller
  */
 
 class ReasoningSimulator {
@@ -18,16 +18,17 @@ class ReasoningSimulator {
     this.isStreaming = false;
     this.streamTimer = null;
     this.treeNodes = [];
+    this.photons = []; // Travelling pulse particles
 
     this.challenges = {
       'swe-bench': {
-        title: 'SWE-bench: Real-world Async Race Fix',
+        title: 'SWE-bench: Async Concurrency Race Fix',
         lang: 'python',
         difficulty: 'SOTA 70.3%',
         flash: {
           thoughts: [
-            'Direct heuristic lookup: race condition identified in event loop dispatch.',
-            'Generating minimal atomic mutex lock wrapper.'
+            'Analyzing event loop dispatch mutex state.',
+            'Generating atomic task lock handler.'
           ],
           code: `import asyncio
 
@@ -38,7 +39,6 @@ class SafeAsyncDispatcher:
 
     async def dispatch(self, event_id: str, payload: dict):
         async with self._lock:
-            # Atomic state transition prevents coroutine race
             handler = self._registry.get(event_id)
             if handler:
                 return await handler(payload)
@@ -46,10 +46,10 @@ class SafeAsyncDispatcher:
         },
         deep: {
           thoughts: [
-            'Deconstructing repository state: Analyzing concurrency model across 14 modules.',
-            'Hypothesis 1: Weakref memory leak during unregister -> Disproved by GC trace.',
-            'Hypothesis 2: Task cancellation leaving half-open socket in uvloop dispatch -> Confirmed.',
-            'Formulating patch: Integrating asyncio.shield + graceful teardown hook + re-entrant lock.',
+            'Deconstructing repository state: Analyzing concurrency model across modules.',
+            'Hypothesis 1: Weakref memory leak -> Disproved by GC trace.',
+            'Hypothesis 2: Task cancellation half-open socket in uvloop -> Confirmed.',
+            'Formulating patch: Integrating asyncio.shield + graceful teardown + atomic lock.',
             'Self-verifying patch against 42 automated regression unit tests: PASS (100%).'
           ],
           code: `import asyncio
@@ -72,7 +72,6 @@ class UltraRobustDispatcher:
     async def register(self, topic: str, callback: Callable) -> None:
         async with self._lock:
             self._handlers[topic] = callback
-            logger.info(f"Registered atomic hook: {topic}")
 
     async def dispatch_safe(self, topic: str, data: Any) -> Any:
         async with self._lock:
@@ -88,7 +87,7 @@ class UltraRobustDispatcher:
         try:
             return await asyncio.shield(task)
         except asyncio.CancelledError:
-            logger.warning(f"Consumer cancelled topic {topic}, cleaning cleanly...")
+            logger.warning(f"Consumer cancelled topic {topic}, cleaning...")
             await asyncio.gather(task, return_exceptions=True)
             raise`
         }
@@ -99,8 +98,8 @@ class UltraRobustDispatcher:
         difficulty: 'Olympiad Math 84.8%',
         flash: {
           thoughts: [
-            'Parsing Lindblad master equation for 2-qubit open system.',
-            'Computing Runge-Kutta numerical density matrix integration.'
+            'Lindblad master equation for 2-qubit open system.',
+            'Runge-Kutta numerical density matrix integration.'
           ],
           code: `export interface DensityMatrix {
   rho: number[][];
@@ -108,7 +107,6 @@ class UltraRobustDispatcher:
 }
 
 export function computeDecoherence(rho0: DensityMatrix, gamma: number, dt: number): DensityMatrix {
-  // 1st order Lindbladian dissipative decay
   const rhoNext = rho0.rho.map((row, i) =>
     row.map((val, j) => (i === j ? val : val * Math.exp(-gamma * dt)))
   );
@@ -117,27 +115,23 @@ export function computeDecoherence(rho0: DensityMatrix, gamma: number, dt: numbe
         },
         deep: {
           thoughts: [
-            'Setting up full density operator matrix in Liouville-von Neumann space.',
-            'Branch 1: Applying rotating wave approximation (RWA) -> Verifying non-Markovian memory bounds.',
-            'Branch 2: Solving Kraus representation matrices for generalized phase-damping channel.',
-            'Self-correcting trace-preservation constraint Tr(ρ) = 1 to 1e-12 precision.',
+            'Setting up Liouville-von Neumann space density matrix.',
+            'Branch 1: Verifying non-Markovian memory bounds.',
+            'Branch 2: Solving Kraus matrices for generalized phase-damping channel.',
+            'Self-correcting trace preservation constraint Tr(ρ) = 1 to 1e-12 precision.',
             'Synthesizing fully vectorized WebGL matrix kernel.'
           ],
-          code: `/**
- * Solved via Gemini 3.7 Flash Deep Reasoning CoT
- * High-precision Kraus Decoherence & Purity Preserver
- */
-export class QuantumLindbladEngine {
+          code: `export class QuantumLindbladEngine {
   private dim: number;
-  private state: Float64Array; // Flattened density matrix (Real + Imag)
+  private state: Float64Array;
 
   constructor(qubits: number) {
     this.dim = 1 << qubits;
     this.state = new Float64Array(this.dim * this.dim * 2);
-    this.state[0] = 1.0; // Pure state |0...0><0...0|
+    this.state[0] = 1.0;
   }
 
-  public stepDissipation(gamma: number, dt: number): { purity: number; entropy: number } {
+  public stepDissipation(gamma: number, dt: number): { purity: number } {
     const d = this.dim;
     let trace = 0.0;
     let purity = 0.0;
@@ -157,33 +151,21 @@ export class QuantumLindbladEngine {
       }
     }
 
-    // Renormalize trace preservation
-    if (Math.abs(trace - 1.0) > 1e-9) {
-      for (let i = 0; i < d; i++) {
-        this.state[(i * d + i) * 2] /= trace;
-      }
-    }
-
-    return { purity, entropy: -Math.log2(Math.max(purity, 1e-15)) };
+    return { purity };
   }
 }`
         }
       },
       '3d-nebula': {
-        title: '3D WebGL Fluid Vortex Shader Engine',
+        title: '3D WebGL Fluid Vortex Shader',
         lang: 'javascript',
         difficulty: 'Multimodal Agentic',
         flash: {
           thoughts: [
-            'Direct fragment shader synthesis for volumetric swirl field.',
-            'Compiling GLSL shader program with highp float precision.'
+            'Fragment shader synthesis for volumetric swirl field.',
+            'Compiling GLSL shader program.'
           ],
-          code: `const vertexShader = \`
-  attribute vec2 position;
-  void main() { gl_Position = vec4(position, 0.0, 1.0); }
-\`;
-
-const fragmentShader = \`
+          code: `const fragmentShader = \`
   precision highp float;
   uniform float u_time;
   uniform vec2 u_res;
@@ -198,22 +180,12 @@ const fragmentShader = \`
         },
         deep: {
           thoughts: [
-            'Architecting real-time Navier-Stokes 2D vorticity grid with Raymarching volumetric absorption.',
-            'Analyzing Beer-Lambert law transmittance attenuation through dense nebulae clouds.',
-            'Optimizing branchless ray step loop for 144Hz high-refresh mobile GPUs.',
-            'Verification check: zero NaN artifacts during singularity division at core (0,0).'
+            'Architecting real-time Navier-Stokes 2D vorticity grid with Raymarching.',
+            'Analyzing Beer-Lambert law transmittance attenuation.',
+            'Optimizing branchless ray step loop for 120Hz mobile GPUs.',
+            'Verification check: zero NaN artifacts during singularity division.'
           ],
-          code: `// Gemini 3.7 Flash Hybrid Reasoning Shader
-export function createVolumetricNebula(gl, canvas) {
-  const vs = \`
-    attribute vec2 a_pos;
-    varying vec2 v_uv;
-    void main() {
-      v_uv = a_pos * 0.5 + 0.5;
-      gl_Position = vec4(a_pos, 0.0, 1.0);
-    }
-  \`;
-
+          code: `export function createVolumetricNebula(gl, canvas) {
   const fs = \`
     precision highp float;
     varying vec2 v_uv;
@@ -224,29 +196,16 @@ export function createVolumetricNebula(gl, canvas) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
     }
 
-    float noise(vec2 p) {
-      vec2 i = floor(p); vec2 f = fract(p);
-      vec2 u = f * f * (3.0 - 2.0 * f);
-      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-                 mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-    }
-
     void main() {
       vec2 st = (gl_FragCoord.xy - 0.5 * u_res) / u_res.y;
       float t = u_time * 0.4;
       float rot = length(st) * 3.0 - t;
       mat2 m = mat2(cos(rot), -sin(rot), sin(rot), cos(rot));
       vec2 q = m * st * 4.0;
-      
-      float f = noise(q + t) * 0.5 + noise(q * 2.0 - t * 0.5) * 0.25;
-      vec3 colorA = vec3(0.0, 0.94, 1.0); // Gemini Cyan
-      vec3 colorB = vec3(0.61, 0.32, 0.88); // Purple
-      vec3 finalCol = mix(colorA, colorB, f + length(st)) * f * 2.0;
-
-      gl_FragColor = vec4(finalCol, 1.0);
+      gl_FragColor = vec4(vec3(0.9, 0.95, 1.0) * (0.5 + 0.5 * sin(rot)), 1.0);
     }
   \`;
-  return { vs, fs };
+  return { fs };
 }`
         }
       }
@@ -264,7 +223,6 @@ export function createVolumetricNebula(gl, canvas) {
       if (window.soundEngine) window.soundEngine.playClick();
     });
 
-    // Challenge buttons
     const btns = document.querySelectorAll('.challenge-btn');
     btns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -278,9 +236,7 @@ export function createVolumetricNebula(gl, canvas) {
 
     const triggerBtn = document.getElementById('runReasoningBtn');
     if (triggerBtn) {
-      triggerBtn.addEventListener('click', () => {
-        this.triggerSimulation();
-      });
+      triggerBtn.addEventListener('click', () => this.triggerSimulation());
     }
 
     this.updateBudgetUI();
@@ -293,60 +249,60 @@ export function createVolumetricNebula(gl, canvas) {
     this.ctx = this.canvas.getContext('2d');
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
+
+    // Continuous render loop for photons & breathing nodes
+    const renderLoop = () => {
+      this.drawTree();
+      requestAnimationFrame(renderLoop);
+    };
+    renderLoop();
   }
 
   resizeCanvas() {
     if (!this.canvas) return;
     const rect = this.canvas.parentElement.getBoundingClientRect();
     this.canvas.width = rect.width;
-    this.canvas.height = 200;
+    this.canvas.height = 180;
   }
 
   updateBudgetUI() {
-    const isFlash = this.budget <= 1024;
-    const isDeep = this.budget >= 8192;
-
     if (this.tokenBudgetEl) {
       this.tokenBudgetEl.textContent = this.budget === 0 ? '0 (Instant)' : `${this.budget} tokens`;
     }
 
     if (this.modeBadge) {
       if (this.budget === 0) {
-        this.modeBadge.textContent = '⚡ Flash Reflex Mode (0s)';
-        this.modeBadge.style.color = '#00F0FF';
-      } else if (isFlash) {
-        this.modeBadge.textContent = '🚀 Fast Reasoning Mode';
-        this.modeBadge.style.color = '#34A853';
-      } else if (isDeep) {
-        this.modeBadge.textContent = '🧠 Deep Extended CoT Mode';
-        this.modeBadge.style.color = '#FF007A';
+        this.modeBadge.textContent = '⚡ Flash Reflex (0s)';
+      } else if (this.budget <= 2048) {
+        this.modeBadge.textContent = '🚀 Fast Reasoning';
+      } else if (this.budget >= 8192) {
+        this.modeBadge.textContent = '🧠 Deep Extended CoT';
       } else {
-        this.modeBadge.textContent = '⚖️ Dynamic Hybrid Mode';
-        this.modeBadge.style.color = '#9B51E0';
+        this.modeBadge.textContent = '⚖️ Dynamic Hybrid';
       }
     }
   }
 
   generateTreeNodes() {
     this.treeNodes = [];
+    this.photons = [];
     const w = this.canvas ? this.canvas.width : 400;
-    const h = 200;
+    const h = 180;
     const isDeep = this.budget >= 2048;
 
-    // Root
-    this.treeNodes.push({ x: 40, y: h / 2, type: 'root', label: 'Prompt Input', alpha: 1 });
+    this.treeNodes.push({ x: 35, y: h / 2, type: 'root', alpha: 1, baseOffsetY: 0 });
 
-    const numBranches = isDeep ? Math.min(8, Math.floor(this.budget / 1024) + 2) : 2;
+    const numBranches = isDeep ? Math.min(6, Math.floor(this.budget / 2048) + 2) : 2;
     for (let i = 0; i < numBranches; i++) {
-      const bx = 120 + i * (w - 200) / (numBranches || 1);
-      const by = 40 + (Math.sin(i * 1.5) * 0.5 + 0.5) * (h - 80);
+      const bx = 100 + i * (w - 150) / (numBranches || 1);
+      const by = 35 + (Math.sin(i * 1.5) * 0.5 + 0.5) * (h - 70);
       const isVerify = i === numBranches - 1;
       this.treeNodes.push({
         x: bx,
         y: by,
         type: isVerify ? 'verify' : (i % 2 === 0 ? 'branch' : 'prune'),
-        label: isVerify ? 'Verified SOTA' : `Hypothesis ${i + 1}`,
-        alpha: 0
+        alpha: 0,
+        baseOffsetY: Math.random() * Math.PI * 2
       });
     }
   }
@@ -354,32 +310,56 @@ export function createVolumetricNebula(gl, canvas) {
   drawTree() {
     if (!this.ctx || !this.canvas) return;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    const time = performance.now() * 0.002;
 
-    // Draw connecting paths
-    this.ctx.lineWidth = 1.5;
+    // Draw connecting paths with subtle curves
     for (let i = 1; i < this.treeNodes.length; i++) {
       const prev = this.treeNodes[i - 1];
       const cur = this.treeNodes[i];
+      const prevY = prev.y + Math.sin(time + prev.baseOffsetY) * 2;
+      const curY = cur.y + Math.sin(time + cur.baseOffsetY) * 2;
+
       this.ctx.beginPath();
-      this.ctx.moveTo(prev.x, prev.y);
-      this.ctx.bezierCurveTo((prev.x + cur.x) / 2, prev.y, (prev.x + cur.x) / 2, cur.y, cur.x, cur.y);
-      this.ctx.strokeStyle = cur.type === 'verify' ? '#34A853' : (cur.type === 'prune' ? '#EA4335' : '#9B51E0');
-      this.ctx.globalAlpha = Math.min(prev.alpha, cur.alpha) * 0.6;
+      this.ctx.moveTo(prev.x, prevY);
+      this.ctx.bezierCurveTo((prev.x + cur.x) / 2, prevY, (prev.x + cur.x) / 2, curY, cur.x, curY);
+      this.ctx.strokeStyle = cur.type === 'verify' ? '#38bdf8' : (cur.type === 'prune' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)');
+      this.ctx.globalAlpha = Math.min(prev.alpha, cur.alpha) * 0.7;
+      this.ctx.lineWidth = cur.type === 'verify' ? 1.5 : 1;
       this.ctx.stroke();
+    }
+
+    // Draw photons
+    for (let pIdx = this.photons.length - 1; pIdx >= 0; pIdx--) {
+      const p = this.photons[pIdx];
+      p.progress += 0.04;
+      if (p.progress >= 1) {
+        this.photons.splice(pIdx, 1);
+        continue;
+      }
+
+      const p1 = this.treeNodes[p.fromIdx];
+      const p2 = this.treeNodes[p.toIdx];
+      if (p1 && p2) {
+        const x = p1.x + (p2.x - p1.x) * p.progress;
+        const y = p1.y + (p2.y - p1.y) * p.progress;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.globalAlpha = 0.9;
+        this.ctx.fill();
+      }
     }
 
     // Draw nodes
     this.treeNodes.forEach((node) => {
+      const nodeY = node.y + Math.sin(time + node.baseOffsetY) * 2;
       this.ctx.beginPath();
-      this.ctx.arc(node.x, node.y, node.type === 'root' ? 8 : (node.type === 'verify' ? 7 : 5), 0, Math.PI * 2);
-      this.ctx.fillStyle = node.type === 'root' ? '#00F0FF' : (node.type === 'verify' ? '#34A853' : (node.type === 'prune' ? '#EA4335' : '#9B51E0'));
+      this.ctx.arc(node.x, nodeY, node.type === 'root' ? 6 : (node.type === 'verify' ? 5 : 4), 0, Math.PI * 2);
+      this.ctx.fillStyle = node.type === 'root' ? '#ffffff' : (node.type === 'verify' ? '#38bdf8' : '#94a3b8');
       this.ctx.globalAlpha = node.alpha;
-      this.ctx.shadowBlur = 10;
-      this.ctx.shadowColor = this.ctx.fillStyle;
       this.ctx.fill();
     });
 
-    this.ctx.shadowBlur = 0;
     this.ctx.globalAlpha = 1;
   }
 
@@ -393,20 +373,18 @@ export function createVolumetricNebula(gl, canvas) {
     const isDeep = this.budget >= 2048;
     const content = isDeep ? data.deep : data.flash;
 
-    // Reset log and code area
     if (this.thoughtList) this.thoughtList.innerHTML = '';
     if (this.codeOutput) this.codeOutput.innerHTML = '<span class="cursor-blink"></span>';
 
     this.generateTreeNodes();
     let nodeIndex = 0;
 
-    // Display thoughts step by step
     let stepIndex = 0;
     const stepInterval = setInterval(() => {
       if (stepIndex < content.thoughts.length) {
         const step = document.createElement('div');
         step.className = 'thought-step';
-        step.innerHTML = `<strong>[CoT Step ${stepIndex + 1}]</strong> ${content.thoughts[stepIndex]}`;
+        step.innerHTML = `<strong>[CoT #${stepIndex + 1}]</strong> ${content.thoughts[stepIndex]}`;
         if (this.thoughtList) {
           this.thoughtList.appendChild(step);
           this.thoughtList.scrollTop = this.thoughtList.scrollHeight;
@@ -414,26 +392,25 @@ export function createVolumetricNebula(gl, canvas) {
 
         if (this.treeNodes[nodeIndex]) {
           this.treeNodes[nodeIndex].alpha = 1;
+          if (nodeIndex > 0) {
+            this.photons.push({ fromIdx: nodeIndex - 1, toIdx: nodeIndex, progress: 0 });
+          }
           nodeIndex++;
-          this.drawTree();
         }
 
         if (window.soundEngine) window.soundEngine.playTypingTick();
         stepIndex++;
       } else {
         clearInterval(stepInterval);
-        // Reveal remaining nodes
         this.treeNodes.forEach((n) => (n.alpha = 1));
-        this.drawTree();
         this.streamCode(content.code);
       }
-    }, isDeep ? 180 : 80);
+    }, isDeep ? 160 : 70);
   }
 
   streamCode(codeText) {
     let charIndex = 0;
-    const speed = this.budget === 0 ? 12 : 6; // Characters per tick
-
+    const speed = this.budget === 0 ? 14 : 7;
     const startTime = performance.now();
 
     this.streamTimer = setInterval(() => {
@@ -444,17 +421,16 @@ export function createVolumetricNebula(gl, canvas) {
         this.codeOutput.scrollTop = this.codeOutput.scrollHeight;
       }
 
-      if (charIndex % 30 === 0 && window.soundEngine) {
+      if (charIndex % 35 === 0 && window.soundEngine) {
         window.soundEngine.playTypingTick();
       }
 
-      // Calculate live throughput
       const elapsedSec = (performance.now() - startTime) / 1000;
       const tokenCount = Math.floor(charIndex / 3.5);
       const tps = elapsedSec > 0 ? Math.min(240, Math.floor(tokenCount / elapsedSec)) : 160;
 
       if (this.tokenRateEl) this.tokenRateEl.textContent = `${Math.max(145, tps)} tok/s`;
-      if (this.latencyEl) this.latencyEl.textContent = `${Math.max(18, Math.floor(elapsedSec * 100))} ms`;
+      if (this.latencyEl) this.latencyEl.textContent = `${Math.max(16, Math.floor(elapsedSec * 100))} ms`;
 
       if (charIndex >= codeText.length) {
         clearInterval(this.streamTimer);
