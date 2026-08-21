@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#070913">
+  <title>Gemini 3.7 Flash · 混合推理旗舰与AI诸神大乱斗</title>
+  <meta name="description" content="体验 Google Gemini 3.7 Flash 的前沿混合推理能力、SOTA基准测试（SWE-bench 70.3%）与搞笑AI大乱斗互动动画。">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+SC:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/reasoning.css">
+  <link rel="stylesheet" href="css/benchmarks.css">
+  <link rel="stylesheet" href="css/arena.css">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23070913'/><path d='M32 8L40 24L56 32L40 40L32 56L24 40L8 32L24 24Z' fill='%2300F0FF'/></svg>">
+</head>
+<body>
+
+  <!-- Interactive Background Canvas -->
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="app-container">
+    <!-- Navbar -->
+    <header class="navbar">
+      <a href="/gemini3.7flash/" class="nav-brand">
+        <div class="gemini-sparkle">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">GEMINI 3.7 FLASH</span>
+          <span class="brand-sub">HYBRID REASONING TITAN</span>
+        </div>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="tab-reasoning">
+          <span>🧠 混合推理引擎</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-benchmarks">
+          <span>📊 巅峰基准大盘</span>
+          <span class="badge">SOTA</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-arena">
+          <span>⚔️ AI 诸神大乱斗</span>
+          <span class="badge">FUNNY</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-playground">
+          <span>🧪 多模态沙箱</span>
+        </button>
+      </nav>
+
+      <!-- Nav Controls -->
+      <div class="nav-actions">
+        <button class="icon-btn active" id="soundToggleBtn" title="切换音效">🔊</button>
+        <button class="icon-btn" id="overclockBtn" title="超频加速">⚡</button>
+        <a href="/game/" class="home-link">🎮 游戏大厅</a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-pill">
+        <span class="dot"></span>
+        <span>GOOGLE FRONTIER HYBRID INTELLIGENCE</span>
+      </div>
+      <h1 class="hero-title">
+        超光速思维 · <span class="gradient-gemini">无界混合推理</span>
+      </h1>
+      <p class="hero-desc">
+        Gemini 3.7 Flash 将<strong>秒级毫秒闪电反射</strong>与<strong>深度可控思维链 (Thinking Budget)</strong>融为一体。
+        以 <strong>70.3% SWE-bench Verified</strong> 登顶全球编码排行榜，以 <strong>150+ Tokens/s</strong> 极速吞吐重塑大模型算力边界。
+      </p>
+
+      <!-- Key Metric Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card gold">
+          <div class="metric-value">70.3<span class="unit">%</span></div>
+          <div class="metric-label">SWE-bench Verified</div>
+          <div class="metric-sub">全球公认最严苛真实项目 Bug 解决率</div>
+        </div>
+
+        <div class="metric-card emerald">
+          <div class="metric-value">150<span class="unit">+ tok/s</span></div>
+          <div class="metric-label">流式生成极速吞吐</div>
+          <div class="metric-sub">毫秒级首字延迟，极致生产力响应</div>
+        </div>
+
+        <div class="metric-card magenta">
+          <div class="metric-value">1<span class="unit">M+ Tokens</span></div>
+          <div class="metric-label">原生超大上下文</div>
+          <div class="metric-sub">一键吞吐完整代码仓库、超长文档与视频</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-value">0~64<span class="unit">k Tokens</span></div>
+          <div class="metric-label">动态思考算力预算</div>
+          <div class="metric-sub">自由调节推理深度，算力按需爆发</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: Dynamic Reasoning & CoT Visualizer -->
+    <section class="tab-section active" id="tab-reasoning">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">
+              <span class="icon">⚡</span>
+              动态思考算力控制器 (Thinking Budget Controller)
+            </h2>
+            <p class="panel-desc">
+              拖动滑块实时调节 Gemini 3.7 Flash 的思考预算。从 0s 即时响应秒回，到万级 Token 深度回溯推理，亲眼见证思维链神经元推导与自纠错过程！
+            </p>
+          </div>
+          <div class="mode-badge" id="modeBadge">⚡ Flash Reflex Mode (0s)</div>
+        </div>
+
+        <div class="reasoning-container">
+          <!-- Left: Controller & Neural Graph -->
+          <div class="budget-controller">
+            <div class="budget-header">
+              <span class="budget-title">🎚️ 思考预算调节 (Tokens)</span>
+              <span class="live-metric"><span class="val" id="liveTokenBudget">4096 tokens</span></span>
+            </div>
+
+            <div class="slider-wrap">
+              <input type="range" class="budget-slider" id="budgetSlider" min="0" max="16384" step="1024" value="4096">
+              <div class="slider-marks">
+                <span>0s (闪电)</span>
+                <span>2048</span>
+                <span>8192 (深度CoT)</span>
+                <span>16384 (极境)</span>
+              </div>
+            </div>
+
+            <!-- Challenge Preset Picker -->
+            <div class="challenge-selector">
+              <div class="section-subtitle">🎯 选择实战推理评测用例</div>
+              <div class="challenge-pills">
+                <button class="challenge-btn active" data-challenge="swe-bench">
+                  <span>🛠️ SWE-bench 竞态修复</span>
+                  <span class="btn-badge">Python · 70.3% SOTA</span>
+                </button>
+                <button class="challenge-btn" data-challenge="quantum">
+                  <span>⚛️ 量子退相干矩阵解算</span>
+                  <span class="btn-badge">Math/GPQA · 84.8%</span>
+                </button>
+                <button class="challenge-btn" data-challenge="3d-nebula">
+                  <span>🌌 3D 体积流体着色器</span>
+                  <span class="btn-badge">Multimodal Agentic</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Neural Thought Graph -->
+            <div class="neural-graph-card">
+              <div class="section-subtitle">🧬 思维链神经推导图谱 (Live Chain-of-Thought Graph)</div>
+              <div class="graph-canvas-wrap">
+                <canvas id="thoughtCanvas"></canvas>
+              </div>
+              <div class="graph-legend">
+                <div class="legend-item"><span class="legend-dot root"></span>根节点输入</div>
+                <div class="legend-item"><span class="legend-dot branch"></span>假设推导分支</div>
+                <div class="legend-item"><span class="legend-dot verify"></span>SOTA 验证通过</div>
+                <div class="legend-item"><span class="legend-dot prune"></span>反例剪枝纠错</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Streaming Code Output -->
+          <div class="stream-chamber">
+            <div class="chamber-topbar">
+              <div class="window-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="live-metrics-bar">
+                <div class="live-metric">
+                  <span>速度:</span>
+                  <span class="val" id="liveTokenRate">160 tok/s</span>
+                </div>
+                <div class="live-metric">
+                  <span>首字延迟:</span>
+                  <span class="val" id="liveLatency">28 ms</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thought Log List -->
+            <div class="thought-log-container" id="thoughtLog">
+              <div class="thought-header">
+                <span>💭 思维过程 (Reasoning Steps)</span>
+              </div>
+              <div id="thoughtList">
+                <!-- Dynamically injected -->
+              </div>
+            </div>
+
+            <!-- Syntax Highlighted Code Stream -->
+            <div class="code-output-area" id="codeOutput">
+              <span class="cursor-blink"></span>
+            </div>
+
+            <div class="chamber-actions">
+              <button class="btn-cyber secondary" id="copyCodeBtn">📋 复制代码</button>
+              <button class="btn-cyber neon" id="runReasoningBtn">🚀 重新激发推理</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: Benchmark Matrix & Radar Chart -->
+    <section class="tab-section" id="tab-benchmarks">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">
+              <span class="icon">📊</span>
+              旗舰大模型综合基准大盘 (Benchmark Matrix)
+            </h2>
+            <p class="panel-desc">
+              权威横向评测数据对比：Gemini 3.7 Flash vs. Claude 3.7 Sonnet vs. OpenAI o3-mini vs. DeepSeek R1。
+            </p>
+          </div>
+        </div>
+
+        <div class="bench-controls">
+          <div class="category-tabs">
+            <button class="cat-btn active" data-category="all">全部综合</button>
+            <button class="cat-btn" data-category="coding">💻 编码与Agent</button>
+            <button class="cat-btn" data-category="math">📐 顶尖奥数与科研</button>
+            <button class="cat-btn" data-category="multimodal">🖼️ 多模态大考</button>
+            <button class="cat-btn" data-category="speed">⚡ 吞吐流速</button>
+          </div>
+        </div>
+
+        <div class="bench-layout">
+          <!-- Bars Container -->
+          <div class="bench-bars-container" id="benchBarsContainer">
+            <!-- Dynamically rendered -->
+          </div>
+
+          <!-- Radar Chart Card -->
+          <div class="radar-card">
+            <div class="radar-title">六维多模态能力雷达</div>
+            <div class="radar-sub">Gemini 3.7 Flash 综合六边形战力</div>
+            <div class="radar-canvas-wrap">
+              <canvas id="radarCanvas"></canvas>
+            </div>
+            <div class="radar-legend">
+              <div class="radar-legend-item"><span class="radar-dot gemini"></span>Gemini 3.7</div>
+              <div class="radar-legend-item"><span class="radar-dot claude"></span>Claude 3.7</div>
+              <div class="radar-legend-item"><span class="radar-dot openai"></span>o3-mini</div>
+              <div class="radar-legend-item"><span class="radar-dot deepseek"></span>DeepSeek R1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: AI Universe Smackdown Battle Arena -->
+    <section class="tab-section" id="tab-arena">
+      <div class="arena-wrapper">
+        <!-- Battle HUD -->
+        <div class="arena-hud">
+          <!-- P1 HUD -->
+          <div class="fighter-hud p1">
+            <div class="fighter-meta">
+              <span class="fighter-name" id="p1Name">Gemini 3.7 Flash</span>
+              <span class="fighter-title">⚡ 光速超脑</span>
+            </div>
+            <div class="hp-bar-wrap">
+              <div class="hp-bar-fill" id="p1HpFill" style="width: 100%;"></div>
+              <span class="hp-text" id="p1HpText">100 / 100 HP</span>
+            </div>
+          </div>
+
+          <!-- VS Center -->
+          <div class="vs-emblem">
+            <div class="vs-circle">VS</div>
+            <div class="round-text" id="arenaRoundText">ROUND 1</div>
+          </div>
+
+          <!-- P2 HUD -->
+          <div class="fighter-hud p2">
+            <div class="fighter-meta">
+              <span class="fighter-title">🍓 深度草莓</span>
+              <span class="fighter-name" id="p2Name">OpenAI o3-mini</span>
+            </div>
+            <div class="hp-bar-wrap">
+              <div class="hp-bar-fill" id="p2HpFill" style="width: 100%;"></div>
+              <span class="hp-text" id="p2HpText">95 / 95 HP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage Canvas & Animated Fighters -->
+        <div class="battle-stage" id="battleStage">
+          <!-- P1 Fighter Entity -->
+          <div class="fighter-entity p1" id="p1Entity">
+            <div class="fighter-aura"></div>
+            <div class="fighter-sprite" id="p1Sprite">🤖</div>
+          </div>
+
+          <!-- P2 Fighter Entity -->
+          <div class="fighter-entity p2" id="p2Entity">
+            <div class="fighter-aura"></div>
+            <div class="fighter-sprite" id="p2Sprite">🍓</div>
+          </div>
+        </div>
+
+        <!-- Arena Controls & Skill Buttons -->
+        <div class="arena-controls">
+          <div class="fighter-select-bar">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:12px; font-weight:800; color:var(--gemini-cyan);">1P 选手:</span>
+              <div class="fighter-chooser">
+                <button class="select-btn p1-select active" data-fighter="gemini">🤖 Gemini 3.7</button>
+                <button class="select-btn p1-select" data-fighter="claude">📜 Claude 3.7</button>
+                <button class="select-btn p1-select" data-fighter="deepseek">🐋 DeepSeek R1</button>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:12px; font-weight:800; color:#FF5500;">2P 对手:</span>
+              <div class="fighter-chooser">
+                <button class="select-btn p2-select active" data-fighter="openai">🍓 o3-mini</button>
+                <button class="select-btn p2-select" data-fighter="claude">📜 Claude 3.7</button>
+                <button class="select-btn p2-select" data-fighter="deepseek">🐋 DeepSeek R1</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-buttons-row">
+            <button class="skill-btn" id="skillBtn1"><span>⚡</span> 150t/s 光速思维炮</button>
+            <button class="skill-btn" id="skillBtn2"><span>💥</span> SWE-bench 反向修Bug斩</button>
+            <button class="skill-btn ultimate" id="skillBtn3"><span>👑</span> 1M 上下文黑洞</button>
+            <button class="btn-cyber neon" id="autoBattleBtn">⚔️ 自动大乱斗观战</button>
+            <button class="btn-cyber secondary" id="resetBattleBtn">🔄 重置战局</button>
+          </div>
+
+          <!-- Combat Feed -->
+          <div class="combat-feed" id="combatFeed">
+            <div class="feed-item highlight">🏆 准备就绪，点击技能释放超强 AI 招式！</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: Live Multimodal & Agentic Sandbox -->
+    <section class="tab-section" id="tab-playground">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">
+              <span class="icon">🧪</span>
+              多模态涂鸦识别与实时渲染沙箱
+            </h2>
+            <p class="panel-desc">
+              在左侧涂鸦画布随意作画，测试 Gemini 3.7 Flash 的毫秒级图像特征提取；在右侧观看实时 Agentic 代码驱动的 3D 渲染器！
+            </p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <!-- Left: Vision Doodle Lab -->
+          <div style="background: rgba(10,15,34,0.85); border: 1px solid var(--panel-border); border-radius: var(--radius-lg); padding: 20px;">
+            <div class="section-subtitle">🎨 多模态手绘识别 (Draw & Flash Recognize)</div>
+            <canvas id="visionCanvas" width="300" height="240" style="width: 100%; height: 240px; background: #060914; border-radius: var(--radius-md); border: 1px dashed rgba(0,240,255,0.4); cursor: crosshair; touch-action: none;"></canvas>
+            <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+              <span id="visionPrediction" style="font-size: 13px; color: #ffffff;">请在上方画布绘制涂鸦...</span>
+              <span id="visionConfidence" style="font-family: var(--font-mono); font-size: 12px; color: var(--gemini-cyan);">--%</span>
+            </div>
+            <button class="btn-cyber secondary" id="clearDoodleBtn" style="margin-top: 12px; width: 100%;">🧹 清空画布</button>
+          </div>
+
+          <!-- Right: Interactive Sandbox Render -->
+          <div style="background: rgba(10,15,34,0.85); border: 1px solid var(--panel-border); border-radius: var(--radius-lg); padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="section-subtitle" style="margin:0;">💻 Agent 代码实时渲染 (Canvas 3D)</div>
+              <select id="sandboxDemoSelect" style="background: #131b38; color: #ffffff; border: 1px solid var(--panel-border); border-radius: 6px; padding: 4px 8px; font-size: 12px;">
+                <option value="matrix-cube">3D 矩阵超立方体</option>
+                <option value="quantum-wave">量子概率干涉波</option>
+              </select>
+            </div>
+            <canvas id="sandboxRenderCanvas" style="width: 100%; height: 240px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.08);"></canvas>
+            <div style="margin-top: 14px; font-size: 12px; color: var(--text-sub); text-align: center;">
+              ✨ 由 Gemini 3.7 Flash 实时生成的矢量计算着色核心 (60 FPS)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>Powered by <strong>Google Gemini 3.7 Flash</strong> · 混合推理架构 · <a href="https://austcoder.cn/">AustCoder</a></p>
+      <p style="margin-top: 6px; font-size: 11.5px;">Keep going and believe yourself · 探索前沿智能与无界算力</p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/sound.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/reasoning.js"></script>
+  <script src="js/benchmarks.js"></script>
+  <script src="js/arena.js"></script>
+  <script src="js/playground.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

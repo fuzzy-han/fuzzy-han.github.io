@@ -50,6 +50,7 @@ body{
 .card.c4::before{background:linear-gradient(90deg,#7fd8ff,#ff7ad0)}
 .card.c5::before{background:linear-gradient(90deg,#7fe0b8,#ffd76a)}
 .card.c6::before{background:linear-gradient(90deg,#b79cff,#ff7ad0)}
+.card.c-gemini::before{background:linear-gradient(90deg,#00F0FF,#4285F4,#9B51E0,#FF3399)}
 .card .ic{font-size:64px; line-height:1; margin-bottom:10px; filter:drop-shadow(0 6px 12px rgba(80,100,140,.25))}
 .card h2{font-size:24px; font-weight:900; letter-spacing:.04em; margin-bottom:6px}
 .card .en{font-size:11px; letter-spacing:.3em; color:var(--ink-soft); margin-bottom:12px}
@@ -62,6 +63,7 @@ body{
 .card.c4 .tags span{background:#f3e8ff; color:#6a2a9a}
 .card.c5 .tags span{background:#e2f7ee; color:#22775a}
 .card.c6 .tags span{background:#f3e8ff; color:#6a2a9a}
+.card.c-gemini .tags span{background:#e0f7ff; color:#0b638c}
 .card .go{align-self:center; padding:12px 30px; border-radius:999px; font-size:14.5px; font-weight:900;
   color:#6b4a10; background:linear-gradient(180deg,#ffeeb0,#ffd76a);
   box-shadow:0 4px 0 #e8b84e, 0 10px 22px rgba(232,184,78,.3);
@@ -72,6 +74,7 @@ body{
 .card.c4 .go{color:#fff; background:linear-gradient(180deg,#8fd8ff,#ff7ad0); box-shadow:0 4px 0 #c05aa0, 0 10px 22px rgba(255,122,208,.3)}
 .card.c5 .go{color:#5a4a10; background:linear-gradient(180deg,#a8e6c8,#ffd76a); box-shadow:0 4px 0 #c9b04e, 0 10px 22px rgba(255,215,106,.35)}
 .card.c6 .go{color:#fff; background:linear-gradient(180deg,#c9b8ff,#8a6cf0); box-shadow:0 4px 0 #6a4ed0, 0 10px 22px rgba(138,108,240,.35)}
+.card.c-gemini .go{color:#fff; background:linear-gradient(180deg,#00F0FF,#4285F4,#9B51E0); box-shadow:0 4px 0 #265cb0, 0 10px 22px rgba(0,240,255,.35)}
 
 footer{margin-top:44px; text-align:center; font-size:12px; letter-spacing:.14em; color:#7a92ab}
 footer a{color:#5a7a9a}
@@ -86,10 +89,19 @@ footer a{color:#5a7a9a}
   <div class="hero">
     <div class="logo">🎮 游戏大厅</div>
     <div class="sub">NAILONG ARCADE</div>
-    <div class="tag">奶龙工坊出品 · 六款小游戏 · 点击开玩</div>
+    <div class="tag">奶龙工坊出品 · 互动体验与小游戏 · 点击开玩</div>
   </div>
 
   <div class="grid">
+    <a class="card c-gemini" href="/gemini3.7flash/">
+      <span class="ic">⚡</span>
+      <h2>Gemini 3.7 Flash</h2>
+      <div class="en">HYBRID REASONING TITAN</div>
+      <p>旗舰混合推理与AI大乱斗互动展台：70.3% SWE-bench SOTA 榜首、动态思考算力调节、神经思维链可视化与搞笑 AI 宇宙大乱斗擂台！</p>
+      <div class="tags"><span>混合推理</span><span>SOTA榜首</span><span>AI大乱斗</span><span>多模态沙箱</span></div>
+      <span class="go">探索旗舰</span>
+    </a>
+
     <a class="card" href="/shadowplay/">
       <span class="ic">🎭</span>
       <h2>影戏 ShadowPlay</h2>
