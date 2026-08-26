@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>数独</title>
-<script>(function(){try{var s=JSON.parse(localStorage.getItem('sdk.settings')||'{}');var t=s.theme||'auto';if(t==='auto')t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){}})()</script>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('sdk.settings')||'{}');var t=s.theme||'auto';if(t==='auto')t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;document.documentElement.dataset.skin=s.skin||'indigo';}catch(e){}})()</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -16,7 +16,8 @@
 --green:#4CAF50;--red:#F44336;--blue:#2196F3;
 --bg:#F5F5F5;--surface:#FFFFFF;--surface2:#ECECEC;--key:#FFFFFF;
 --on:#1C1B1F;--on-var:#606269;
---thin:#E0E0E0;--thick:#616161;
+--thin:#CBD2DB;--thick:#3E4E63;
+--pad-num:#3A4E6E;--pad-btn:#3F51B5;
 --sel:rgba(63,81,181,.14);--peer:rgba(63,81,181,.055);--same:rgba(63,81,181,.24);
 --wrong-bg:#FFEBEE;--done-bg:#E8F5E9;
 --num-given:#1C1B1F;--num-user:#3F51B5;--num-hint:#1976D2;--num-wrong:#D32F2F;--num-done:#388E3C;
@@ -26,7 +27,8 @@
 html[data-theme=dark]{
 --bg:#121212;--surface:#1E1E1E;--surface2:#0C0C0C;--key:#2A2A2A;
 --on:#ECEAE6;--on-var:#A6A4AC;
---thin:#333333;--thick:#BDBDBD;
+--thin:#39404A;--thick:#8B97A8;
+--pad-num:#AAB9D0;--pad-btn:#5C6BC0;
 --amber-bright:#FFD54F;
 --sel:rgba(127,141,224,.22);--peer:rgba(127,141,224,.09);--same:rgba(127,141,224,.32);
 --wrong-bg:rgba(244,67,54,.17);--done-bg:rgba(76,175,80,.15);
@@ -34,6 +36,12 @@ html[data-theme=dark]{
 --mask:rgba(0,0,0,.72);
 --shadow-1:0 1px 3px rgba(0,0,0,.5);--shadow-2:0 4px 14px rgba(0,0,0,.55);--shadow-3:0 10px 34px rgba(0,0,0,.7);
 }
+html[data-skin=sage]{--primary:#6B8F71;--pad-btn:#6B8F71;--num-user:#5F8466;--pad-num:#4E6B54;--bg:#F2F5F0;--surface:#FAFCF8;--surface2:#E6ECE3;--sel:rgba(107,143,113,.17);--peer:rgba(107,143,113,.07);--same:rgba(107,143,113,.30);--thin:#D3DCD0;--thick:#59755E;--done-bg:#E4EFE2}
+html[data-theme=dark][data-skin=sage]{--primary:#93B898;--pad-btn:#5F7F65;--num-user:#9CBA9F;--pad-num:#A9C4AD;--bg:#131712;--surface:#1B201A;--surface2:#0D100C;--sel:rgba(147,184,152,.20);--peer:rgba(147,184,152,.09);--same:rgba(147,184,152,.30);--thin:#39423A;--thick:#8FA392;--done-bg:rgba(129,199,132,.13)}
+html[data-skin=clay]{--primary:#A9714F;--pad-btn:#A9714F;--num-user:#9A6647;--pad-num:#7E543C;--bg:#F6F2EF;--surface:#FDFBF9;--surface2:#EEE6E0;--sel:rgba(169,113,79,.16);--peer:rgba(169,113,79,.07);--same:rgba(169,113,79,.28);--thin:#E0D4CC;--thick:#7E5A42;--done-bg:#EFE9E0}
+html[data-theme=dark][data-skin=clay]{--primary:#C99B7E;--pad-btn:#8F6248;--num-user:#C9A183;--pad-num:#D4B298;--bg:#171310;--surface:#201A15;--surface2:#100D0A;--sel:rgba(201,155,126,.20);--peer:rgba(201,155,126,.09);--same:rgba(201,155,126,.30);--thin:#413831;--thick:#A98D77;--done-bg:rgba(255,183,77,.12)}
+html[data-skin=slate]{--primary:#5E7186;--pad-btn:#5E7186;--num-user:#54708C;--pad-num:#44586C;--bg:#F1F3F5;--surface:#FAFBFC;--surface2:#E4E8EC;--sel:rgba(94,113,134,.16);--peer:rgba(94,113,134,.07);--same:rgba(94,113,134,.28);--thin:#D2D8DE;--thick:#47596B;--done-bg:#E3EBE7}
+html[data-theme=dark][data-skin=slate]{--primary:#8FA5BB;--pad-btn:#5E7186;--num-user:#93A9BF;--pad-num:#A3B5C8;--bg:#131619;--surface:#1B1F23;--surface2:#0D0F11;--sel:rgba(147,165,187,.20);--peer:rgba(147,165,187,.09);--same:rgba(147,165,187,.30);--thin:#394048;--thick:#8FA0B3;--done-bg:rgba(129,199,132,.12)}
 html,body{height:100%}
 body{
 font-family:'Roboto','Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
@@ -93,23 +101,29 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .fab{pointer-events:auto;display:flex;align-items:center;gap:10px;height:56px;padding:0 26px;border-radius:28px;background:var(--primary);color:var(--on-primary);font-size:16px;font-weight:600;box-shadow:var(--shadow-2);transition:transform .18s cubic-bezier(.3,1.5,.6,1);position:relative;overflow:hidden}
 .fab:active{transform:scale(.94)}
 
-.game-topbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 6px 0;display:flex;align-items:center;gap:4px;z-index:4;box-shadow:var(--shadow-1);background:var(--surface)}
-.tb-left{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
-.diff-tag{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden}
-.diff-tag .dot{width:9px;height:9px;border-radius:50%;background:var(--dc,#999)}
-.timer{font-size:24px;font-weight:700;color:var(--amber-bright);font-variant-numeric:tabular-nums;letter-spacing:.5px;padding:4px 10px;border-radius:12px;position:relative;overflow:hidden}
-.timer:active{background:var(--sel)}
-.tb-right{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:2px;min-width:0}
-.errors{display:flex;align-items:center;gap:5px;font-size:16px;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums;white-space:nowrap}
-.errors .x{filter:saturate(1.2)}
-@keyframes bump{50%{transform:scale(1.35)}}
-.errors.bump{animation:bump .32s}
+.game-appbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;gap:8px;z-index:4;background:var(--surface)}
+.gtitle{font-size:20px;font-weight:700;flex:1}
+.newgame-btn{height:38px;padding:0 18px;border-radius:10px;background:var(--pad-btn,var(--primary));color:var(--on-primary);font-size:14px;font-weight:600;position:relative;overflow:hidden;box-shadow:var(--shadow-1)}
+.info-row{display:flex;align-items:flex-end;justify-content:space-between;background:var(--surface);padding:2px 18px 8px;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.info-block{display:flex;flex-direction:column;gap:2px;min-width:86px;text-align:left;border-radius:10px}
+.info-block.center{text-align:center;align-items:center}
+.info-block.right{text-align:right;align-items:flex-end}
+button.info-block{cursor:pointer;padding:2px 4px}
+.i-label{font-size:12px;color:var(--on-var);display:flex;align-items:center;gap:4px}
+.i-value{font-size:15px;font-weight:600;display:flex;align-items:center;gap:4px;color:var(--on)}
+.i-value svg{width:14px;height:14px;color:var(--on-var)}
+.i-big{font-size:22px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;color:var(--on)}
+.errwrap.over .i-big{color:#A81D12;animation:errblink 1.1s infinite}
+@keyframes errblink{50%{opacity:.3}}
+.pause-mini{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--on-var);position:relative;overflow:hidden}
+.pause-mini svg{width:15px;height:15px}
+.pause-mini:active{background:var(--sel)}
 
-.board-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px}
-.board{width:min(100%,calc(100dvh - 352px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--surface);border:4px solid var(--thick);border-radius:14px;box-shadow:var(--shadow-2);overflow:hidden}
+.board-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px}
+.board{width:min(100%,calc(100dvh - 348px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--board-bg,var(--surface));border:3px solid var(--thick);border-radius:10px;box-shadow:var(--shadow-2);overflow:hidden}
 .cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--thin);border-bottom:1px solid var(--thin);transition:background .15s;cursor:pointer}
-.cell.bl{border-left:4px solid var(--thick)}
-.cell.bt{border-top:4px solid var(--thick)}
+.cell.bl{border-left:3px solid var(--thick)}
+.cell.bt{border-top:3px solid var(--thick)}
 .cell:nth-child(9n){border-right:none}
 .cell:nth-child(n+73){border-bottom:none}
 .cell.peer{background:var(--peer)}
@@ -137,17 +151,18 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .notes i.on{visibility:visible}
 
 .pad{background:var(--surface2);z-index:3;box-shadow:0 -2px 10px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom)}
-.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px 6px}
-.key{height:46px;border-radius:13px;background:var(--key);box-shadow:var(--shadow-1);display:flex;align-items:center;justify-content:center;gap:5px;font-size:23px;font-weight:600;color:var(--num-user);transition:transform .15s cubic-bezier(.3,1.5,.6,1),opacity .2s;position:relative;overflow:hidden}
-.key:active{transform:scale(.92)}
-.key em{font-style:normal;font-size:10px;font-weight:400;color:var(--on-var);opacity:.75;align-self:flex-end;margin-bottom:7px}
-.key.exhaust{opacity:.32}
-.tools{display:flex;justify-content:space-evenly;padding:4px 12px 12px}
-.tool{min-width:96px;height:54px;border-radius:16px;border:1.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--on-var);position:relative;overflow:hidden;transition:all .15s}
-.tool svg{width:21px;height:21px}
-.tool.on{border-color:var(--primary);color:var(--primary);background:var(--sel)}
-.tool.dim{opacity:.38}
-.badge{position:absolute;top:4px;right:10px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--amber);color:#3E2723;font-size:11px;font-weight:700;line-height:17px;text-align:center}
+.tools-row{display:flex;justify-content:space-evenly;align-items:center;padding:10px 12px 2px}
+.tool{width:60px;height:52px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--on-var);position:relative;transition:all .15s}
+.tool svg{width:24px;height:24px}
+.tool.on{color:var(--primary);background:var(--sel)}
+.tool.dim{opacity:.32}
+.badge{position:absolute;top:2px;right:6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#5C7EA3;color:#fff;font-size:10px;font-weight:700;line-height:17px;text-align:center}
+.badge.offb{background:var(--thin);color:var(--on-var)}
+.nums-row{display:flex;gap:4px;padding:4px 8px calc(12px + env(safe-area-inset-bottom))}
+.key{flex:1;height:58px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:27px;font-weight:600;color:var(--pad-num);font-family:Roboto, sans-serif;transition:transform .15s cubic-bezier(.3,1.5,.6,1),opacity .2s;position:relative;overflow:hidden}
+.key:active{transform:scale(.88);background:var(--sel)}
+.key em{font-style:normal;font-size:10px;font-weight:400;color:var(--on-var);opacity:.55;line-height:1;font-variant-numeric:tabular-nums}
+.key.exhaust{opacity:.28}
 
 .mask{position:fixed;inset:0;background:var(--mask);z-index:60;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;padding:24px}
 .mask.show{opacity:1;pointer-events:auto}
@@ -192,6 +207,11 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .lb-time{font-weight:700;font-variant-numeric:tabular-nums}
 .lb-err{color:var(--red);font-size:13px}
 .lb-date{margin-left:auto;font-size:11px;color:var(--on-var)}
+.lb-tag{font-size:11px;font-weight:700;color:#B8860B;background:rgba(255,193,7,.16);border:1px solid rgba(255,193,7,.45);border-radius:6px;padding:1px 5px;margin-left:6px}
+.lb-item .lb-date{margin-left:auto}
+.diff-pick{display:flex;align-items:center;gap:12px;width:100%;height:56px;padding:0 14px;border-radius:14px;font-size:15px;font-weight:600;text-align:left;position:relative;overflow:hidden}
+.diff-pick .pdot{width:14px;height:14px;border-radius:50%;flex:none}
+.diff-pick .pcur{margin-left:auto;font-size:12px;color:var(--primary);font-weight:700}
 .lb-empty{text-align:center;color:var(--on-var);padding:36px 0;font-size:14px}
 
 .toast{position:fixed;left:50%;bottom:110px;transform:translate(-50%,16px);background:#323232;color:#fff;padding:10px 20px;border-radius:26px;font-size:14px;box-shadow:var(--shadow-2);opacity:0;pointer-events:none;transition:all .25s;z-index:80;max-width:86vw;text-align:center}
@@ -242,39 +262,47 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 </section>
 
 <section id="page-game" class="page">
-  <header class="game-topbar">
-    <div class="tb-left">
-      <button id="btnBack" class="icon-btn rip" aria-label="返回">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-      </button>
-      <span id="diffTag" class="diff-tag"><i class="dot"></i><span id="diffTagName">低难度</span></span>
-    </div>
-    <button id="timer" class="timer rip">00:00</button>
-    <div class="tb-right">
-      <button id="btnPauseTop" class="icon-btn rip" aria-label="暂停">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-      </button>
-      <span class="errors" id="errBox"><span class="x">❌</span><span id="errCount">0/∞</span></span>
-    </div>
+  <header class="game-appbar">
+    <button id="btnBack" class="icon-btn rip" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+    <span class="logo-dot" style="width:26px;height:26px;border-radius:8px"></span>
+    <span class="gtitle">数独</span>
+    <button id="btnNewGame" class="newgame-btn rip">新游戏</button>
   </header>
+  <div class="info-row">
+    <button id="diffPicker" class="info-block rip">
+      <span class="i-label">难度</span>
+      <span class="i-value"><span id="diffValue">低难度</span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></span>
+    </button>
+    <div class="info-block center errwrap" id="errWrap">
+      <span class="i-big" id="errBig">0</span>
+      <span class="i-label" id="errCap">错误 0/∞</span>
+    </div>
+    <div class="info-block right">
+      <span class="i-label">时间</span>
+      <span class="i-value"><span id="timer">00:00</span><button id="btnPauseTop" class="pause-mini rip" aria-label="暂停"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button></span>
+    </div>
+  </div>
   <main class="board-wrap"><div id="board" class="board"></div></main>
   <footer class="pad">
-    <div class="nums" id="nums"></div>
-    <div class="tools">
-      <button id="btnErase" class="tool rip">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
-        擦除
+    <div class="tools-row">
+      <button id="btnUndo" class="tool rip" aria-label="撤销">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
       </button>
-      <button id="btnHint" class="tool rip">
+      <button id="btnErase" class="tool rip" aria-label="擦除">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
+      </button>
+      <button id="btnNote" class="tool rip" aria-label="笔记">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        <span class="badge offb" id="noteBadge">OFF</span>
+      </button>
+      <button id="btnHint" class="tool rip" aria-label="提示">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
-        提示
         <span class="badge" id="hintBadge">3</span>
       </button>
-      <button id="btnNote" class="tool rip">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-        笔记
-      </button>
     </div>
+    <div class="nums-row" id="nums"></div>
   </footer>
 </section>
 
@@ -302,6 +330,10 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
     </div>
     <div class="dlg-actions">
       <button id="btnAgain" class="btn filled rip">再来一局</button>
+      <button id="btnContinue" class="btn tonal rip hidden">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        继续挑战（保留记录标注）
+      </button>
       <button id="btnShare" class="btn tonal rip">
         <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81A2.99 2.99 0 006 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65a2.92 2.92 0 105.84 0c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
         分享成绩
@@ -321,7 +353,22 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
       <button data-theme="light">浅色</button>
       <button data-theme="dark">深色</button>
     </div>
+    <div style="font-size:13px;color:var(--on-var);margin-bottom:8px">棋盘风格 · 低对比度 Material 配色</div>
+    <div class="seg" id="skinSeg">
+      <button data-skin="indigo">靛蓝</button>
+      <button data-skin="sage">鼠尾草</button>
+      <button data-skin="clay">陶土</button>
+      <button data-skin="slate">蓝灰</button>
+    </div>
     <button id="btnClearData" class="btn tonal danger rip">清除所有数据</button>
+  </div>
+</div>
+
+<div id="diffSheet" class="sheet-mask">
+  <div class="sheet">
+    <div class="sheet-head"><h3>选择难度</h3><button class="icon-btn rip sheet-close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+    <div id="diffPickList"></div>
+    <p style="font-size:12px;color:var(--on-var);margin-top:10px">切换难度将开始一局新游戏</p>
   </div>
 </div>
 
@@ -493,7 +540,7 @@ const LS={
  del(k){try{localStorage.removeItem('sdk.'+k);}catch(e){}}
 };
 let G=null,selDiff=LS.get('lastDiff','easy'),lbTab='easy',lastLost=false;
-const cellEls=[],keyEls={},doneMarked=new Set();
+const cellEls=[],keyEls={},doneMarked=new Set(),UNDO=[];
 
 const fmt=s=>{
  s=Math.max(0,s|0);
@@ -520,7 +567,7 @@ function buildBoard(){
   for(let n=1;n<=9;n++){const s=document.createElement('i');s.textContent=n;s.dataset.n=n;ns.appendChild(s);}
   cell.appendChild(v);cell.appendChild(ns);
   b.appendChild(cell);
-  cellEls.push({root:cell,v,notes:ns});
+  cellEls.push({root:cell,v,notes:ns,base:cell.className});
  }
  b.addEventListener('click',e=>{
   const cell=e.target.closest('.cell');
@@ -541,6 +588,11 @@ function buildPad(){
  $('#nums').addEventListener('contextmenu',e=>e.preventDefault());
 }
 
+function snapshot(){
+ if(UNDO.length>=200)UNDO.shift();
+ UNDO.push({b:G.board.slice(),n:G.notes.map(s=>[...s]),e:G.errors,h:[...G.hinted],c:G.continues});
+}
+
 function newGameState(diff,puzzle,solution){
  G={
   diff,puzzle:puzzle.slice(),solution:solution.slice(),
@@ -548,9 +600,11 @@ function newGameState(diff,puzzle,solution){
   given:puzzle.map(v=>v>0),
   notes:Array.from({length:81},()=>new Set()),
   selected:-1,noteMode:false,errors:0,hints:3,hinted:new Set(),
-  locks:new Map(),time:0,running:true,over:false
+  locks:new Map(),time:0,running:true,over:false,
+  continues:0,limitLifted:false
  };
  doneMarked.clear();
+ UNDO.length=0;
  lastLost=false;
  LS.set('lastDiff',diff);
  selDiff=diff;
@@ -582,9 +636,11 @@ function resumeGame(){
   notes:s.notes.map(a=>new Set(a)),
   selected:-1,noteMode:false,errors:s.errors,hints:s.hints,
   hinted:new Set(s.hinted||[]),locks:new Map(),
-  time:s.time||0,running:true,over:false
+  time:s.time||0,running:true,over:false,
+  continues:s.continues||0,limitLifted:!!s.limitLifted
  };
  doneMarked.clear();
+ UNDO.length=0;
  lastLost=false;
  show('game');renderAll();startTicker();
  toastMsg('已恢复上局进度');
@@ -592,7 +648,7 @@ function resumeGame(){
 }
 function save(){
  if(!G||G.over)return;
- LS.set('save',{diff:G.diff,puzzle:G.puzzle,solution:G.solution,board:G.board,notes:G.notes.map(s=>[...s]),errors:G.errors,hints:G.hints,hinted:[...G.hinted],time:G.time});
+ LS.set('save',{diff:G.diff,puzzle:G.puzzle,solution:G.solution,board:G.board,notes:G.notes.map(s=>[...s]),errors:G.errors,hints:G.hints,hinted:[...G.hinted],time:G.time,continues:G.continues,limitLifted:G.limitLifted});
 }
 function startTicker(){
  if(startTicker._iv)return;
@@ -648,8 +704,9 @@ function pressKey(k){
  if(G.noteMode){
   if(G.board[i])return;
   const ns=G.notes[i];
+  snapshot();
   ns.has(k)?ns.delete(k):ns.add(k);
-  save();renderBoard();
+  save();renderBoard();syncToolbars();
   return;
  }
  if(G.board[i]===k)return;
@@ -657,6 +714,7 @@ function pressKey(k){
 }
 function placeValue(i,k,byUser){
  const correct=k===G.solution[i];
+ snapshot();
  G.notes[i].clear();
  if(correct){
   const wasEmpty=!G.board[i];
@@ -668,7 +726,7 @@ function placeValue(i,k,byUser){
   const cell=cellEls[i].root;
   if(wasEmpty){cell.classList.remove('pop');void cell.offsetWidth;cell.classList.add('pop');setTimeout(()=>cell.classList.remove('pop'),260);}
   markNewDone(i);
-  if(isWin())finish(true);
+  if(isWin())finishWin();
  }else{
   G.board[i]=k;
   G.errors++;
@@ -679,8 +737,35 @@ function placeValue(i,k,byUser){
   renderBoard();
   flashShake(i);
   const me=maxErr();
-  if(me!==Infinity&&G.errors>=me)setTimeout(()=>finish(false),350);
+  if(me!==Infinity&&G.errors>=me&&!G.limitLifted)setTimeout(showFailDialog,350);
  }
+}
+function undoMove(){
+ if(!G||G.over)return;
+ if(!UNDO.length){toastMsg('没有可撤销的操作');return;}
+ const s=UNDO.pop();
+ G.board=s.b.slice();
+ G.notes=s.n.map(a=>new Set(a));
+ G.errors=s.e;
+ G.hinted=new Set(s.h);
+ G.continues=s.c;
+ if(G.errors<maxErr())G.limitLifted=false;
+ renderAll();
+ save();
+}
+function showFailDialog(){
+ if(!G||G.over)return;
+ G.running=false;
+ lastLost=true;
+ save();
+ $('#endEmoji').textContent='💥';
+ $('#endTitle').textContent='错误次数达上限';
+ $('#endStats').classList.add('hidden');
+ $('#btnShare').classList.add('hidden');
+ $('#btnLower').classList.remove('hidden');
+ $('#btnContinue').classList.remove('hidden');
+ $('#btnAgain').textContent='重新挑战';
+ openMask('#endMask');
 }
 function flashShake(i){
  const cell=cellEls[i].root;
@@ -708,6 +793,7 @@ function erase(){
  if(i<0){toastMsg('请先选择一个格子');return;}
  if(G.given[i])return;
  if(!G.board[i]&&!G.notes[i].size)return;
+ snapshot();
  G.board[i]=0;G.notes[i].clear();
  save();renderAll();
 }
@@ -733,23 +819,32 @@ function useHint(){
  G.hinted.add(pick);
  G.selected=pick;
  placeValue(pick,G.solution[pick],false);
+ syncToolbars();
  toastMsg(`已填入正确数字 · 剩余提示 ${G.hints} 次`);
+}
+
+function syncToolbars(){
+ $('#hintBadge').textContent=G.hints;
+ $('#btnHint').classList.toggle('dim',G.hints<=0);
+ $('#btnNote').classList.toggle('on',G.noteMode);
+ const nb=$('#noteBadge');
+ nb.textContent=G.noteMode?'ON':'OFF';
+ nb.classList.toggle('offb',!G.noteMode);
+ $('#btnUndo').classList.toggle('dim',!UNDO.length||G.over);
 }
 
 function renderAll(){
  $('#timer').textContent=fmt(G.time);
- const tag=$('#diffTag');
- tag.style.setProperty('--dc',{easy:'#4CAF50',hard:'#FFC107',master:'#F44336'}[G.diff]);
- $('#diffTagName').textContent=DIFFS[G.diff].name;
+ $('#diffValue').textContent=DIFFS[G.diff].name;
  updateErrors(false);
- $('#hintBadge').textContent=G.hints;
- $('#btnNote').classList.toggle('on',G.noteMode);
+ syncToolbars();
  renderBoard();renderPad();
 }
 function updateErrors(anim){
  const me=maxErr();
- $('#errCount').textContent=`${G.errors}/${me===Infinity?'∞':me}`;
- if(anim){const eb=$('#errBox');eb.classList.remove('bump');void eb.offsetWidth;eb.classList.add('bump');}
+ $('#errBig').textContent=G.errors;
+ $('#errCap').textContent=`错误 ${G.errors}/${me===Infinity?'∞':me}`;
+ $('#errWrap').classList.toggle('over',me!==Infinity&&G.errors>=me&&G.limitLifted);
 }
 function renderBoard(){
  const done=doneUnits();
@@ -757,7 +852,7 @@ function renderBoard(){
  const sv=sel>=0?G.board[sel]:0;
  for(let i=0;i<81;i++){
   const e=cellEls[i],val=G.board[i];
-  let cls='cell';
+  let cls=e.base;
   if(G.given[i])cls+=' given';
   else if(G.hinted.has(i))cls+=' hinted';
   else cls+=' user';
@@ -810,65 +905,57 @@ function quitToHome(){
 }
 
 function rateResult(){
+ const letters=['S','A','B','C'];
  const t=G.time,e=G.errors,par=PAR[G.diff],me=maxErr()==Infinity?3:maxErr();
- if(e===0&&t<=par*0.75)return['S',3];
- if(e<=1&&t<=par)return['A',2];
- if(e<=me&&t<=par*1.6)return['B',1];
- return['C',0];
+ let idx;
+ if(e===0&&t<=par*0.75)idx=0;
+ else if(e<=1&&t<=par)idx=1;
+ else if(e<=me&&t<=par*1.6)idx=2;
+ else idx=3;
+ idx=Math.min(3,idx+(G.continues||0));
+ return[letters[idx],3-idx];
 }
 function starsHtml(n){
  let h='';
  for(let k=0;k<3;k++)h+=`<span class="${k<n?'':'off'}">★</span>`;
  return h;
 }
-function finish(won){
- if(!G.over){
-  G.over=true;G.running=false;
-  const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{}});
-  st.games++;
-  if(won){
-   st.wins++;st.streak++;st.bestStreak=Math.max(st.bestStreak,st.streak);
-   const b=st.best[G.diff];
-   if(!b||G.time<b)st.best[G.diff]=G.time;
-   const me=st.minErr[G.diff];
-   if(me==null||G.errors<me)st.minErr[G.diff]=G.errors;
-   const lb=LS.get('lb',{});
-   const arr=lb[G.diff]||[];
-   arr.push({t:G.time,e:G.errors,at:Date.now()});
-   arr.sort((a,b2)=>a.e-b2.e||a.t-b2.t||b2.at-a.at);
-   lb[G.diff]=arr.slice(0,10);
-   LS.set('lb',lb);
-  }else st.streak=0;
-  LS.set('stats',st);
-  LS.del('save');
-  vib(won?[30,50,30,50,80]:[90]);
- }
+function finishWin(){
+ if(G.over)return;
+ G.over=true;G.running=false;
+ lastLost=false;
+ const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{},rescues:0});
+ st.games++;
+ st.wins++;st.streak++;st.bestStreak=Math.max(st.bestStreak,st.streak);
+ const b=st.best[G.diff];
+ if(!b||G.time<b)st.best[G.diff]=G.time;
+ const me=st.minErr[G.diff];
+ if(me==null||G.errors<me)st.minErr[G.diff]=G.errors;
+ if(G.continues>0)st.rescues=(st.rescues||0)+1;
+ const lb=LS.get('lb',{});
+ const arr=lb[G.diff]||[];
+ arr.push({t:G.time,e:G.errors,at:Date.now(),c:G.continues||0});
+ arr.sort((a,b2)=>a.e-b2.e||a.t-b2.t||b2.at-a.at);
+ lb[G.diff]=arr.slice(0,10);
+ LS.set('lb',lb);
+ LS.set('stats',st);
+ LS.del('save');
+ vib([30,50,30,50,80]);
  $('#timer').textContent=fmt(G.time);
- if(won){
-  lastLost=false;
-  const [rank,n]=rateResult();
-  $('#endEmoji').textContent='🏆';
-  $('#endTitle').textContent='挑战成功！';
-  $('#endTime').textContent=fmt(G.time);
-  $('#endErr').textContent=G.errors+' 次';
-  $('#endStars').innerHTML=starsHtml(n)+` ${rank}级`;
-  $('#endStats').classList.remove('hidden');
-  $('#rateRow').classList.remove('hidden');
-  $('#btnShare').classList.remove('hidden');
-  $('#btnLower').classList.add('hidden');
-  $('#btnAgain').textContent='再来一局';
-  openMask('#endMask');
-  setTimeout(()=>FX.burst(),260);
- }else{
-  lastLost=true;
-  $('#endEmoji').textContent='💔';
-  $('#endTitle').textContent='挑战失败';
-  $('#endStats').classList.add('hidden');
-  $('#btnShare').classList.add('hidden');
-  $('#btnLower').classList.remove('hidden');
-  $('#btnAgain').textContent='重新挑战';
-  openMask('#endMask');
- }
+ const [rank,n]=rateResult();
+ $('#endEmoji').textContent=G.continues>0?'🩹':'🏆';
+ $('#endTitle').textContent=G.continues>0?`挑战成功！续命 ×${G.continues}`:'挑战成功！';
+ $('#endTime').textContent=fmt(G.time);
+ $('#endErr').textContent=G.errors+' 次';
+ $('#endStars').innerHTML=starsHtml(n)+` ${rank}级`;
+ $('#endStats').classList.remove('hidden');
+ $('#rateRow').classList.remove('hidden');
+ $('#btnShare').classList.remove('hidden');
+ $('#btnLower').classList.add('hidden');
+ $('#btnContinue').classList.add('hidden');
+ $('#btnAgain').textContent='再来一局';
+ openMask('#endMask');
+ setTimeout(()=>FX.burst(),260);
 }
 function afterFailShow(){
  $('#endStats').classList.remove('hidden');
@@ -989,7 +1076,8 @@ function buildShareCard(rankText){
  return c;
 }
 function shareText(rankText){
- return `🧩 数独·${DIFFS[G.diff].name}挑战成功！\n⏱️ 用时：${fmtCN(G.time)}\n❌ 错误：${G.errors}次\n🏆 获得评级：${rankText}\n你能比我更快吗？来挑战！\n${location.href.split('#')[0]||''}`;
+ const rescue=G.continues?`\n🩹 续命 ×${G.continues}（特别标注）`:'';
+ return `🧩 数独·${DIFFS[G.diff].name}挑战成功！\n⏱️ 用时：${fmtCN(G.time)}\n❌ 错误：${G.errors}次${rescue}\n🏆 获得评级：${rankText}\n你能比我更快吗？来挑战！\n${location.href.split('#')[0]||''}`;
 }
 async function copyText(t){
  try{await navigator.clipboard.writeText(t);return true;}
@@ -1030,13 +1118,14 @@ async function doShare(){
 }
 
 function renderHome(){
- const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{}});
+ const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{},rescues:0});
  const bestAll=Object.values(st.best||{});
  const chips=[
   ['🎮 总游戏场次',String(st.games)],
   ['⏱️ 最佳时间',bestAll.length?fmt(Math.min(...bestAll)):'—'],
   ['🎯 最少错误',st.minErr&&Object.keys(st.minErr).length?String(Math.min(...Object.values(st.minErr)))+' 次':'—'],
-  ['🔥 连胜纪录',String(st.bestStreak||0)]
+  ['🔥 连胜纪录',String(st.bestStreak||0)],
+  ['🩹 带伤通关',String(st.rescues||0)]
  ];
  $('#statsRow').innerHTML=chips.map(([l,v])=>`<div class="stat-chip"><div class="stat-label">${l}</div><div class="stat-value">${v}</div></div>`).join('');
  $$('#diffList .diff-btn').forEach(btn=>{
@@ -1063,7 +1152,8 @@ function renderLb(){
   const medal=idx<3?` r${idx+1}`:'';
   const d=new Date(r.at);
   const ds=`${d.getMonth()+1}/${d.getDate()}`;
-  return `<li class="lb-item"><span class="lb-rank${medal}">${idx+1}</span><span class="lb-time">${fmt(r.t)}</span><span class="lb-err">错 ${r.e}</span><span class="lb-date">${ds}</span></li>`;
+  const tag=r.c?`<span class="lb-tag">续命×${r.c}</span>`:'';
+  return `<li class="lb-item"><span class="lb-rank${medal}">${idx+1}</span><span class="lb-time">${fmt(r.t)}</span><span class="lb-err">错 ${r.e}</span>${tag}<span class="lb-date">${ds}</span></li>`;
  }).join('');
 }
 
@@ -1074,7 +1164,17 @@ function applyThemeSetting(t){
  meta&&meta.setAttribute('content',eff==='dark'?'#121212':'#3F51B5');
 }
 let themePref=LS.get('settings',{theme:'auto'}).theme||'auto';
+let skinPref=LS.get('settings',{theme:'auto',skin:'indigo'}).skin||'indigo';
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themePref==='auto')applyThemeSetting('auto');});
+function applySkin(s){skinPref=s;document.documentElement.dataset.skin=s;}
+function renderDiffPickList(){
+ $('#diffPickList').innerHTML=['easy','hard','master'].map(d=>{
+  const m=DIFFS[d];
+  const cur=G&&G.diff===d;
+  const dot={easy:'#4CAF50',hard:'#FFC107',master:'#F44336'}[d];
+  return `<button class="diff-pick rip" data-diff="${d}"><span class="pdot" style="background:${dot}"></span>${m.name}${cur?'<span class="pcur">当前</span>':''}</button>`;
+ }).join('');
+}
 
 function bind(){
  $$('.diff-btn').forEach(btn=>btn.addEventListener('click',()=>{selDiff=btn.dataset.diff;renderHome();}));
@@ -1082,15 +1182,29 @@ function bind(){
  $('#btnResumeGame').addEventListener('click',()=>resumeGame());
  $('#btnSettings').addEventListener('click',()=>{
   $$('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.theme===themePref));
+  $$('#skinSeg button').forEach(b=>b.classList.toggle('on',b.dataset.skin===skinPref));
   openMask('#settingsSheet');
  });
  $('#themeSeg').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   themePref=b.dataset.theme;
-  LS.set('settings',{theme:themePref});
+  LS.set('settings',{theme:themePref,skin:skinPref});
   applyThemeSetting(themePref);
   $$('#themeSeg button').forEach(x=>x.classList.toggle('on',x===b));
  });
+ $('#skinSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  applySkin(b.dataset.skin);
+  LS.set('settings',{theme:themePref,skin:skinPref});
+  $$('#skinSeg button').forEach(x=>x.classList.toggle('on',x===b));
+ });
+ $('#diffPicker').addEventListener('click',()=>{renderDiffPickList();openMask('#diffSheet');});
+ $('#diffPickList').addEventListener('click',e=>{
+  const b=e.target.closest('.diff-pick');if(!b)return;
+  closeMask('#diffSheet');
+  startGame(b.dataset.diff);
+ });
+ $('#btnNewGame').addEventListener('click',()=>startGame(G?G.diff:selDiff));
  $('#btnClearData').addEventListener('click',e=>{
   const b=e.currentTarget;
   if(!b._armed){b._armed=true;b.textContent='再次点击确认清除';setTimeout(()=>{b._armed=false;b.textContent='清除所有数据';},2500);return;}
@@ -1111,10 +1225,23 @@ function bind(){
  $('#btnResume').addEventListener('click',resumePlay);
  $('#btnRestart').addEventListener('click',restartSame);
  $('#btnQuit').addEventListener('click',quitToHome);
+ $('#btnUndo').addEventListener('click',undoMove);
  $('#btnErase').addEventListener('click',erase);
  $('#btnHint').addEventListener('click',useHint);
- $('#btnNote').addEventListener('click',()=>{G.noteMode=!G.noteMode;$('#btnNote').classList.toggle('on',G.noteMode);toastMsg(G.noteMode?'笔记模式：候选数记录中':'笔记模式已关闭');});
+ $('#btnNote').addEventListener('click',()=>{G.noteMode=!G.noteMode;syncToolbars();toastMsg(G.noteMode?'笔记模式：候选数记录中':'笔记模式已关闭');});
  $('#btnAgain').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();lastLost?restartSame():startGame(G.diff);});
+ $('#btnContinue').addEventListener('click',()=>{
+  closeMask('#endMask');
+  afterFailShow();
+  G.continues=(G.continues||0)+1;
+  G.limitLifted=true;
+  G.running=true;
+  save();
+  updateErrors(false);
+  syncToolbars();
+  vib(30);
+  toastMsg(`第 ${G.continues} 次续命 · 本局成绩将特别标注`);
+ });
  $('#btnShare').addEventListener('click',doShare);
  $('#btnLower').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();startGame(G.diff==='master'?'hard':'easy');});
  $('#btnHome2').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();show('home');});
@@ -1127,6 +1254,7 @@ function bind(){
   if(e.key==='Backspace'||e.key==='Delete'){erase();return;}
   if(e.key==='n'||e.key==='N'){$('#btnNote').click();return;}
   if(e.key==='h'||e.key==='H'){useHint();return;}
+  if(e.key==='z'||e.key==='Z'){undoMove();return;}
   if(e.key==='Escape'){pauseGame();return;}
   const dir={ArrowUp:-9,ArrowDown:9,ArrowLeft:-1,ArrowRight:1}[e.key];
   if(dir!=null&&G.selected>=0){e.preventDefault();selectCell(Math.max(0,Math.min(80,G.selected+dir)));}
