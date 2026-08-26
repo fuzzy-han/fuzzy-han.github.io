@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#3F51B5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="数独">
+<meta name="mobile-web-app-capable" content="yes">
 <title>数独</title>
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('sdk.settings')||'{}');var t=s.theme||'auto';if(t==='auto')t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;document.documentElement.dataset.skin=s.skin||'indigo';}catch(e){}})()</script>
 <style>
@@ -153,6 +155,9 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .level-node.done .lv-stars{color:#FFE082}
 .level-node.next{border-color:var(--pad-btn,var(--primary));color:var(--pad-btn,var(--primary));background:var(--surface)}
 .level-node.locked{opacity:.38}
+.a2hs-steps{margin:6px 4px 10px 20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6;color:var(--on)}
+.a2hs-steps b{color:var(--primary)}
+.a2hs-note{font-size:12px;color:var(--on-var);margin-top:4px}
 
 .game-appbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;gap:8px;z-index:4;background:var(--surface)}
 .gtitle{font-size:20px;font-weight:700;flex:1}
@@ -433,6 +438,7 @@ button.info-block{cursor:pointer;padding:2px 4px}
       <button data-skin="clay">陶土</button>
       <button data-skin="slate">蓝灰</button>
     </div>
+    <button id="btnA2HS" class="btn tonal rip" style="margin-bottom:10px">📱 添加到手机桌面</button>
     <button id="btnClearData" class="btn tonal danger rip">清除所有数据</button>
   </div>
 </div>
@@ -516,6 +522,18 @@ button.info-block{cursor:pointer;padding:2px 4px}
   </header>
   <main class="levels-body" id="levelMap"></main>
 </section>
+
+<div id="a2hsSheet" class="sheet-mask">
+  <div class="sheet">
+    <div class="sheet-head"><h3>添加到手机桌面</h3><button class="icon-btn rip sheet-close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+    <ol class="a2hs-steps">
+      <li>点击浏览器底部工具栏的<b>分享</b>按钮 <span class="a2hs-ico">⬆️</span></li>
+      <li>在菜单中找到<b>「添加到主屏幕」</b></li>
+      <li>确认名称后点击<b>添加</b></li>
+    </ol>
+    <p class="a2hs-note">添加后像 App 一样全屏启动，进度保存在本机</p>
+  </div>
+</div>
 
 <canvas id="fx"></canvas>
 <div id="toast" class="toast"></div>
@@ -1813,6 +1831,46 @@ function renderLevelMap(){
  $('#levelMap').innerHTML=html;
 }
 
+/* ==================== PWA 添加到桌面 ==================== */
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;});
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||(navigator.standalone===true);
+function setupManifest(){
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#3F51B5"/><g stroke="#fff" stroke-width="13" opacity=".85"><path d="M181 96v320M331 96v320M96 181h320M96 331h320"/></g><text x="256" y="272" font-family="sans-serif" font-size="170" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="central">数</text></svg>';
+ const icon='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+ const dir=location.origin+location.pathname.replace(/[^/]*$/,'');
+ const manifest={
+  name:'数独 Sudoku',short_name:'数独',
+  description:'Material 风格数独：100 关闯关、技巧学堂、排行榜、离线可玩',
+  start_url:dir,scope:dir,display:'standalone',orientation:'portrait',
+  background_color:'#F5F5F5',theme_color:'#3F51B5',
+  icons:[{src:icon,sizes:'any',type:'image/svg+xml',purpose:'any'}]
+ };
+ let link=document.querySelector('link[rel="manifest"]');
+ if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link);}
+ link.href='data:application/manifest+json;charset=utf-8,'+encodeURIComponent(JSON.stringify(manifest));
+}
+async function addToHome(){
+ if(isStandalone()){toastMsg('已经安装在桌面啦');return;}
+ if(deferredInstallPrompt){
+  try{
+   deferredInstallPrompt.prompt();
+   const {outcome}=await deferredInstallPrompt.userChoice;
+   deferredInstallPrompt=null;
+   toastMsg(outcome==='accepted'?'已添加到桌面 🎉':'已取消');
+  }catch(e){toastMsg('安装未完成，可稍后再试');}
+  return;
+ }
+ const ua=navigator.userAgent;
+ const isIOS=/iPhone|iPad|iPod/.test(ua)||( /Macintosh/.test(ua)&&'ontouchend' in document);
+ if(isIOS){openMask('#a2hsSheet');return;}
+ toastMsg('请用浏览器菜单里的「添加到主屏幕 / 安装应用」');
+}
+function registerSW(){
+ if(!('serviceWorker' in navigator)||location.protocol!=='https:')return;
+ try{navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+}
+
 function applyThemeSetting(t){
  const eff=t==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;
  document.documentElement.dataset.theme=eff;
@@ -1864,6 +1922,7 @@ function bind(){
   startGame(b.dataset.diff);
  });
  $('#btnNewGame').addEventListener('click',()=>startGame(G?G.diff:selDiff));
+ $('#btnA2HS').addEventListener('click',addToHome);
  $('#btnClearData').addEventListener('click',e=>{
   const b=e.currentTarget;
   if(!b._armed){b._armed=true;b.textContent='再次点击确认清除';setTimeout(()=>{b._armed=false;b.textContent='清除所有数据';},2500);return;}
@@ -1973,6 +2032,8 @@ function initDiffButtons(){
 function init(){
  applyThemeSetting(themePref);
  applySkin(skinPref);
+ setupManifest();
+ registerSW();
  FX.init();
  initDiffButtons();
  buildBoard();
