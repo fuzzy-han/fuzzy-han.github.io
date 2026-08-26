@@ -106,10 +106,10 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .errors.bump{animation:bump .32s}
 
 .board-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px}
-.board{width:min(100%,calc(100dvh - 352px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--surface);border:3px solid var(--thick);border-radius:14px;box-shadow:var(--shadow-2);overflow:hidden}
+.board{width:min(100%,calc(100dvh - 352px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--surface);border:4px solid var(--thick);border-radius:14px;box-shadow:var(--shadow-2);overflow:hidden}
 .cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--thin);border-bottom:1px solid var(--thin);transition:background .15s;cursor:pointer}
-.cell.bl{border-left:3px solid var(--thick)}
-.cell.bt{border-top:3px solid var(--thick)}
+.cell.bl{border-left:4px solid var(--thick)}
+.cell.bt{border-top:4px solid var(--thick)}
 .cell:nth-child(9n){border-right:none}
 .cell:nth-child(n+73){border-bottom:none}
 .cell.peer{background:var(--peer)}
