@@ -80,10 +80,10 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .lessons-banner{display:flex;align-items:center;gap:14px;background:var(--sel);border-radius:16px;padding:14px 16px;cursor:pointer;transition:transform .15s;width:100%;text-align:left}
 .lessons-banner:active{transform:scale(.98)}
 .lbi-icon{width:44px;height:44px;border-radius:12px;background:var(--pad-btn,var(--primary));color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
-.lbi-info{flex:1;min-width:0}
-.lbi-title{font-size:15px;font-weight:700}
-.lbi-sub{font-size:12px;color:var(--on-var);margin-top:2px}
-.lbi-prog{font-size:12px;font-weight:700;color:var(--primary);background:var(--surface);border-radius:10px;padding:4px 10px;flex:none}
+.lbi-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.lbi-title{font-size:15px;font-weight:700;color:var(--on)}
+.lbi-sub{font-size:12px;color:var(--on-var)}
+.lbi-prog{font-size:12px;font-weight:700;color:var(--primary);background:var(--surface);border-radius:10px;padding:4px 10px;flex:none;white-space:nowrap}
 
 .resume-card{display:flex;align-items:center;gap:12px;background:var(--sel);border-radius:16px;padding:12px 14px}
 .resume-info{flex:1;min-width:0}
@@ -126,6 +126,8 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .lesson-row .lstate{font-size:12px;font-weight:700;color:var(--on-var);flex:none}
 .lesson-row.done .lstate{color:var(--green)}
 .lesson-play{flex:1;overflow-y:auto;padding:12px 14px 24px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.lboard-wrap{width:100%;display:flex;justify-content:center;min-height:0}
+#lboard{width:min(100%,420px)}
 .theory-card{width:100%;background:var(--sel);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--on)}
 .theory-card b{color:var(--primary)}
 .task-bar{width:100%;display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;padding:10px 14px}
@@ -139,12 +141,26 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 #lboard .cell .v{font-size:clamp(17px,min(5.4vw,5dvh),28px)}
 @keyframes lflash{0%{background:rgba(76,175,80,.5)}100%{}}
 .cell.lflash{animation:lflash .7s ease-out}
+.levels-body{flex:1;overflow-y:auto;padding:12px 16px 30px}
+.chap-label{font-size:12px;font-weight:700;color:var(--on-var);margin:14px 2px 8px;display:flex;justify-content:space-between;align-items:center}
+.chap-label:first-child{margin-top:2px}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.level-node{height:60px;border-radius:14px;background:var(--sel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;overflow:hidden;transition:transform .15s;border:1.5px solid transparent;padding:0}
+.level-node:active{transform:scale(.92)}
+.level-node .lv-num{font-size:16px;font-weight:800;line-height:1}
+.level-node .lv-stars{font-size:9px;line-height:1;color:var(--amber);letter-spacing:.5px;white-space:nowrap}
+.level-node.done{background:var(--pad-btn,var(--primary));color:var(--on-primary)}
+.level-node.done .lv-stars{color:#FFE082}
+.level-node.next{border-color:var(--pad-btn,var(--primary));color:var(--pad-btn,var(--primary));background:var(--surface)}
+.level-node.locked{opacity:.38}
 
 .game-appbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;gap:8px;z-index:4;background:var(--surface)}
 .gtitle{font-size:20px;font-weight:700;flex:1}
 .newgame-btn{height:38px;padding:0 18px;border-radius:10px;background:var(--pad-btn,var(--primary));color:var(--on-primary);font-size:14px;font-weight:600;position:relative;overflow:hidden}
-.info-row{display:flex;align-items:flex-end;justify-content:space-between;background:var(--surface);padding:2px 18px 8px;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.05)}
-.info-block{display:flex;flex-direction:column;gap:2px;min-width:86px;text-align:left;border-radius:10px}
+.info-row{display:flex;align-items:flex-end;justify-content:space-between;background:var(--surface);padding:2px 14px 8px;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.info-block{display:flex;flex-direction:column;gap:2px;min-width:72px;text-align:left;border-radius:10px}
+.info-row>.info-block:first-child{flex:1}
+.info-row>.info-block.right{flex:1}
 .info-block.center{text-align:center;align-items:center}
 .info-block.right{text-align:right;align-items:flex-end}
 button.info-block{cursor:pointer;padding:2px 4px}
@@ -159,7 +175,7 @@ button.info-block{cursor:pointer;padding:2px 4px}
 .pause-mini:active{background:var(--sel)}
 
 .board-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px}
-.board{width:min(100%,calc(100dvh - 348px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--board-bg,var(--surface));border:3px solid var(--thick);border-radius:10px;overflow:hidden}
+.board{width:clamp(220px,min(100%,calc(100dvh - 348px)),520px);max-width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--board-bg,var(--surface));border:3px solid var(--thick);border-radius:10px;overflow:hidden}
 .cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--thin);border-bottom:1px solid var(--thin);transition:background .15s;cursor:pointer}
 .cell.bl{border-left:3px solid var(--thick)}
 .cell.bt{border-top:3px solid var(--thick)}
@@ -281,10 +297,19 @@ button.info-block{cursor:pointer;padding:2px 4px}
   <main class="home-body">
     <div class="sec-label">我的统计</div>
     <div class="stats-row" id="statsRow"></div>
+    <div class="sec-label">模式</div>
+    <button id="levelsBanner" class="lessons-banner">
+      <span class="lbi-icon">🗺️</span>
+      <span class="lbi-info">
+        <span class="lbi-title">闯关模式</span>
+        <span class="lbi-sub">100 关循序渐进 · 从入门到究极</span>
+      </span>
+      <span class="lbi-prog" id="levelHomeProg">0/100</span>
+    </button>
     <button id="lessonsBanner" class="lessons-banner">
       <span class="lbi-icon">🎓</span>
       <span class="lbi-info">
-        <span class="lbi-title">技巧学堂</span><br>
+        <span class="lbi-title">技巧学堂</span>
         <span class="lbi-sub">6 关闯关教学 · 从唯一候选数到 X-Wing</span>
       </span>
       <span class="lbi-prog" id="lessonsProg">0/6</span>
@@ -460,7 +485,7 @@ button.info-block{cursor:pointer;padding:2px 4px}
         <div id="taskText"></div>
       </div>
     </div>
-    <div class="lboard-wrap"><div id="lboard" class="board" style="width:min(100%,calc(100dvh - 430px))"></div></div>
+    <div class="lboard-wrap"><div id="lboard" class="board"></div></div>
     <div class="lcontrols">
       <button id="btnLNotes" class="lbtn rip">显示候选数</button>
       <button id="btnLHint" class="lbtn rip">看提示</button>
@@ -481,6 +506,17 @@ button.info-block{cursor:pointer;padding:2px 4px}
   </div>
 </section>
 
+<section id="page-levels" class="page">
+  <header class="lesson-head">
+    <button id="btnLevelsBack" class="icon-btn rip" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+    <h2>闯关模式</h2>
+    <span class="lesson-progchip" id="levelMapProg">★0 · 0/100</span>
+  </header>
+  <main class="levels-body" id="levelMap"></main>
+</section>
+
 <canvas id="fx"></canvas>
 <div id="toast" class="toast"></div>
 <div id="orientTip">📱 请竖屏游玩以获得最佳体验</div>
@@ -495,9 +531,8 @@ for(let c=0;c<9;c++)UNITS.push([0,1,2,3,4,5,6,7,8].map(r=>r*9+c));
 for(let b=0;b<9;b++){const r0=((b/3)|0)*3,c0=(b%3)*3,u=[];for(let r=0;r<3;r++)for(let c=0;c<3;c++)u.push((r0+r)*9+c0+c);UNITS.push(u);}
 const peersOf=[];
 for(let i=0;i<81;i++){const s=new Set();const r=rowOf(i),c=colOf(i),b=boxOf(i);[0,1,2,3,4,5,6,7,8].forEach(k=>{s.add(r*9+k);s.add(k*9+c);});UNITS[18+b].forEach(j=>s.add(j));s.delete(i);peersOf.push([...s]);}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function solveGrid(puz,rand){
- const g=puz.slice();
+function shuffle(a,rnd){rnd=rnd||Math.random;for(let i=a.length-1;i>0;i--){const j=(rnd()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function solveGrid(puz,rand,rnd){ const g=puz.slice();
  const rows=new Array(9).fill(0),cols=new Array(9).fill(0),boxes=new Array(9).fill(0);
  const empt=[];
  for(let i=0;i<81;i++){const v=g[i];if(v){const m=1<<v;rows[rowOf(i)]|=m;cols[colOf(i)]|=m;boxes[boxOf(i)]|=m;}else empt.push(i);}
@@ -512,7 +547,7 @@ function solveGrid(puz,rand){
   if(!bn)return false;
   const i=empt[bi];empt[bi]=empt[empt.length-1];empt.pop();
   const r=rowOf(i),c=colOf(i),b=boxOf(i);
-  const order=rand?shuffle(bc):bc;
+  const order=rand?shuffle(bc,rnd):bc;
   for(const v of order){const m=1<<v;
    g[i]=v;rows[r]|=m;cols[c]|=m;boxes[b]|=m;
    if(rec())return true;
@@ -523,14 +558,14 @@ function solveGrid(puz,rand){
  };
  return rec()?g:null;
 }
-function generateSolved(){
+function generateSolved(rnd){
  const g=new Array(81).fill(0);
  for(const b of [0,4,8]){
-  const nums=shuffle([1,2,3,4,5,6,7,8,9]);
+  const nums=shuffle([1,2,3,4,5,6,7,8,9],rnd);
   const r0=((b/3)|0)*3,c0=(b%3)*3;let k=0;
   for(let r=0;r<3;r++)for(let c=0;c<3;c++)g[(r0+r)*9+c0+c]=nums[k++];
  }
- return solveGrid(g,true);
+ return solveGrid(g,true,rnd);
 }
 function countSolutions(cells,limit){
  limit=limit||2;
@@ -698,7 +733,8 @@ function newGameState(diff,puzzle,solution){
   notes:Array.from({length:81},()=>new Set()),
   selected:-1,noteMode:false,errors:0,hints:3,hinted:new Set(),
   locks:new Map(),time:0,running:true,over:false,
-  continues:0,limitLifted:false
+  continues:0,limitLifted:false,
+  mode:'free',level:0,errLimit:null
  };
  doneMarked.clear();
  UNDO.length=0;
@@ -716,10 +752,12 @@ function startGame(diff){
  toastMsg(`${DIFFS[diff].name} · ${gen.clues} 提示数字`);
 }
 function restartSame(){
- const d=G.diff,p=G.puzzle,sol=G.solution;
+ const d=G.diff,p=G.puzzle,s=G.solution;
+ const mode=G.mode,level=G.level,el=G.errLimit,hints=G.hints;
  closeMask('#pauseMask');
  closeMask('#endMask');
- newGameState(d,p,sol);
+ newGameState(d,p,s);
+ G.mode=mode;G.level=level;G.errLimit=el;G.hints=hints;
  show('game');
  renderAll();
  save();
@@ -734,7 +772,8 @@ function resumeGame(){
   selected:-1,noteMode:false,errors:s.errors,hints:s.hints,
   hinted:new Set(s.hinted||[]),locks:new Map(),
   time:s.time||0,running:true,over:false,
-  continues:s.continues||0,limitLifted:!!s.limitLifted
+  continues:s.continues||0,limitLifted:!!s.limitLifted,
+  mode:s.mode||'free',level:s.level||0,errLimit:s.errLimit!=null?s.errLimit:null
  };
  doneMarked.clear();
  UNDO.length=0;
@@ -745,7 +784,7 @@ function resumeGame(){
 }
 function save(){
  if(!G||G.over)return;
- LS.set('save',{diff:G.diff,puzzle:G.puzzle,solution:G.solution,board:G.board,notes:G.notes.map(s=>[...s]),errors:G.errors,hints:G.hints,hinted:[...G.hinted],time:G.time,continues:G.continues,limitLifted:G.limitLifted});
+ LS.set('save',{diff:G.diff,puzzle:G.puzzle,solution:G.solution,board:G.board,notes:G.notes.map(s=>[...s]),errors:G.errors,hints:G.hints,hinted:[...G.hinted],time:G.time,continues:G.continues,limitLifted:G.limitLifted,mode:G.mode,level:G.level,errLimit:G.errLimit});
 }
 function startTicker(){
  if(startTicker._iv)return;
@@ -758,7 +797,7 @@ function startTicker(){
  },1000);
 }
 
-const maxErr=()=>DIFFS[G.diff].maxErr;
+const maxErr=()=>G&&G.errLimit!=null?G.errLimit:DIFFS[G.diff].maxErr;
 function progress(){
  let blanks=0,corr=0;
  for(let i=0;i<81;i++){
@@ -932,7 +971,7 @@ function syncToolbars(){
 
 function renderAll(){
  $('#timer').textContent=fmt(G.time);
- $('#diffValue').textContent=DIFFS[G.diff].name;
+ $('#diffValue').textContent=G.mode==='level'?`第 ${G.level} 关`:DIFFS[G.diff].name;
  updateErrors(false);
  syncToolbars();
  renderBoard();renderPad();
@@ -1021,6 +1060,30 @@ function finishWin(){
  if(G.over)return;
  G.over=true;G.running=false;
  lastLost=false;
+ vib([30,50,30,50,80]);
+ $('#timer').textContent=fmt(G.time);
+ if(G.mode==='level'){
+  const s=levelStars();
+  const prog=levelProg();
+  prog.stars[G.level]=Math.max(prog.stars[G.level]||0,s);
+  prog.unlocked=Math.max(prog.unlocked||1,Math.min(100,G.level+1));
+  LS.set('levelProg',prog);
+  $('#endEmoji').textContent=s===3?'🏆':s===2?'⭐':'🎯';
+  $('#endTitle').textContent=`第 ${G.level} 关通过！`;
+  $('#endTime').textContent=fmt(G.time);
+  $('#endErr').textContent=G.errors+' 次';
+  $('#endStars').innerHTML=starsHtml(s);
+  $('#endStats').classList.remove('hidden');
+  $('#rateRow').classList.remove('hidden');
+  $('#rateRow').firstChild.textContent='⭐ 星级';
+  $('#btnShare').classList.add('hidden');
+  $('#btnLower').classList.add('hidden');
+  $('#btnContinue').classList.add('hidden');
+  $('#btnAgain').textContent=G.level<100?'下一关 →':'返回关卡列表';
+  openMask('#endMask');
+  setTimeout(()=>FX.burst(),260);
+  return;
+ }
  const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{},rescues:0});
  st.games++;
  st.wins++;st.streak++;st.bestStreak=Math.max(st.bestStreak,st.streak);
@@ -1037,9 +1100,8 @@ function finishWin(){
  LS.set('lb',lb);
  LS.set('stats',st);
  LS.del('save');
- vib([30,50,30,50,80]);
- $('#timer').textContent=fmt(G.time);
  const [rank,n]=rateResult();
+ $('#rateRow').firstChild.textContent='⭐ 评级';
  $('#endEmoji').textContent=G.continues>0?'🩹':'🏆';
  $('#endTitle').textContent=G.continues>0?`挑战成功！续命 ×${G.continues}`:'挑战成功！';
  $('#endTime').textContent=fmt(G.time);
@@ -1228,6 +1290,10 @@ function renderHome(){
  const lp=lessonProg();
  const lbp=$('#lessonsProg');
  if(lbp)lbp.textContent=`${lp.done.length}/${LESSONS.length}`;
+ const lvp=levelProg();
+ const lvStarArr=Object.values(lvp.stars);
+ const lvbp=$('#levelHomeProg');
+ if(lvbp)lvbp.textContent=`★${lvStarArr.reduce((a,b)=>a+b,0)} · ${lvStarArr.length}/100`;
  $$('#diffList .diff-btn').forEach(btn=>{
   const d=btn.dataset.diff;
   btn.classList.toggle('sel',d===selDiff);
@@ -1240,7 +1306,8 @@ function renderHome(){
   rc.classList.remove('hidden');
   let blanks=0,corr=0;
   for(let i=0;i<81;i++){if(sv.puzzle[i])continue;blanks++;if(sv.board[i]===sv.solution[i])corr++;}
-  $('#resumeSub').textContent=`${DIFFS[sv.diff].name} · 已完成 ${Math.round(corr/Math.max(blanks,1)*100)}% · 已用时 ${fmt(sv.time||0)}`;
+  const name=sv.mode==='level'?`第 ${sv.level} 关`:`${DIFFS[sv.diff].name}`;
+  $('#resumeSub').textContent=`${name} · 已完成 ${Math.round(corr/Math.max(blanks,1)*100)}% · 已用时 ${fmt(sv.time||0)}`;
  }else rc.classList.add('hidden');
 }
 function renderLb(){
@@ -1258,7 +1325,7 @@ function renderLb(){
 }
 
 /* ==================== 技巧学堂 ==================== */
-function shuffleA(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function shuffleA(a,rnd){rnd=rnd||Math.random;for(let i=a.length-1;i>0;i--){const j=(rnd()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function candArr(board,i){
  const taken=new Set();
  for(const j of SudokuCore.peersOf[i])if(board[j])taken.add(board[j]);
@@ -1667,6 +1734,85 @@ function renderLessonList(){
  }).join('');
 }
 
+/* ==================== 关卡模式 ==================== */
+function mulberry32(seed){
+ return function(){
+  seed|=0;seed=seed+0x6D2B79F5|0;
+  let t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296;
+ };
+}
+const CHAPTERS=['入门','新手','进阶','熟练','挑战','硬核','大师','宗师','传奇','究极'];
+function levelConfig(n){
+ const clue=Math.max(23,Math.round(40-(n-1)*17/99));
+ const maxErr=n<=30?Infinity:n<=65?5:3;
+ const hints=n<=50?3:n<=80?2:1;
+ const par=Math.round(240+(n-1)*1260/99);
+ return {clue,maxErr,hints,par};
+}
+function makeLevelPuzzle(n){
+ const cfg=levelConfig(n);
+ const rnd=mulberry32(0x51ED^Math.imul(n,0x9E3779B1));
+ const solution=SudokuCore.generateSolved(rnd);
+ const puzzle=solution.slice();
+ const target=cfg.clue;
+ let clues=81,tries=0;
+ for(let pass=0;pass<12&&clues>target&&tries<500;pass++){
+  const order=shuffleA([...Array(81).keys()].filter(i=>puzzle[i]>0),rnd);
+  for(const i of order){
+   if(clues<=target||tries>=500)break;
+   const old=puzzle[i];puzzle[i]=0;tries++;
+   if(SudokuCore.countSolutions(puzzle,2)===1)clues--;else puzzle[i]=old;
+  }
+ }
+ return {puzzle,solution,clues};
+}
+const levelProg=()=>LS.get('levelProg',{stars:{},unlocked:1});
+function levelStars(){
+ const cfg=levelConfig(G.level);
+ if(G.continues>0)return 1;
+ if(G.errors===0&&G.time<=cfg.par)return 3;
+ const half=cfg.maxErr===Infinity?2:Math.max(1,Math.floor(cfg.maxErr/2));
+ if(G.errors<=half&&G.time<=cfg.par*1.6)return 2;
+ return 1;
+}
+const pickDiffByClues=c=>c>=33?'easy':c>=26?'hard':'master';
+function startLevel(n){
+ if(n>100)return;
+ const cfg=levelConfig(n);
+ const gen=makeLevelPuzzle(n);
+ newGameState(pickDiffByClues(gen.clues),gen.puzzle,gen.solution);
+ G.mode='level';G.level=n;G.errLimit=cfg.maxErr;G.hints=cfg.hints;
+ show('game');
+ renderAll();
+ startTicker();
+ save();
+ toastMsg(`第 ${n} 关 · ${gen.clues} 提示 · 3★目标：${fmt(cfg.par)} 内 0 错`);
+}
+function renderLevelMap(){
+ const prog=levelProg();
+ const starArr=Object.values(prog.stars);
+ const totalStars=starArr.reduce((a,b)=>a+b,0);
+ $('#levelMapProg').textContent=`★${totalStars} · ${starArr.length}/100`;
+ let html='';
+ for(let ch=0;ch<10;ch++){
+  let done=0;
+  let grid='';
+  for(let k=1;k<=10;k++){
+   const n=ch*10+k;
+   const stars=prog.stars[n]||0;
+   if(stars)done++;
+   const locked=n>prog.unlocked;
+   const cls=locked?'locked':stars?'done':'next';
+   const starTxt=stars?`<span class="lv-stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</span>`:`<span class="lv-stars">${cls==='next'?'▶':''}</span>`;
+   grid+=`<button class="level-node ${cls}" data-n="${n}" ${locked?'disabled':''}><span class="lv-num">${locked?'🔒':n}</span>${starTxt}</button>`;
+  }
+  html+=`<div class="chap-label"><span>第 ${ch+1} 章 · ${CHAPTERS[ch]}</span><span>${done}/10</span></div><div class="level-grid">${grid}</div>`;
+ }
+ $('#levelMap').innerHTML=html;
+}
+
 function applyThemeSetting(t){
  const eff=t==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;
  document.documentElement.dataset.theme=eff;
@@ -1708,7 +1854,10 @@ function bind(){
   LS.set('settings',{theme:themePref,skin:skinPref});
   $$('#skinSeg button').forEach(x=>x.classList.toggle('on',x===b));
  });
- $('#diffPicker').addEventListener('click',()=>{renderDiffPickList();openMask('#diffSheet');});
+ $('#diffPicker').addEventListener('click',()=>{
+  if(G&&G.mode==='level'){toastMsg('关卡模式中，难度由关卡决定');return;}
+  renderDiffPickList();openMask('#diffSheet');
+ });
  $('#diffPickList').addEventListener('click',e=>{
   const b=e.target.closest('.diff-pick');if(!b)return;
   closeMask('#diffSheet');
@@ -1726,6 +1875,12 @@ function bind(){
  });
  $('#btnLb').addEventListener('click',()=>{renderLb();openMask('#lbSheet');});
  $('#lessonsBanner').addEventListener('click',()=>{renderLessonList();show('lessons');});
+ $('#levelsBanner').addEventListener('click',()=>{renderLevelMap();show('levels');});
+ $('#btnLevelsBack').addEventListener('click',()=>show('home'));
+ $('#levelMap').addEventListener('click',e=>{
+  const node=e.target.closest('.level-node');
+  if(node&&!node.classList.contains('locked'))startLevel(+node.dataset.n);
+ });
  $('#btnLessonsBack').addEventListener('click',()=>show('home'));
  $('#btnLessonBack').addEventListener('click',()=>{renderLessonList();show('lessons');});
  $('#lessonList').addEventListener('click',e=>{
@@ -1755,7 +1910,12 @@ function bind(){
  $('#btnErase').addEventListener('click',erase);
  $('#btnHint').addEventListener('click',useHint);
  $('#btnNote').addEventListener('click',()=>{G.noteMode=!G.noteMode;syncToolbars();toastMsg(G.noteMode?'笔记模式：候选数记录中':'笔记模式已关闭');});
- $('#btnAgain').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();lastLost?restartSame():startGame(G.diff);});
+ $('#btnAgain').addEventListener('click',()=>{
+  closeMask('#endMask');
+  afterFailShow();
+  if(G.mode==='level'){G.level<100?startLevel(G.level+1):(renderLevelMap(),show('levels'));}
+  else lastLost?restartSame():startGame(G.diff);
+ });
  $('#btnContinue').addEventListener('click',()=>{
   closeMask('#endMask');
   afterFailShow();
@@ -1770,7 +1930,7 @@ function bind(){
  });
  $('#btnShare').addEventListener('click',doShare);
  $('#btnLower').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();startGame(G.diff==='master'?'hard':'easy');});
- $('#btnHome2').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();show('home');});
+ $('#btnHome2').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();G&&G.mode==='level'?(renderLevelMap(),show('levels')):show('home');});
 
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&!G.over&&G.running)pauseGame();});
  window.addEventListener('keydown',e=>{
@@ -1825,7 +1985,7 @@ function init(){
  startTicker();
 }
 init();
-window.__SDK__={get g(){return G;},get L(){return LSN;},restartSame,LESSONS,startLesson};
+window.__SDK__={get g(){return G;},get L(){return LSN;},restartSame,LESSONS,startLesson,levelConfig,makeLevelPuzzle,startLevel};
 })();
 </script>
 </body>
