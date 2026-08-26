@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#3F51B5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>数独</title>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('sdk.settings')||'{}');var t=s.theme||'auto';if(t==='auto')t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){}})()</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+--primary:#3F51B5;--on-primary:#fff;
+--amber:#FFC107;--amber-bright:#F5A800;
+--green:#4CAF50;--red:#F44336;--blue:#2196F3;
+--bg:#F5F5F5;--surface:#FFFFFF;--surface2:#ECECEC;--key:#FFFFFF;
+--on:#1C1B1F;--on-var:#606269;
+--thin:#E0E0E0;--thick:#9E9E9E;
+--sel:rgba(63,81,181,.14);--peer:rgba(63,81,181,.055);--same:rgba(63,81,181,.24);
+--wrong-bg:#FFEBEE;--done-bg:#E8F5E9;
+--num-given:#1C1B1F;--num-user:#3F51B5;--num-hint:#1976D2;--num-wrong:#D32F2F;--num-done:#388E3C;
+--mask:rgba(0,0,0,.6);
+--shadow-1:0 1px 3px rgba(0,0,0,.14);--shadow-2:0 4px 14px rgba(0,0,0,.16);--shadow-3:0 10px 34px rgba(0,0,0,.28);
+}
+html[data-theme=dark]{
+--bg:#121212;--surface:#1E1E1E;--surface2:#0C0C0C;--key:#2A2A2A;
+--on:#ECEAE6;--on-var:#A6A4AC;
+--thin:#333333;--thick:#7A7A7A;
+--amber-bright:#FFD54F;
+--sel:rgba(127,141,224,.22);--peer:rgba(127,141,224,.09);--same:rgba(127,141,224,.32);
+--wrong-bg:rgba(244,67,54,.17);--done-bg:rgba(76,175,80,.15);
+--num-given:#ECEAE6;--num-user:#9FA8DA;--num-hint:#64B5F6;--num-wrong:#EF5350;--num-done:#81C784;
+--mask:rgba(0,0,0,.72);
+--shadow-1:0 1px 3px rgba(0,0,0,.5);--shadow-2:0 4px 14px rgba(0,0,0,.55);--shadow-3:0 10px 34px rgba(0,0,0,.7);
+}
+html,body{height:100%}
+body{
+font-family:'Roboto','Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+background:var(--bg);color:var(--on);
+overscroll-behavior:none;touch-action:manipulation;
+-webkit-user-select:none;user-select:none;
+overflow:hidden;
+}
+button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+.page{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);
+opacity:0;transform:translateX(7%);pointer-events:none;
+transition:opacity .3s cubic-bezier(.4,0,.2,1),transform .3s cubic-bezier(.4,0,.2,1)}
+.page.active{opacity:1;transform:none;pointer-events:auto}
+
+.appbar{height:calc(64px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;z-index:4;box-shadow:var(--shadow-1);background:var(--surface)}
+.appbar-title{flex:1;display:flex;align-items:center;gap:10px;padding-left:12px;font-size:24px;font-weight:600}
+.logo-dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#7986CB);position:relative;box-shadow:var(--shadow-1)}
+.logo-dot::before{content:"";position:absolute;inset:5px;background:
+linear-gradient(var(--on-primary),var(--on-primary)) 0 33%/100% 2px no-repeat,
+linear-gradient(var(--on-primary),var(--on-primary)) 0 66%/100% 2px no-repeat,
+linear-gradient(var(--on-primary),var(--on-primary)) 33% 0/2px 100% no-repeat,
+linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;opacity:.95;border-radius:1px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--on-var);transition:background .15s;position:relative;overflow:hidden}
+.icon-btn:active{background:var(--sel)}
+.icon-btn svg{width:23px;height:23px}
+
+.home-body{flex:1;overflow-y:auto;padding:14px 16px 130px;display:flex;flex-direction:column;gap:14px}
+.stats-row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px;margin:-2px}
+.stat-chip{min-width:106px;scroll-snap-align:start;background:var(--surface);border-radius:16px;padding:11px 13px;box-shadow:var(--shadow-1)}
+.stat-label{font-size:11px;color:var(--on-var);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.stat-value{font-size:18px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.resume-card{display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,var(--sel),transparent),var(--surface);border:1px solid var(--primary);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow-1)}
+.resume-info{flex:1;min-width:0}
+.resume-title{font-size:14px;font-weight:600}
+.resume-sub{font-size:12px;color:var(--on-var);margin-top:2px}
+.resume-play{width:42px;height:42px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-1);flex:none;position:relative;overflow:hidden}
+.resume-play svg{width:20px;height:20px}
+
+.diff-list{display:flex;flex-direction:column;gap:12px}
+.diff-btn{display:flex;align-items:center;gap:14px;text-align:left;height:72px;padding:0 16px;border-radius:20px;border:1.5px solid var(--thin);background:var(--surface);transition:all .18s;position:relative;overflow:hidden}
+.diff-btn.sel{background-image:linear-gradient(120deg,var(--sel),transparent 70%);border-color:var(--primary);box-shadow:var(--shadow-1)}
+.dico{width:40px;height:40px;border-radius:50%;border:3px solid var(--dc);display:flex;align-items:center;justify-content:center;flex:none}
+.dico::after{content:"";width:16px;height:16px;border-radius:50%;background:var(--dc)}
+.d-easy{--dc:#4CAF50}.d-hard{--dc:#FFC107}.d-master{--dc:#F44336}
+.diff-txt{flex:1;min-width:0}
+.diff-name{font-size:16px;font-weight:600}
+.diff-desc{font-size:12px;color:var(--on-var);margin-top:3px}
+.diff-best{font-size:12px;color:var(--on-var);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.lb-link{align-self:center;padding:10px 18px;font-size:13px;color:var(--primary);font-weight:600;border-radius:20px}
+.lb-link:active{background:var(--sel)}
+
+.fab-zone{position:fixed;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:6;pointer-events:none}
+.fab{pointer-events:auto;display:flex;align-items:center;gap:10px;height:56px;padding:0 26px;border-radius:28px;background:var(--primary);color:var(--on-primary);font-size:16px;font-weight:600;box-shadow:var(--shadow-2);transition:transform .18s cubic-bezier(.3,1.5,.6,1);position:relative;overflow:hidden}
+.fab:active{transform:scale(.94)}
+
+.game-topbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 6px 0;display:flex;align-items:center;gap:4px;z-index:4;box-shadow:var(--shadow-1);background:var(--surface)}
+.tb-left{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
+.diff-tag{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden}
+.diff-tag .dot{width:9px;height:9px;border-radius:50%;background:var(--dc,#999)}
+.timer{font-size:24px;font-weight:700;color:var(--amber-bright);font-variant-numeric:tabular-nums;letter-spacing:.5px;padding:4px 10px;border-radius:12px;position:relative;overflow:hidden}
+.timer:active{background:var(--sel)}
+.tb-right{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:2px;min-width:0}
+.errors{display:flex;align-items:center;gap:5px;font-size:16px;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums;white-space:nowrap}
+.errors .x{filter:saturate(1.2)}
+@keyframes bump{50%{transform:scale(1.35)}}
+.errors.bump{animation:bump .32s}
+
+.board-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px}
+.board{width:min(100%,calc(100dvh - 352px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--surface);border:3px solid var(--thick);border-radius:14px;box-shadow:var(--shadow-2);overflow:hidden}
+.cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--thin);border-bottom:1px solid var(--thin);transition:background .15s;cursor:pointer}
+.cell.bl{border-left:3px solid var(--thick)}
+.cell.bt{border-top:3px solid var(--thick)}
+.cell:nth-child(9n){border-right:none}
+.cell:nth-child(n+73){border-bottom:none}
+.cell.peer{background:var(--peer)}
+.cell.same{background:var(--same)}
+.cell.done{background:var(--done-bg)}
+.cell.sel{background:var(--sel);box-shadow:inset 0 0 0 2px var(--primary);z-index:2}
+.cell.wrong{background:var(--wrong-bg)}
+.cell.wrong .v{color:var(--num-wrong)}
+.cell.done.wrong{background:var(--wrong-bg)}
+.cell.locked{cursor:not-allowed}
+.cell .v{font-size:min(6vw,31px);font-size:clamp(19px,min(6vw,5.6dvh),31px);font-weight:500;color:var(--num-given);line-height:1}
+.cell.user .v{color:var(--num-user)}
+.cell.hinted .v{color:var(--num-hint)}
+.cell.done .v{color:var(--num-done)}
+.cell.done.wrong .v{color:var(--num-wrong)}
+.cell.sel .v{transform-origin:center}
+@keyframes pop{0%{transform:scale(.55)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.cell.pop .v{animation:pop .24s cubic-bezier(.3,1.4,.6,1)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.cell.shake{animation:shake .3s}
+@keyframes dpulse{0%{background:rgba(76,175,80,.45)}100%{}}
+.cell.justdone{animation:dpulse .7s ease-out}
+.notes{position:absolute;inset:1px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);pointer-events:none}
+.notes i{font-style:normal;display:flex;align-items:center;justify-content:center;font-size:min(9px,2.4vw);line-height:1;color:var(--on-var);visibility:hidden}
+.notes i.on{visibility:visible}
+
+.pad{background:var(--surface2);z-index:3;box-shadow:0 -2px 10px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px 6px}
+.key{height:46px;border-radius:13px;background:var(--key);box-shadow:var(--shadow-1);display:flex;align-items:center;justify-content:center;gap:5px;font-size:23px;font-weight:600;color:var(--num-user);transition:transform .15s cubic-bezier(.3,1.5,.6,1),opacity .2s;position:relative;overflow:hidden}
+.key:active{transform:scale(.92)}
+.key em{font-style:normal;font-size:10px;font-weight:400;color:var(--on-var);opacity:.75;align-self:flex-end;margin-bottom:7px}
+.key.exhaust{opacity:.32}
+.tools{display:flex;justify-content:space-evenly;padding:4px 12px 12px}
+.tool{min-width:96px;height:54px;border-radius:16px;border:1.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--on-var);position:relative;overflow:hidden;transition:all .15s}
+.tool svg{width:21px;height:21px}
+.tool.on{border-color:var(--primary);color:var(--primary);background:var(--sel)}
+.tool.dim{opacity:.38}
+.badge{position:absolute;top:4px;right:10px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--amber);color:#3E2723;font-size:11px;font-weight:700;line-height:17px;text-align:center}
+
+.mask{position:fixed;inset:0;background:var(--mask);z-index:60;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;padding:24px}
+.mask.show{opacity:1;pointer-events:auto}
+.dialog{width:min(88vw,360px);background:var(--surface);color:var(--on);border-radius:28px;padding:26px 22px 20px;box-shadow:var(--shadow-3);text-align:center;transform:scale(.92) translateY(20px);transition:transform .25s cubic-bezier(.3,1.2,.5,1)}
+.mask.show .dialog{transform:none}
+.dialog h2{font-size:22px;font-weight:700}
+.progress-line{margin-top:14px;font-size:15px;color:var(--on-var)}
+.progress-line b{color:var(--on);font-size:20px}
+.paused-time{margin-top:6px;font-size:13px;color:var(--on-var)}
+.dlg-actions{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.btn{height:48px;border-radius:24px;font-size:15px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s;position:relative;overflow:hidden}
+.btn:active{transform:scale(.97)}
+.btn.filled{background:var(--primary);color:var(--on-primary);box-shadow:var(--shadow-1)}
+.btn.tonal{background:var(--sel);color:var(--primary)}
+.btn.textb{color:var(--primary);height:40px}
+.end-emoji{font-size:56px;line-height:1;margin-bottom:8px}
+.end-stats{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+.end-stat{font-size:16px;color:var(--on-var)}
+.end-stat b{color:var(--on);font-size:21px;font-variant-numeric:tabular-nums;margin-left:6px}
+.stars{color:var(--amber);font-size:20px;letter-spacing:3px;margin-left:6px}
+.stars .off{opacity:.25}
+
+.sheet-mask{position:fixed;inset:0;background:var(--mask);z-index:65;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
+.sheet-mask.show{opacity:1;pointer-events:auto}
+.sheet{width:min(100vw,480px);background:var(--surface);color:var(--on);border-radius:28px 28px 0 0;padding:14px 20px calc(20px + env(safe-area-inset-bottom));transform:translateY(40%);transition:transform .28s cubic-bezier(.3,1,.4,1);max-height:82dvh;overflow-y:auto}
+.sheet-mask.show .sheet{transform:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sheet-head h3{font-size:18px;font-weight:700}
+.seg{display:flex;background:var(--bg);border-radius:14px;padding:4px;gap:4px;margin-bottom:16px}
+.seg button{flex:1;height:40px;border-radius:11px;font-size:14px;font-weight:600;color:var(--on-var);transition:all .15s;position:relative;overflow:hidden}
+.seg button.on{background:var(--primary);color:var(--on-primary);box-shadow:var(--shadow-1)}
+.sheet .btn.tonal.danger{color:var(--red);background:var(--wrong-bg)}
+.lb-tabs{display:flex;gap:8px;margin-bottom:14px}
+.lb-tab{flex:1;height:40px;border-radius:20px;font-size:13px;font-weight:600;color:var(--on-var);border:1.5px solid var(--thin);transition:all .15s;position:relative;overflow:hidden}
+.lb-tab.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.lb-list{list-style:none;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.lb-item{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:11px 14px;font-size:14px}
+.lb-rank{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--thin);color:var(--on);flex:none}
+.lb-rank.r1{background:var(--amber);color:#3E2723}
+.lb-rank.r2{background:#BDBDBD;color:#263238}
+.lb-rank.r3{background:#FB8C00;color:#fff}
+.lb-time{font-weight:700;font-variant-numeric:tabular-nums}
+.lb-err{color:var(--red);font-size:13px}
+.lb-date{margin-left:auto;font-size:11px;color:var(--on-var)}
+.lb-empty{text-align:center;color:var(--on-var);padding:36px 0;font-size:14px}
+
+.toast{position:fixed;left:50%;bottom:110px;transform:translate(-50%,16px);background:#323232;color:#fff;padding:10px 20px;border-radius:26px;font-size:14px;box-shadow:var(--shadow-2);opacity:0;pointer-events:none;transition:all .25s;z-index:80;max-width:86vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+#fx{position:fixed;inset:0;pointer-events:none;z-index:70}
+.ripple{position:absolute;border-radius:50%;background:rgba(128,128,128,.4);animation:rip .55s ease-out forwards;pointer-events:none}
+@keyframes rip{from{transform:scale(0);opacity:.55}to{transform:scale(1);opacity:0}}
+
+#orientTip{position:fixed;top:0;left:0;right:0;background:#B3261E;color:#fff;text-align:center;font-size:13px;padding:9px 12px;z-index:99;display:none}
+@media (orientation:landscape) and (max-height:480px){#orientTip{display:block}}
+
+@media (min-width:600px){
+.home-body{max-width:480px;width:100%;margin:0 auto}
+.board-wrap{align-items:center}
+}
+</style>
+</head>
+<body>
+
+<section id="page-home" class="page active">
+  <header class="appbar">
+    <div class="appbar-title"><span class="logo-dot"></span>数独</div>
+    <button id="btnSettings" class="icon-btn rip" aria-label="设置">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+    </button>
+  </header>
+  <main class="home-body">
+    <div class="stats-row" id="statsRow"></div>
+    <div id="resumeCard" class="resume-card hidden">
+      <div class="resume-info">
+        <div class="resume-title">继续上局</div>
+        <div class="resume-sub" id="resumeSub"></div>
+      </div>
+      <button id="btnResumeGame" class="resume-play rip" aria-label="继续">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+    <div class="diff-list" id="diffList"></div>
+    <button id="btnLb" class="lb-link">查看排行榜 ›</button>
+  </main>
+  <div class="fab-zone">
+    <button id="btnStart" class="fab rip">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M8 5v14l11-7z"/></svg>
+      开始游戏
+    </button>
+  </div>
+</section>
+
+<section id="page-game" class="page">
+  <header class="game-topbar">
+    <div class="tb-left">
+      <button id="btnBack" class="icon-btn rip" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <span id="diffTag" class="diff-tag"><i class="dot"></i><span id="diffTagName">低难度</span></span>
+    </div>
+    <button id="timer" class="timer rip">00:00</button>
+    <div class="tb-right">
+      <button id="btnPauseTop" class="icon-btn rip" aria-label="暂停">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
+      <span class="errors" id="errBox"><span class="x">❌</span><span id="errCount">0/∞</span></span>
+    </div>
+  </header>
+  <main class="board-wrap"><div id="board" class="board"></div></main>
+  <footer class="pad">
+    <div class="nums" id="nums"></div>
+    <div class="tools">
+      <button id="btnErase" class="tool rip">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
+        擦除
+      </button>
+      <button id="btnHint" class="tool rip">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+        提示
+        <span class="badge" id="hintBadge">3</span>
+      </button>
+      <button id="btnNote" class="tool rip">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        笔记
+      </button>
+    </div>
+  </footer>
+</section>
+
+<div id="pauseMask" class="mask">
+  <div class="dialog">
+    <h2>游戏暂停</h2>
+    <p class="progress-line">已完成 <b id="pauseProg">0%</b></p>
+    <p class="paused-time">已用时 <span id="pauseTime">00:00</span></p>
+    <div class="dlg-actions">
+      <button id="btnResume" class="btn filled rip">继续</button>
+      <button id="btnRestart" class="btn tonal rip">重新开始</button>
+      <button id="btnQuit" class="btn textb rip">返回主页</button>
+    </div>
+  </div>
+</div>
+
+<div id="endMask" class="mask">
+  <div class="dialog">
+    <div class="end-emoji" id="endEmoji">🏆</div>
+    <h2 id="endTitle">挑战成功！</h2>
+    <div class="end-stats" id="endStats">
+      <div class="end-stat">🏆 用时<b id="endTime">00:00</b></div>
+      <div class="end-stat">❌ 错误<b id="endErr">0 次</b></div>
+      <div class="end-stat" id="rateRow">⭐ 评级<span class="stars" id="endStars"></span></div>
+    </div>
+    <div class="dlg-actions">
+      <button id="btnAgain" class="btn filled rip">再来一局</button>
+      <button id="btnShare" class="btn tonal rip">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81A2.99 2.99 0 006 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65a2.92 2.92 0 105.84 0c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+        分享成绩
+      </button>
+      <button id="btnLower" class="btn tonal rip hidden">降低难度</button>
+      <button id="btnHome2" class="btn textb rip">返回首页</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsSheet" class="sheet-mask">
+  <div class="sheet">
+    <div class="sheet-head"><h3>设置</h3><button class="icon-btn rip sheet-close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+    <div style="font-size:13px;color:var(--on-var);margin-bottom:8px">外观主题</div>
+    <div class="seg" id="themeSeg">
+      <button data-theme="auto">跟随系统</button>
+      <button data-theme="light">浅色</button>
+      <button data-theme="dark">深色</button>
+    </div>
+    <button id="btnClearData" class="btn tonal danger rip">清除所有数据</button>
+  </div>
+</div>
+
+<div id="lbSheet" class="sheet-mask">
+  <div class="sheet">
+    <div class="sheet-head"><h3>排行榜 · 本机 TOP 10</h3><button class="icon-btn rip sheet-close"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+    <div class="lb-tabs" id="lbTabs">
+      <button class="lb-tab on" data-diff="easy">低难度</button>
+      <button class="lb-tab" data-diff="hard">高难度</button>
+      <button class="lb-tab" data-diff="master">大师难度</button>
+    </div>
+    <ol class="lb-list" id="lbList"></ol>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+<div id="toast" class="toast"></div>
+<div id="orientTip">📱 请竖屏游玩以获得最佳体验</div>
+
+<script>
+'use strict';
+const SudokuCore=(()=>{
+const rowOf=i=>(i/9)|0,colOf=i=>i%9,boxOf=i=>(((i/27)|0)*3)+((((i%9)/3)|0));
+const UNITS=[];
+for(let r=0;r<9;r++)UNITS.push([0,1,2,3,4,5,6,7,8].map(c=>r*9+c));
+for(let c=0;c<9;c++)UNITS.push([0,1,2,3,4,5,6,7,8].map(r=>r*9+c));
+for(let b=0;b<9;b++){const r0=((b/3)|0)*3,c0=(b%3)*3,u=[];for(let r=0;r<3;r++)for(let c=0;c<3;c++)u.push((r0+r)*9+c0+c);UNITS.push(u);}
+const peersOf=[];
+for(let i=0;i<81;i++){const s=new Set();const r=rowOf(i),c=colOf(i),b=boxOf(i);[0,1,2,3,4,5,6,7,8].forEach(k=>{s.add(r*9+k);s.add(k*9+c);});UNITS[18+b].forEach(j=>s.add(j));s.delete(i);peersOf.push([...s]);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function solveGrid(puz,rand){
+ const g=puz.slice();
+ const rows=new Array(9).fill(0),cols=new Array(9).fill(0),boxes=new Array(9).fill(0);
+ const empt=[];
+ for(let i=0;i<81;i++){const v=g[i];if(v){const m=1<<v;rows[rowOf(i)]|=m;cols[colOf(i)]|=m;boxes[boxOf(i)]|=m;}else empt.push(i);}
+ const rec=()=>{
+  if(!empt.length)return true;
+  let bi=-1,bc=null,bn=10;
+  for(let j=0;j<empt.length;j++){
+   const i=empt[j],used=rows[rowOf(i)]|cols[colOf(i)]|boxes[boxOf(i)];
+   const opts=[];for(let v=1;v<=9;v++)if(!(used&(1<<v)))opts.push(v);
+   if(opts.length<bn){bn=opts.length;bi=j;bc=opts;if(bn<=1)break;}
+  }
+  if(!bn)return false;
+  const i=empt[bi];empt[bi]=empt[empt.length-1];empt.pop();
+  const r=rowOf(i),c=colOf(i),b=boxOf(i);
+  const order=rand?shuffle(bc):bc;
+  for(const v of order){const m=1<<v;
+   g[i]=v;rows[r]|=m;cols[c]|=m;boxes[b]|=m;
+   if(rec())return true;
+   g[i]=0;rows[r]^=m;cols[c]^=m;boxes[b]^=m;
+  }
+  empt.push(i);
+  return false;
+ };
+ return rec()?g:null;
+}
+function generateSolved(){
+ const g=new Array(81).fill(0);
+ for(const b of [0,4,8]){
+  const nums=shuffle([1,2,3,4,5,6,7,8,9]);
+  const r0=((b/3)|0)*3,c0=(b%3)*3;let k=0;
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++)g[(r0+r)*9+c0+c]=nums[k++];
+ }
+ return solveGrid(g,true);
+}
+function countSolutions(cells,limit){
+ limit=limit||2;
+ const rows=new Array(9).fill(0),cols=new Array(9).fill(0),boxes=new Array(9).fill(0);
+ const empt=[];
+ for(let i=0;i<81;i++){const v=cells[i];
+  if(v){const m=1<<v,r=rowOf(i),c=colOf(i),b=boxOf(i);
+   if((rows[r]&m)||(cols[c]&m)||(boxes[b]&m))return 0;
+   rows[r]|=m;cols[c]|=m;boxes[b]|=m;
+  }else empt.push(i);}
+ let count=0;
+ const dfs=k=>{
+  if(count>=limit)return;
+  if(k===empt.length){count++;return;}
+  let bi=-1,bn=10;
+  for(let j=k;j<empt.length;j++){
+   const i=empt[j],used=rows[rowOf(i)]|cols[colOf(i)]|boxes[boxOf(i)];
+   let n=0;for(let v=1;v<=9;v++)if(!(used&(1<<v)))n++;
+   if(n<bn){bn=n;bi=j;if(n<=1)break;}
+  }
+  if(bn===0)return;
+  const t=empt[k];empt[k]=empt[bi];empt[bi]=t;
+  const i=empt[k],r=rowOf(i),c=colOf(i),b=boxOf(i);
+  for(let v=1;v<=9;v++){const m=1<<v;
+   if((rows[r]&m)||(cols[c]&m)||(boxes[b]&m))continue;
+   rows[r]|=m;cols[c]|=m;boxes[b]|=m;
+   dfs(k+1);
+   rows[r]^=m;cols[c]^=m;boxes[b]^=m;
+   if(count>=limit)break;
+  }
+  const t2=empt[k];empt[k]=empt[bi];empt[bi]=t2;
+ };
+ dfs(0);
+ return count;
+}
+function solvableByBasics(puz){
+ const g=puz.slice();
+ const cand=i=>{const used=0;let u=0;
+  for(const j of peersOf[i]){const v=g[j];if(v)u|=1<<v;}
+  const o=[];for(let v=1;v<=9;v++)if(!(u&(1<<v)))o.push(v);
+  return o;};
+ let progress=true;
+ while(progress){
+  progress=false;
+  for(let i=0;i<81;i++)if(!g[i]){const o=cand(i);if(!o.length)return false;if(o.length===1){g[i]=o[0];progress=true;}}
+  if(progress)continue;
+  for(const unit of UNITS){
+   for(let v=1;v<=9;v++){
+    let has=false,cnt=0,spot=-1;
+    for(const i of unit){
+     if(g[i]===v){has=true;break;}
+     if(g[i])continue;
+     if(cand(i).indexOf(v)>=0){cnt++;spot=i;if(cnt>1)break;}
+    }
+    if(has)continue;
+    if(cnt===0)return false;
+    if(cnt===1){g[spot]=v;progress=true;}
+   }
+  }
+ }
+ return g.every(v=>v>0);
+}
+const TARGETS={easy:[33,39],hard:[25,29],master:[19,23]};
+function makePuzzle(diff){
+ const solution=generateSolved();
+ const puzzle=solution.slice();
+ const range=TARGETS[diff];
+ const target=range[0]+((Math.random()*(range[1]-range[0]+1))|0);
+ let clues=81,tries=0;
+ const maxPasses=diff==='master'?40:10,maxTries=diff==='master'?1600:420;
+ const attempt=i=>{
+  const old=puzzle[i];puzzle[i]=0;tries++;
+  if(countSolutions(puzzle,2)!==1){puzzle[i]=old;return false;}
+  if(diff==='easy'&&!solvableByBasics(puzzle)){puzzle[i]=old;return false;}
+  clues--;
+  return true;
+ };
+ for(let pass=0;pass<maxPasses&&clues>target&&tries<maxTries;pass++){
+  const order=shuffle([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80].filter(i=>puzzle[i]>0));
+  for(const i of order){
+   if(clues<=target||tries>=maxTries)break;
+   attempt(i);
+  }
+ }
+ return {puzzle,solution,clues};
+}
+return {rowOf,colOf,boxOf,UNITS,peersOf,generateSolved,countSolutions,solvableByBasics,makePuzzle};
+})();
+globalThis.__ENGINE__=SudokuCore;
+</script>
+<script>
+'use strict';
+(function(){
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+const DIFFS={
+ easy:{name:'低难度',desc:'30+ 提示数字，适合新手',cls:'d-easy',maxErr:Infinity},
+ hard:{name:'高难度',desc:'24-29 提示数字，进阶挑战',cls:'d-hard',maxErr:5},
+ master:{name:'大师难度',desc:'17-23 提示数字，极限烧脑',cls:'d-master',maxErr:3}
+};
+const PAR={easy:420,hard:960,master:1980};
+const LS={
+ get(k,d){try{const v=localStorage.getItem('sdk.'+k);return v?JSON.parse(v):d;}catch(e){return d;}},
+ set(k,v){try{localStorage.setItem('sdk.'+k,JSON.stringify(v));}catch(e){}},
+ del(k){try{localStorage.removeItem('sdk.'+k);}catch(e){}}
+};
+let G=null,selDiff=LS.get('lastDiff','easy'),lbTab='easy',lastLost=false;
+const cellEls=[],keyEls={},doneMarked=new Set();
+
+const fmt=s=>{
+ s=Math.max(0,s|0);
+ const h=(s/3600)|0,m=((s%3600)/60)|0,sec=s%60,p=n=>String(n).padStart(2,'0');
+ return h?`${h}:${p(m)}:${p(sec)}`:`${p(m)}:${p(sec)}`;
+};
+const fmtCN=s=>{const m=(s/60)|0,x=s%60;return m?`${m}分${String(x).padStart(2,'0')}秒`:`${x}秒`;};
+const toastMsg=(t)=>{const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1800);};
+const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
+
+function show(page){$$('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));if(page==='home')renderHome();}
+function openMask(sel){$(sel).classList.add('show');}
+function closeMask(sel){$(sel).classList.remove('show');}
+
+function buildBoard(){
+ const b=$('#board');
+ for(let i=0;i<81;i++){
+  const r=SudokuCore.rowOf(i),c=SudokuCore.colOf(i);
+  const cell=document.createElement('div');
+  cell.className='cell'+(c%3===0&&c>0?' bl':'')+(r%3===0&&r>0?' bt':'');
+  cell.dataset.i=i;
+  const v=document.createElement('span');v.className='v';
+  const ns=document.createElement('div');ns.className='notes';
+  for(let n=1;n<=9;n++){const s=document.createElement('i');s.textContent=n;s.dataset.n=n;ns.appendChild(s);}
+  cell.appendChild(v);cell.appendChild(ns);
+  b.appendChild(cell);
+  cellEls.push({root:cell,v,notes:ns});
+ }
+ b.addEventListener('click',e=>{
+  const cell=e.target.closest('.cell');
+  if(cell)selectCell(+cell.dataset.i);
+ });
+ b.addEventListener('contextmenu',e=>e.preventDefault());
+}
+function buildPad(){
+ const nums=$('#nums');
+ for(let k=1;k<=9;k++){
+  const btn=document.createElement('button');
+  btn.className='key rip';btn.dataset.k=k;
+  btn.innerHTML=`<span>${k}</span><em>9</em>`;
+  btn.addEventListener('click',()=>pressKey(k));
+  nums.appendChild(btn);
+  keyEls[k]=btn;
+ }
+ $('#nums').addEventListener('contextmenu',e=>e.preventDefault());
+}
+
+function newGameState(diff,puzzle,solution){
+ G={
+  diff,puzzle:puzzle.slice(),solution:solution.slice(),
+  board:puzzle.slice(),
+  given:puzzle.map(v=>v>0),
+  notes:Array.from({length:81},()=>new Set()),
+  selected:-1,noteMode:false,errors:0,hints:3,hinted:new Set(),
+  locks:new Map(),time:0,running:true,over:false
+ };
+ doneMarked.clear();
+ lastLost=false;
+ LS.set('lastDiff',diff);
+ selDiff=diff;
+}
+function startGame(diff){
+ const gen=SudokuCore.makePuzzle(diff);
+ newGameState(diff,gen.puzzle,gen.solution);
+ show('game');
+ renderAll();
+ startTicker();
+ save();
+ toastMsg(`${DIFFS[diff].name} · ${gen.clues} 提示数字`);
+}
+function restartSame(){
+ const d=G.diff,p=G.puzzle,sol=G.solution;
+ closeMask('#pauseMask');
+ closeMask('#endMask');
+ newGameState(d,p,sol);
+ show('game');
+ renderAll();
+ save();
+}
+function resumeGame(){
+ const s=LS.get('save');
+ if(!s||!s.puzzle)return false;
+ G={
+  diff:s.diff,puzzle:s.puzzle,solution:s.solution,board:s.board,
+  given:s.puzzle.map(v=>v>0),
+  notes:s.notes.map(a=>new Set(a)),
+  selected:-1,noteMode:false,errors:s.errors,hints:s.hints,
+  hinted:new Set(s.hinted||[]),locks:new Map(),
+  time:s.time||0,running:true,over:false
+ };
+ doneMarked.clear();
+ lastLost=false;
+ show('game');renderAll();startTicker();
+ toastMsg('已恢复上局进度');
+ return true;
+}
+function save(){
+ if(!G||G.over)return;
+ LS.set('save',{diff:G.diff,puzzle:G.puzzle,solution:G.solution,board:G.board,notes:G.notes.map(s=>[...s]),errors:G.errors,hints:G.hints,hinted:[...G.hinted],time:G.time});
+}
+function startTicker(){
+ if(startTicker._iv)return;
+ startTicker._iv=setInterval(()=>{
+  if(G&&!G.over&&G.running&&!document.hidden){
+   G.time++;
+   $('#timer').textContent=fmt(G.time);
+   if(G.time%5===0)save();
+  }
+ },1000);
+}
+
+const maxErr=()=>DIFFS[G.diff].maxErr;
+function progress(){
+ let blanks=0,corr=0;
+ for(let i=0;i<81;i++){
+  if(G.given[i])continue;
+  blanks++;
+  if(G.board[i]===G.solution[i])corr++;
+ }
+ return Math.round(corr/Math.max(blanks,1)*100);
+}
+const locked=i=>{const t=G.locks.get(i);return t&&Date.now()<t;};
+const isWin=()=>G.board.every((v,i)=>v===G.solution[i]);
+
+function doneUnits(){
+ const done=new Set();
+ SudokuCore.UNITS.forEach((u,uid)=>{
+  let ok=true;
+  for(let k=0;k<9;k++){const v=G.board[u[k]];if(v!==k+1){ok=false;break;}}
+  if(ok)done.add(uid);
+ });
+ return done;
+}
+function unitIdsOf(i){
+ const r=SudokuCore.rowOf(i),c=SudokuCore.colOf(i),b=SudokuCore.boxOf(i);
+ return [r,9+c,18+b];
+}
+
+function selectCell(i){
+ G.selected=i;
+ renderBoard();
+}
+function clearPeersNotes(i,d){
+ for(const j of SudokuCore.peersOf[i])G.notes[j].delete(d);
+}
+function pressKey(k){
+ if(!G||G.over)return;
+ const i=G.selected;
+ if(i<0){toastMsg('请先选择一个格子');return;}
+ if(G.given[i]){flashShake(i);return;}
+ if(locked(i))return;
+ if(G.noteMode){
+  if(G.board[i])return;
+  const ns=G.notes[i];
+  ns.has(k)?ns.delete(k):ns.add(k);
+  save();renderBoard();
+  return;
+ }
+ if(G.board[i]===k)return;
+ placeValue(i,k,true);
+}
+function placeValue(i,k,byUser){
+ const correct=k===G.solution[i];
+ G.notes[i].clear();
+ if(correct){
+  const wasEmpty=!G.board[i];
+  G.board[i]=k;
+  clearPeersNotes(i,k);
+  if(byUser)vib(15);
+  save();
+  renderAll();
+  const cell=cellEls[i].root;
+  if(wasEmpty){cell.classList.remove('pop');void cell.offsetWidth;cell.classList.add('pop');setTimeout(()=>cell.classList.remove('pop'),260);}
+  markNewDone(i);
+  if(isWin())finish(true);
+ }else{
+  G.board[i]=k;
+  G.errors++;
+  G.locks.set(i,Date.now()+1000);
+  updateErrors(true);
+  vib(70);
+  save();
+  renderBoard();
+  flashShake(i);
+  const me=maxErr();
+  if(me!==Infinity&&G.errors>=me)setTimeout(()=>finish(false),350);
+ }
+}
+function flashShake(i){
+ const cell=cellEls[i].root;
+ cell.classList.remove('shake');void cell.offsetWidth;cell.classList.add('shake');
+ setTimeout(()=>cell.classList.remove('shake'),320);
+}
+function markNewDone(i){
+ for(const uid of unitIdsOf(i)){
+  if(doneMarked.has(uid))continue;
+  const u=SudokuCore.UNITS[uid];
+  let ok=true;
+  for(let k=0;k<9;k++)if(G.board[u[k]]!==k+1){ok=false;break;}
+  if(!ok)continue;
+  doneMarked.add(uid);
+  for(const j of u){
+   const cell=cellEls[j].root;
+   cell.classList.remove('justdone');void cell.offsetWidth;cell.classList.add('justdone');
+   setTimeout(()=>cell.classList.remove('justdone'),720);
+  }
+ }
+}
+function erase(){
+ if(!G||G.over)return;
+ const i=G.selected;
+ if(i<0){toastMsg('请先选择一个格子');return;}
+ if(G.given[i])return;
+ if(!G.board[i]&&!G.notes[i].size)return;
+ G.board[i]=0;G.notes[i].clear();
+ save();renderAll();
+}
+function useHint(){
+ if(!G||G.over)return;
+ if(G.hints<=0){toastMsg('提示已用完');return;}
+ const targets=[];
+ for(let i=0;i<81;i++)if(!G.given[i]&&G.board[i]!==G.solution[i]&&!locked(i))targets.push(i);
+ if(!targets.length){toastMsg('没有可提示的格子了');return;}
+ let pick=-1;
+ const singles=[];
+ for(const i of targets){
+  if(G.board[i])continue;
+  let u=0;
+  for(const j of SudokuCore.peersOf[i]){const v=G.board[j];if(v)u|=1<<v;}
+  let cnt=0,val=0;
+  for(let v=1;v<=9;v++)if(!(u&(1<<v))){cnt++;val=v;}
+  if(cnt===1)singles.push(i);
+ }
+ pick=singles.length?singles[(Math.random()*singles.length)|0]:targets.filter(i=>!G.board[i])[0]??targets[0];
+ if(pick==null||pick<0)pick=targets[0];
+ G.hints--;
+ G.hinted.add(pick);
+ G.selected=pick;
+ placeValue(pick,G.solution[pick],false);
+ toastMsg(`已填入正确数字 · 剩余提示 ${G.hints} 次`);
+}
+
+function renderAll(){
+ $('#timer').textContent=fmt(G.time);
+ const tag=$('#diffTag');
+ tag.style.setProperty('--dc',{easy:'#4CAF50',hard:'#FFC107',master:'#F44336'}[G.diff]);
+ $('#diffTagName').textContent=DIFFS[G.diff].name;
+ updateErrors(false);
+ $('#hintBadge').textContent=G.hints;
+ $('#btnNote').classList.toggle('on',G.noteMode);
+ renderBoard();renderPad();
+}
+function updateErrors(anim){
+ const me=maxErr();
+ $('#errCount').textContent=`${G.errors}/${me===Infinity?'∞':me}`;
+ if(anim){const eb=$('#errBox');eb.classList.remove('bump');void eb.offsetWidth;eb.classList.add('bump');}
+}
+function renderBoard(){
+ const done=doneUnits();
+ const sel=G.selected;
+ const sv=sel>=0?G.board[sel]:0;
+ for(let i=0;i<81;i++){
+  const e=cellEls[i],val=G.board[i];
+  let cls='cell';
+  if(G.given[i])cls+=' given';
+  else if(G.hinted.has(i))cls+=' hinted';
+  else cls+=' user';
+  if(val&&val!==G.solution[i])cls+=' wrong';
+  if(done.size){
+   for(const uid of unitIdsOf(i))if(done.has(uid)){cls+=' done';break;}
+  }
+  if(i===sel)cls+=' sel';
+  else if(sv&&val===sv)cls+=' same';
+  else if(sel>=0&&SudokuCore.peersOf[sel].includes(i))cls+=' peer';
+  if(locked(i))cls+=' locked';
+  if(e.root.className!==cls)e.root.className=cls;
+  e.v.textContent=val||'';
+  const ns=G.notes[i];
+  if(!val&&ns.size){
+   e.notes.style.display='grid';
+   for(const sp of e.notes.children)sp.classList.toggle('on',ns.has(+sp.dataset.n));
+  }else e.notes.style.display='none';
+ }
+}
+function renderPad(){
+ for(let k=1;k<=9;k++){
+  let cnt=0;
+  for(const v of G.board)if(v===k)cnt++;
+  const left=9-cnt;
+  const em=keyEls[k].querySelector('em');
+  em.textContent=left>0?left:'';
+  keyEls[k].classList.toggle('exhaust',left<=0);
+ }
+}
+
+function pauseGame(){
+ if(!G||G.over)return;
+ G.running=false;
+ save();
+ $('#pauseProg').textContent=progress()+'%';
+ $('#pauseTime').textContent=fmt(G.time);
+ openMask('#pauseMask');
+}
+function resumePlay(){
+ if(!G||G.over)return;
+ closeMask('#pauseMask');
+ G.running=true;
+}
+function quitToHome(){
+ if(G&&!G.over)save();
+ G&&(G.running=false);
+ closeMask('#pauseMask');
+ show('home');
+}
+
+function rateResult(){
+ const t=G.time,e=G.errors,par=PAR[G.diff],me=maxErr()==Infinity?3:maxErr();
+ if(e===0&&t<=par*0.75)return['S',3];
+ if(e<=1&&t<=par)return['A',2];
+ if(e<=me&&t<=par*1.6)return['B',1];
+ return['C',0];
+}
+function starsHtml(n){
+ let h='';
+ for(let k=0;k<3;k++)h+=`<span class="${k<n?'':'off'}">★</span>`;
+ return h;
+}
+function finish(won){
+ if(!G.over){
+  G.over=true;G.running=false;
+  const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{}});
+  st.games++;
+  if(won){
+   st.wins++;st.streak++;st.bestStreak=Math.max(st.bestStreak,st.streak);
+   const b=st.best[G.diff];
+   if(!b||G.time<b)st.best[G.diff]=G.time;
+   const me=st.minErr[G.diff];
+   if(me==null||G.errors<me)st.minErr[G.diff]=G.errors;
+   const lb=LS.get('lb',{});
+   const arr=lb[G.diff]||[];
+   arr.push({t:G.time,e:G.errors,at:Date.now()});
+   arr.sort((a,b2)=>a.e-b2.e||a.t-b2.t||b2.at-a.at);
+   lb[G.diff]=arr.slice(0,10);
+   LS.set('lb',lb);
+  }else st.streak=0;
+  LS.set('stats',st);
+  LS.del('save');
+  vib(won?[30,50,30,50,80]:[90]);
+ }
+ $('#timer').textContent=fmt(G.time);
+ if(won){
+  lastLost=false;
+  const [rank,n]=rateResult();
+  $('#endEmoji').textContent='🏆';
+  $('#endTitle').textContent='挑战成功！';
+  $('#endTime').textContent=fmt(G.time);
+  $('#endErr').textContent=G.errors+' 次';
+  $('#endStars').innerHTML=starsHtml(n)+` ${rank}级`;
+  $('#endStats').classList.remove('hidden');
+  $('#rateRow').classList.remove('hidden');
+  $('#btnShare').classList.remove('hidden');
+  $('#btnLower').classList.add('hidden');
+  $('#btnAgain').textContent='再来一局';
+  openMask('#endMask');
+  setTimeout(()=>FX.burst(),260);
+ }else{
+  lastLost=true;
+  $('#endEmoji').textContent='💔';
+  $('#endTitle').textContent='挑战失败';
+  $('#endStats').classList.add('hidden');
+  $('#btnShare').classList.add('hidden');
+  $('#btnLower').classList.remove('hidden');
+  $('#btnAgain').textContent='重新挑战';
+  openMask('#endMask');
+ }
+}
+function afterFailShow(){
+ $('#endStats').classList.remove('hidden');
+}
+
+const FX={
+ cv:null,ctx:null,parts:[],raf:0,
+ init(){this.cv=$('#fx');this.ctx=this.cv.getContext('2d');},
+ burst(){
+  if(!this.ctx)return;
+  this.cv.width=innerWidth;this.cv.height=innerHeight;
+  const colors=['#FFC107','#F44336','#2196F3','#4CAF50','#9C27B0','#FF9800','#E91E63'];
+  this.parts=[];
+  for(let k=0;k<150;k++){
+   this.parts.push({
+    x:Math.random()*innerWidth,y:-20-Math.random()*innerHeight*0.4,
+    vx:(Math.random()-0.5)*2.2,vy:2+Math.random()*3.2,
+    rot:Math.random()*Math.PI,vr:(Math.random()-0.5)*0.25,
+    size:5+Math.random()*6,color:colors[(Math.random()*colors.length)|0],
+    round:Math.random()<0.35
+   });
+  }
+  cancelAnimationFrame(this.raf);
+  const loop=()=>{
+   const ctx=this.ctx;
+   ctx.clearRect(0,0,this.cv.width,this.cv.height);
+   let alive=false;
+   for(const p of this.parts){
+    p.vy+=0.035;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vx+=Math.sin(p.y*0.02)*0.02;
+    if(p.y<innerHeight+30)alive=true;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+    ctx.fillStyle=p.color;
+    if(p.round){ctx.beginPath();ctx.arc(0,0,p.size/2,0,7);ctx.fill();}
+    else ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.62);
+    ctx.restore();
+   }
+   if(alive)this.raf=requestAnimationFrame(loop);
+   else ctx.clearRect(0,0,this.cv.width,this.cv.height);
+  };
+  this.raf=requestAnimationFrame(loop);
+ }
+};
+
+function buildShareCard(rankText){
+ const diff=G.diff,meta=DIFFS[diff];
+ const grads={
+  easy:['#2E7D32','#66BB6A'],
+  hard:['#E65100','#FFA726'],
+  master:['#6A1B9A','#EC407A']
+ }[diff];
+ const c=document.createElement('canvas');c.width=1080;c.height=1920;
+ const x=c.getContext('2d');
+ const grad=x.createLinearGradient(0,0,1080,1920);
+ grad.addColorStop(0,grads[0]);grad.addColorStop(1,grads[1]);
+ x.fillStyle=grad;x.fillRect(0,0,1080,1920);
+ x.globalAlpha=0.07;x.fillStyle='#fff';
+ for(let k=0;k<26;k++){
+  x.beginPath();
+  x.arc(Math.random()*1080,Math.random()*1920,30+Math.random()*140,0,7);
+  x.fill();
+ }
+ x.globalAlpha=1;
+ x.fillStyle='#fff';
+ x.beginPath();x.arc(120,170,58,0,7);x.fill();
+ x.fillStyle=grads[0];
+ x.font='bold 58px "Noto Sans SC",sans-serif';
+ x.textAlign='center';x.textBaseline='middle';
+ x.fillText('数',120,174);
+ x.textAlign='left';x.fillStyle='#fff';
+ x.font='bold 62px "Noto Sans SC",sans-serif';
+ x.fillText('数独 · 成绩单',210,172);
+ x.textAlign='center';
+ x.font='bold 64px "Noto Sans SC",sans-serif';
+ x.fillText(`${meta.name}`,540,430);
+ x.font='bold 104px "Noto Sans SC",sans-serif';
+ x.fillText('挑战成功！',540,560);
+ x.font='900 190px "Roboto",monospace';
+ x.fillStyle='#FFE082';
+ x.fillText(fmt(G.time),540,790);
+ x.fillStyle='#fff';
+ x.font='52px "Noto Sans SC",sans-serif';
+ x.fillText(`❌ 错误 ${G.errors} 次`,540,950);
+ x.fillText(`⭐ 评级 ${rankText}`,540,1030);
+ const gs=620,gx=(1080-gs)/2,gy=1110,cs=gs/9;
+ x.fillStyle='rgba(255,255,255,.14)';
+ x.fillRect(gx,gy,gs,gs);
+ x.textAlign='center';x.textBaseline='middle';
+ for(let i=0;i<81;i++){
+  const r=SudokuCore.rowOf(i),cc=SudokuCore.colOf(i);
+  const cx=gx+cc*cs+cs/2,cy=gy+r*cs+cs/2;
+  const v=G.board[i];
+  if(!v)continue;
+  x.fillStyle=G.given[i]?'#FFFFFF':'#FFE082';
+  x.font=`${G.given[i]?700:500} ${cs*0.56}px Roboto`;
+  x.fillText(String(v),cx,cy+cs*0.03);
+ }
+ x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=2;
+ for(let k=1;k<9;k++){
+  x.beginPath();x.moveTo(gx+k*cs,gy);x.lineTo(gx+k*cs,gy+gs);x.stroke();
+  x.beginPath();x.moveTo(gx,gy+k*cs);x.lineTo(gx+gs,gy+k*cs);x.stroke();
+ }
+ x.strokeStyle='#fff';x.lineWidth=6;
+ for(let k=1;k<3;k++){
+  x.beginPath();x.moveTo(gx+k*cs*3,gy);x.lineTo(gx+k*cs*3,gy+gs);x.stroke();
+  x.beginPath();x.moveTo(gx,gy+k*cs*3);x.lineTo(gx+gs,gy+k*cs*3);x.stroke();
+ }
+ x.strokeRect(gx,gy,gs,gs);
+ x.fillStyle='rgba(255,255,255,.2)';
+ const pw=560;
+ x.fillRect((1080-pw)/2,1780,pw,100);
+ x.fillStyle='#fff';
+ x.font='bold 52px "Noto Sans SC",sans-serif';
+ x.fillText('来挑战我 →',540,1832);
+ x.font='28px "Noto Sans SC",sans-serif';
+ x.globalAlpha=0.85;
+ x.fillText(location.href.split('#')[0]||'数独 Sudoku',540,1908);
+ x.globalAlpha=1;
+ return c;
+}
+function shareText(rankText){
+ return `🧩 数独·${DIFFS[G.diff].name}挑战成功！\n⏱️ 用时：${fmtCN(G.time)}\n❌ 错误：${G.errors}次\n🏆 获得评级：${rankText}\n你能比我更快吗？来挑战！\n${location.href.split('#')[0]||''}`;
+}
+async function copyText(t){
+ try{await navigator.clipboard.writeText(t);return true;}
+ catch(e){
+  try{
+   const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';
+   document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+   return true;
+  }catch(e2){return false;}
+ }
+}
+async function doShare(){
+ const [rank]=rateResult();
+ const rankText=rank+'级';
+ const canvas=buildShareCard(rankText);
+ const text=shareText(rankText);
+ const done=()=>toastMsg('图片已保存，文案已复制');
+ try{
+  const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+  const file=new File([blob],'sudoku-score.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+   await navigator.share({files:[file],title:'数独成绩单',text});
+   toastMsg('已分享');
+   return;
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='sudoku-score.png';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  await copyText(text);
+  done();
+ }catch(err){
+  if(err&&err.name==='AbortError')return;
+  await copyText(text);
+  toastMsg('文案已复制到剪贴板');
+ }
+}
+
+function renderHome(){
+ const st=LS.get('stats',{games:0,wins:0,streak:0,bestStreak:0,best:{},minErr:{}});
+ const bestAll=Object.values(st.best||{});
+ const chips=[
+  ['🎮 总游戏场次',String(st.games)],
+  ['⏱️ 最佳时间',bestAll.length?fmt(Math.min(...bestAll)):'—'],
+  ['🎯 最少错误',st.minErr&&Object.keys(st.minErr).length?String(Math.min(...Object.values(st.minErr)))+' 次':'—'],
+  ['🔥 连胜纪录',String(st.bestStreak||0)]
+ ];
+ $('#statsRow').innerHTML=chips.map(([l,v])=>`<div class="stat-chip"><div class="stat-label">${l}</div><div class="stat-value">${v}</div></div>`).join('');
+ $$('#diffList .diff-btn').forEach(btn=>{
+  const d=btn.dataset.diff;
+  btn.classList.toggle('sel',d===selDiff);
+  const best=(LS.get('stats',{}).best||{})[d];
+  btn.querySelector('.diff-best').textContent=best?('最佳 '+fmt(best)):'';
+ });
+ const sv=LS.get('save');
+ const rc=$('#resumeCard');
+ if(sv&&sv.puzzle&&!sv.over){
+  rc.classList.remove('hidden');
+  let blanks=0,corr=0;
+  for(let i=0;i<81;i++){if(sv.puzzle[i])continue;blanks++;if(sv.board[i]===sv.solution[i])corr++;}
+  $('#resumeSub').textContent=`${DIFFS[sv.diff].name} · 已完成 ${Math.round(corr/Math.max(blanks,1)*100)}% · 已用时 ${fmt(sv.time||0)}`;
+ }else rc.classList.add('hidden');
+}
+function renderLb(){
+ $$('#lbTabs .lb-tab').forEach(t=>t.classList.toggle('on',t.dataset.diff===lbTab));
+ const arr=(LS.get('lb',{})[lbTab])||[];
+ const list=$('#lbList');
+ if(!arr.length){list.innerHTML='<div class="lb-empty">暂无记录，快来创造第一个纪录吧！</div>';return;}
+ list.innerHTML=arr.map((r,idx)=>{
+  const medal=idx<3?` r${idx+1}`:'';
+  const d=new Date(r.at);
+  const ds=`${d.getMonth()+1}/${d.getDate()}`;
+  return `<li class="lb-item"><span class="lb-rank${medal}">${idx+1}</span><span class="lb-time">${fmt(r.t)}</span><span class="lb-err">错 ${r.e}</span><span class="lb-date">${ds}</span></li>`;
+ }).join('');
+}
+
+function applyThemeSetting(t){
+ const eff=t==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;
+ document.documentElement.dataset.theme=eff;
+ const meta=document.querySelector('meta[name=theme-color]');
+ meta&&meta.setAttribute('content',eff==='dark'?'#121212':'#3F51B5');
+}
+let themePref=LS.get('settings',{theme:'auto'}).theme||'auto';
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themePref==='auto')applyThemeSetting('auto');});
+
+function bind(){
+ $$('.diff-btn').forEach(btn=>btn.addEventListener('click',()=>{selDiff=btn.dataset.diff;renderHome();}));
+ $('#btnStart').addEventListener('click',()=>startGame(selDiff));
+ $('#btnResumeGame').addEventListener('click',()=>resumeGame());
+ $('#btnSettings').addEventListener('click',()=>{
+  $$('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.theme===themePref));
+  openMask('#settingsSheet');
+ });
+ $('#themeSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  themePref=b.dataset.theme;
+  LS.set('settings',{theme:themePref});
+  applyThemeSetting(themePref);
+  $$('#themeSeg button').forEach(x=>x.classList.toggle('on',x===b));
+ });
+ $('#btnClearData').addEventListener('click',e=>{
+  const b=e.currentTarget;
+  if(!b._armed){b._armed=true;b.textContent='再次点击确认清除';setTimeout(()=>{b._armed=false;b.textContent='清除所有数据';},2500);return;}
+  ['save','stats','lb'].forEach(k=>LS.del(k));
+  b._armed=false;b.textContent='清除所有数据';
+  closeMask('#settingsSheet');
+  renderHome();
+  toastMsg('数据已清除');
+ });
+ $('#btnLb').addEventListener('click',()=>{renderLb();openMask('#lbSheet');});
+ $('#lbTabs').addEventListener('click',e=>{const t=e.target.closest('.lb-tab');if(t){lbTab=t.dataset.diff;renderLb();}});
+ $$('.sheet-close').forEach(b=>b.addEventListener('click',e=>{const m=e.target.closest('.sheet-mask');if(m)m.classList.remove('show');}));
+ $$('.sheet-mask').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
+
+ $('#btnBack').addEventListener('click',pauseGame);
+ $('#btnPauseTop').addEventListener('click',pauseGame);
+ $('#timer').addEventListener('click',pauseGame);
+ $('#btnResume').addEventListener('click',resumePlay);
+ $('#btnRestart').addEventListener('click',restartSame);
+ $('#btnQuit').addEventListener('click',quitToHome);
+ $('#btnErase').addEventListener('click',erase);
+ $('#btnHint').addEventListener('click',useHint);
+ $('#btnNote').addEventListener('click',()=>{G.noteMode=!G.noteMode;$('#btnNote').classList.toggle('on',G.noteMode);toastMsg(G.noteMode?'笔记模式：候选数记录中':'笔记模式已关闭');});
+ $('#btnAgain').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();lastLost?restartSame():startGame(G.diff);});
+ $('#btnShare').addEventListener('click',doShare);
+ $('#btnLower').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();startGame(G.diff==='master'?'hard':'easy');});
+ $('#btnHome2').addEventListener('click',()=>{closeMask('#endMask');afterFailShow();show('home');});
+
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&!G.over&&G.running)pauseGame();});
+ window.addEventListener('keydown',e=>{
+  if(!G||G.over||!$('#page-game').classList.contains('active'))return;
+  if($('.mask.show'))return;
+  if(e.key>='1'&&e.key<='9'){pressKey(+e.key);return;}
+  if(e.key==='Backspace'||e.key==='Delete'){erase();return;}
+  if(e.key==='n'||e.key==='N'){$('#btnNote').click();return;}
+  if(e.key==='h'||e.key==='H'){useHint();return;}
+  if(e.key==='Escape'){pauseGame();return;}
+  const dir={ArrowUp:-9,ArrowDown:9,ArrowLeft:-1,ArrowRight:1}[e.key];
+  if(dir!=null&&G.selected>=0){e.preventDefault();selectCell(Math.max(0,Math.min(80,G.selected+dir)));}
+ });
+ window.addEventListener('beforeunload',()=>{if(G&&!G.over&&G.running)save();});
+
+ document.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('.rip');
+  if(!t)return;
+  const r=t.getBoundingClientRect();
+  const sz=Math.max(r.width,r.height)*1.15;
+  const s=document.createElement('span');
+  s.className='ripple';
+  s.style.cssText=`width:${sz}px;height:${sz}px;left:${e.clientX-r.left-sz/2}px;top:${e.clientY-r.top-sz/2}px`;
+  t.appendChild(s);
+  setTimeout(()=>s.remove(),580);
+ },{passive:true});
+}
+
+function initDiffButtons(){
+ $('#diffList').innerHTML=['easy','hard','master'].map(d=>{
+  const m=DIFFS[d];
+  return `<button class="diff-btn rip ${m.cls}" data-diff="${d}">
+   <span class="dico"></span>
+   <span class="diff-txt"><span class="diff-name">${m.name}</span><br><span class="diff-desc">${m.desc}</span></span>
+   <span class="diff-best"></span>
+  </button>`;
+ }).join('');
+}
+function init(){
+ applyThemeSetting(themePref);
+ FX.init();
+ initDiffButtons();
+ buildBoard();
+ buildPad();
+ bind();
+ renderHome();
+ startTicker();
+}
+init();
+window.__SDK__={get g(){return G;},restartSame};
+})();
+</script>
+</body>
+</html>
