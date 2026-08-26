@@ -58,9 +58,9 @@ opacity:0;transform:translateX(7%);pointer-events:none;
 transition:opacity .3s cubic-bezier(.4,0,.2,1),transform .3s cubic-bezier(.4,0,.2,1)}
 .page.active{opacity:1;transform:none;pointer-events:auto}
 
-.appbar{height:calc(64px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;z-index:4;box-shadow:var(--shadow-1);background:var(--surface)}
+.appbar{height:calc(64px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;z-index:4;background:var(--surface);border-bottom:1px solid var(--thin)}
 .appbar-title{flex:1;display:flex;align-items:center;gap:10px;padding-left:12px;font-size:24px;font-weight:600}
-.logo-dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#7986CB);position:relative;box-shadow:var(--shadow-1)}
+.logo-dot{width:30px;height:30px;border-radius:9px;background:var(--pad-btn,var(--primary));position:relative}
 .logo-dot::before{content:"";position:absolute;inset:5px;background:
 linear-gradient(var(--on-primary),var(--on-primary)) 0 33%/100% 2px no-repeat,
 linear-gradient(var(--on-primary),var(--on-primary)) 0 66%/100% 2px no-repeat,
@@ -70,25 +70,35 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .icon-btn:active{background:var(--sel)}
 .icon-btn svg{width:23px;height:23px}
 
-.home-body{flex:1;overflow-y:auto;padding:14px 16px 130px;display:flex;flex-direction:column;gap:14px}
+.home-body{flex:1;overflow-y:auto;padding:16px 16px 130px;display:flex;flex-direction:column;gap:12px}
+.sec-label{font-size:12px;font-weight:700;color:var(--on-var);letter-spacing:1px;margin-top:6px}
 .stats-row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px;margin:-2px}
-.stat-chip{min-width:106px;scroll-snap-align:start;background:var(--surface);border-radius:16px;padding:11px 13px;box-shadow:var(--shadow-1)}
+.stat-chip{min-width:104px;scroll-snap-align:start;background:var(--sel);border-radius:14px;padding:11px 13px}
 .stat-label{font-size:11px;color:var(--on-var);display:flex;align-items:center;gap:4px;white-space:nowrap}
 .stat-value{font-size:18px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-.resume-card{display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,var(--sel),transparent),var(--surface);border:1px solid var(--primary);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow-1)}
+.lessons-banner{display:flex;align-items:center;gap:14px;background:var(--sel);border-radius:16px;padding:14px 16px;cursor:pointer;transition:transform .15s;width:100%;text-align:left}
+.lessons-banner:active{transform:scale(.98)}
+.lbi-icon{width:44px;height:44px;border-radius:12px;background:var(--pad-btn,var(--primary));color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.lbi-info{flex:1;min-width:0}
+.lbi-title{font-size:15px;font-weight:700}
+.lbi-sub{font-size:12px;color:var(--on-var);margin-top:2px}
+.lbi-prog{font-size:12px;font-weight:700;color:var(--primary);background:var(--surface);border-radius:10px;padding:4px 10px;flex:none}
+
+.resume-card{display:flex;align-items:center;gap:12px;background:var(--sel);border-radius:16px;padding:12px 14px}
 .resume-info{flex:1;min-width:0}
 .resume-title{font-size:14px;font-weight:600}
 .resume-sub{font-size:12px;color:var(--on-var);margin-top:2px}
-.resume-play{width:42px;height:42px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-1);flex:none;position:relative;overflow:hidden}
+.resume-play{width:42px;height:42px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;flex:none;position:relative;overflow:hidden}
 .resume-play svg{width:20px;height:20px}
 
-.diff-list{display:flex;flex-direction:column;gap:12px}
-.diff-btn{display:flex;align-items:center;gap:14px;text-align:left;height:72px;padding:0 16px;border-radius:20px;border:1.5px solid var(--thin);background:var(--surface);transition:all .18s;position:relative;overflow:hidden}
-.diff-btn.sel{background-image:linear-gradient(120deg,var(--sel),transparent 70%);border-color:var(--primary);box-shadow:var(--shadow-1)}
-.dico{width:40px;height:40px;border-radius:50%;border:3px solid var(--dc);display:flex;align-items:center;justify-content:center;flex:none}
-.dico::after{content:"";width:16px;height:16px;border-radius:50%;background:var(--dc)}
-.d-easy{--dc:#4CAF50}.d-hard{--dc:#FFC107}.d-master{--dc:#F44336}
+.diff-list{display:flex;flex-direction:column;gap:10px}
+.diff-btn{display:flex;align-items:center;gap:14px;text-align:left;height:68px;padding:0 16px;border-radius:16px;border:1.5px solid transparent;background:var(--sel);transition:all .18s;position:relative;overflow:hidden}
+.diff-btn.sel{background:var(--surface);border-color:var(--primary)}
+.diff-btn.sel::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--primary)}
+.dico{width:38px;height:38px;border-radius:50%;background:var(--dc);display:flex;align-items:center;justify-content:center;flex:none}
+.dico::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--surface);opacity:.9}
+.d-easy{--dc:#4CAF50}.d-hard{--dc:#FF9800}.d-master{--dc:#F44336}
 .diff-txt{flex:1;min-width:0}
 .diff-name{font-size:16px;font-weight:600}
 .diff-desc{font-size:12px;color:var(--on-var);margin-top:3px}
@@ -98,12 +108,41 @@ linear-gradient(var(--on-primary),var(--on-primary)) 66% 0/2px 100% no-repeat;op
 .lb-link:active{background:var(--sel)}
 
 .fab-zone{position:fixed;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:6;pointer-events:none}
-.fab{pointer-events:auto;display:flex;align-items:center;gap:10px;height:56px;padding:0 26px;border-radius:28px;background:var(--primary);color:var(--on-primary);font-size:16px;font-weight:600;box-shadow:var(--shadow-2);transition:transform .18s cubic-bezier(.3,1.5,.6,1);position:relative;overflow:hidden}
+.fab{pointer-events:auto;display:flex;align-items:center;gap:10px;height:54px;padding:0 28px;border-radius:27px;background:var(--pad-btn);color:var(--on-primary);font-size:16px;font-weight:600;transition:transform .18s cubic-bezier(.3,1.5,.6,1);position:relative;overflow:hidden}
 .fab:active{transform:scale(.94)}
+
+.lesson-head{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;gap:6px;background:var(--surface);border-bottom:1px solid var(--thin)}
+.lesson-head h2{font-size:18px;font-weight:700;flex:1}
+.lesson-progchip{font-size:12px;font-weight:700;color:var(--primary);background:var(--sel);border-radius:10px;padding:5px 10px}
+.lessons-body{flex:1;overflow-y:auto;padding:14px 16px 30px;display:flex;flex-direction:column;gap:10px}
+.lesson-row{display:flex;align-items:center;gap:14px;background:var(--sel);border-radius:16px;padding:14px 16px;text-align:left;transition:transform .15s;position:relative;overflow:hidden;width:100%}
+.lesson-row:active{transform:scale(.98)}
+.lesson-row.locked{opacity:.45}
+.lesson-row .lnum{width:40px;height:40px;border-radius:12px;background:var(--pad-btn,var(--primary));color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex:none}
+.lesson-row.done .lnum{background:var(--green)}
+.lesson-row .linfo{flex:1;min-width:0}
+.lesson-row .lname{font-size:15px;font-weight:700}
+.lesson-row .ldesc{font-size:12px;color:var(--on-var);margin-top:3px}
+.lesson-row .lstate{font-size:12px;font-weight:700;color:var(--on-var);flex:none}
+.lesson-row.done .lstate{color:var(--green)}
+.lesson-play{flex:1;overflow-y:auto;padding:12px 14px 24px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.theory-card{width:100%;background:var(--sel);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--on)}
+.theory-card b{color:var(--primary)}
+.task-bar{width:100%;display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;padding:10px 14px}
+.task-digit{width:40px;height:40px;border-radius:10px;background:var(--pad-btn,var(--primary));color:var(--on-primary);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.task-text{font-size:13.5px;font-weight:600;line-height:1.5;flex:1}
+.task-step{font-size:11px;color:var(--on-var);font-weight:700}
+.lcontrols{display:flex;gap:8px;width:100%}
+.lbtn{flex:1;height:40px;border-radius:12px;background:var(--sel);font-size:13px;font-weight:600;color:var(--on);position:relative;overflow:hidden}
+.lbtn.on{background:var(--pad-btn,var(--primary));color:var(--on-primary)}
+.lesson-done-card .dialog{width:min(84vw,330px)}
+#lboard .cell .v{font-size:clamp(17px,min(5.4vw,5dvh),28px)}
+@keyframes lflash{0%{background:rgba(76,175,80,.5)}100%{}}
+.cell.lflash{animation:lflash .7s ease-out}
 
 .game-appbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 8px 0;display:flex;align-items:center;gap:8px;z-index:4;background:var(--surface)}
 .gtitle{font-size:20px;font-weight:700;flex:1}
-.newgame-btn{height:38px;padding:0 18px;border-radius:10px;background:var(--pad-btn,var(--primary));color:var(--on-primary);font-size:14px;font-weight:600;position:relative;overflow:hidden;box-shadow:var(--shadow-1)}
+.newgame-btn{height:38px;padding:0 18px;border-radius:10px;background:var(--pad-btn,var(--primary));color:var(--on-primary);font-size:14px;font-weight:600;position:relative;overflow:hidden}
 .info-row{display:flex;align-items:flex-end;justify-content:space-between;background:var(--surface);padding:2px 18px 8px;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.05)}
 .info-block{display:flex;flex-direction:column;gap:2px;min-width:86px;text-align:left;border-radius:10px}
 .info-block.center{text-align:center;align-items:center}
@@ -120,7 +159,7 @@ button.info-block{cursor:pointer;padding:2px 4px}
 .pause-mini:active{background:var(--sel)}
 
 .board-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px}
-.board{width:min(100%,calc(100dvh - 348px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--board-bg,var(--surface));border:3px solid var(--thick);border-radius:10px;box-shadow:var(--shadow-2);overflow:hidden}
+.board{width:min(100%,calc(100dvh - 348px));max-width:520px;aspect-ratio:1;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);background:var(--board-bg,var(--surface));border:3px solid var(--thick);border-radius:10px;overflow:hidden}
 .cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--thin);border-bottom:1px solid var(--thin);transition:background .15s;cursor:pointer}
 .cell.bl{border-left:3px solid var(--thick)}
 .cell.bt{border-top:3px solid var(--thick)}
@@ -240,7 +279,16 @@ button.info-block{cursor:pointer;padding:2px 4px}
     </button>
   </header>
   <main class="home-body">
+    <div class="sec-label">我的统计</div>
     <div class="stats-row" id="statsRow"></div>
+    <button id="lessonsBanner" class="lessons-banner">
+      <span class="lbi-icon">🎓</span>
+      <span class="lbi-info">
+        <span class="lbi-title">技巧学堂</span><br>
+        <span class="lbi-sub">6 关闯关教学 · 从唯一候选数到 X-Wing</span>
+      </span>
+      <span class="lbi-prog" id="lessonsProg">0/6</span>
+    </button>
     <div id="resumeCard" class="resume-card hidden">
       <div class="resume-info">
         <div class="resume-title">继续上局</div>
@@ -384,6 +432,55 @@ button.info-block{cursor:pointer;padding:2px 4px}
   </div>
 </div>
 
+<section id="page-lessons" class="page">
+  <header class="lesson-head">
+    <button id="btnLessonsBack" class="icon-btn rip" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+    <h2>技巧学堂</h2>
+    <span class="lesson-progchip" id="lessonListProg">0/6</span>
+  </header>
+  <main class="lessons-body" id="lessonList"></main>
+</section>
+
+<section id="page-lesson" class="page">
+  <header class="lesson-head">
+    <button id="btnLessonBack" class="icon-btn rip" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+    <h2 id="lessonTitle">技巧</h2>
+    <span class="lesson-progchip" id="lessonStepChip">第 1 步</span>
+  </header>
+  <main class="lesson-play">
+    <div class="theory-card" id="lessonTheory"></div>
+    <div class="task-bar">
+      <div class="task-digit" id="taskDigit">?</div>
+      <div class="task-text">
+        <div class="task-step" id="taskStep">步骤 1/2</div>
+        <div id="taskText"></div>
+      </div>
+    </div>
+    <div class="lboard-wrap"><div id="lboard" class="board" style="width:min(100%,calc(100dvh - 430px))"></div></div>
+    <div class="lcontrols">
+      <button id="btnLNotes" class="lbtn rip">显示候选数</button>
+      <button id="btnLHint" class="lbtn rip">看提示</button>
+      <button id="btnLReset" class="lbtn rip">重新本关</button>
+    </div>
+    <div class="nums-row" id="lnums" style="width:100%"></div>
+  </main>
+  <div id="lessonDone" class="lesson-done-card">
+    <div class="dialog">
+      <div class="end-emoji">🎓</div>
+      <h2 id="lessonDoneTitle">本关通过！</h2>
+      <p class="progress-line" id="lessonDoneSub" style="margin-top:10px"></p>
+      <div class="dlg-actions">
+        <button id="btnLessonNext" class="btn filled rip">下一关</button>
+        <button id="btnLessonList" class="btn textb rip">返回课程列表</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <canvas id="fx"></canvas>
 <div id="toast" class="toast"></div>
 <div id="orientTip">📱 请竖屏游玩以获得最佳体验</div>
@@ -520,7 +617,7 @@ function makePuzzle(diff){
  }
  return {puzzle,solution,clues};
 }
-return {rowOf,colOf,boxOf,UNITS,peersOf,generateSolved,countSolutions,solvableByBasics,makePuzzle};
+return {rowOf,colOf,boxOf,UNITS,peersOf,generateSolved,solveGrid,countSolutions,solvableByBasics,makePuzzle};
 })();
 globalThis.__ENGINE__=SudokuCore;
 </script>
@@ -1128,6 +1225,9 @@ function renderHome(){
   ['🩹 带伤通关',String(st.rescues||0)]
  ];
  $('#statsRow').innerHTML=chips.map(([l,v])=>`<div class="stat-chip"><div class="stat-label">${l}</div><div class="stat-value">${v}</div></div>`).join('');
+ const lp=lessonProg();
+ const lbp=$('#lessonsProg');
+ if(lbp)lbp.textContent=`${lp.done.length}/${LESSONS.length}`;
  $$('#diffList .diff-btn').forEach(btn=>{
   const d=btn.dataset.diff;
   btn.classList.toggle('sel',d===selDiff);
@@ -1154,6 +1254,416 @@ function renderLb(){
   const ds=`${d.getMonth()+1}/${d.getDate()}`;
   const tag=r.c?`<span class="lb-tag">续命×${r.c}</span>`:'';
   return `<li class="lb-item"><span class="lb-rank${medal}">${idx+1}</span><span class="lb-time">${fmt(r.t)}</span><span class="lb-err">错 ${r.e}</span>${tag}<span class="lb-date">${ds}</span></li>`;
+ }).join('');
+}
+
+/* ==================== 技巧学堂 ==================== */
+function shuffleA(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function candArr(board,i){
+ const taken=new Set();
+ for(const j of SudokuCore.peersOf[i])if(board[j])taken.add(board[j]);
+ const out=[];
+ for(let v=1;v<=9;v++)if(!taken.has(v))out.push(v);
+ return out;
+}
+const allCands=b=>b.map((v,i)=>v?[]:candArr(b,i));
+const blankSet=(sol,blanks)=>{const b=sol.slice();for(const i of blanks)b[i]=0;return b;};
+
+function genL1(){
+ for(let t=0;t<400;t++){
+  const sol=SudokuCore.generateSolved();
+  const box=(Math.random()*9)|0;
+  const blanks=new Set(SudokuCore.UNITS[18+box]);
+  for(const i of shuffleA([...Array(81).keys()].filter(i=>!blanks.has(i))).slice(0,3))blanks.add(i);
+  const board=blankSet(sol,[...blanks]);
+  if(!SudokuCore.solvableByBasics(board))continue;
+  return {sol,board,meta:{digit:'?'}};
+ }
+ return null;
+}
+function genHiddenIn(unitCells,unitOf){
+ for(let t=0;t<1200;t++){
+  const sol=SudokuCore.generateSolved();
+  const ui=(Math.random()*9)|0;
+  const cells=unitCells(ui);
+  const target=cells[(Math.random()*9)|0];
+  const blanks=[target,...shuffleA(cells.filter(i=>i!==target)).slice(0,2+((Math.random()*2)|0))];
+  const board=blankSet(sol,blanks);
+  const cands=allCands(board);
+  const d=sol[target];
+  if(!blanks.every(i=>i===target||!cands[i].includes(d)))continue;
+  return {sol,board,meta:unitOf(ui,d,target)};
+ }
+ return null;
+}
+const genL2=()=>genHiddenIn(ui=>[...Array(9).keys()].map(c=>ui*9+c),(ui,d,cell)=>({row:ui,digit:d,cell}));
+const genL3=()=>genHiddenIn(ui=>SudokuCore.UNITS[18+ui],(ui,d,cell)=>({box:ui,digit:d,cell}));
+function genL4(){
+ for(let t=0;t<2500;t++){
+  const sol=SudokuCore.generateSolved();
+  const box=(Math.random()*9)|0;
+  const cells=SudokuCore.UNITS[18+box];
+  const d=1+((Math.random()*9)|0);
+  const p=cells.find(i=>sol[i]===d);
+  const seg=cells.filter(i=>SudokuCore.rowOf(i)===SudokuCore.rowOf(p)&&i!==p);
+  if(!seg.length)continue;
+  const q=seg[(Math.random()*seg.length)|0];
+  const row=SudokuCore.rowOf(p);
+  const rowIdx=[...Array(9).keys()].map(c=>row*9+c);
+  const wPool=rowIdx.filter(i=>SudokuCore.boxOf(i)!==box&&i!==q);
+  if(!wPool.length)continue;
+  const w=wPool[(Math.random()*wPool.length)|0];
+  const extra=new Set();
+  for(const i of [p,q,w])for(const j of SudokuCore.peersOf[i])if(sol[j]===d)extra.add(j);
+  extra.delete(p);extra.delete(q);extra.delete(w);
+  const blanks=[p,q,w,...extra];
+  const board=blankSet(sol,blanks);
+  const cands=allCands(board);
+  if(!cands[p].includes(d)||!cands[q].includes(d)||!cands[w].includes(d))continue;
+  const inBox=cells.filter(i=>!board[i]&&cands[i].includes(d));
+  if(inBox.length!==2||!inBox.includes(p)||!inBox.includes(q))continue;
+  const inRow=rowIdx.filter(i=>!board[i]&&cands[i].includes(d));
+  if(!(inRow.length===3&&inRow.includes(p)&&inRow.includes(q)&&inRow.includes(w)))continue;
+  return {sol,board,meta:{box,digit:d,p,q,witness:w,row}};
+ }
+ return null;
+}
+function genL5(){
+ for(let t=0;t<3000;t++){
+  const sol=SudokuCore.generateSolved();
+  const box=(Math.random()*9)|0;
+  const cells=SudokuCore.UNITS[18+box];
+  const row=SudokuCore.rowOf(cells[0]);
+  const rowCells=cells.filter(i=>SudokuCore.rowOf(i)===row);
+  const [c1,c2]=shuffleA([...rowCells]);
+  const a=sol[c1],b=sol[c2];
+  const blanks=new Set([c1,c2]);
+  for(const [i,v] of [[c1,a],[c1,b],[c2,a],[c2,b]])
+   for(const j of SudokuCore.peersOf[i])if(sol[j]===v)blanks.add(j);
+  const rowIdx=[...Array(9).keys()].map(c=>row*9+c);
+  const wPool=rowIdx.filter(i=>SudokuCore.boxOf(i)!==box&&!blanks.has(i));
+  if(!wPool.length)continue;
+  const w=wPool[(Math.random()*wPool.length)|0];
+  blanks.add(w);
+  for(const v of [a,b])for(const j of SudokuCore.peersOf[w])if(sol[j]===v)blanks.add(j);
+  const bl=[...blanks];
+  const board=blankSet(sol,bl);
+  const cands=allCands(board);
+  if(!(cands[c1].length===2&&cands[c1].includes(a)&&cands[c1].includes(b)))continue;
+  if(!(cands[c2].length===2&&cands[c2].includes(a)&&cands[c2].includes(b)))continue;
+  if(!cands[w].includes(a)||!cands[w].includes(b)||cands[w].length===2)continue;
+  const pairCells=rowIdx.filter(i=>!board[i]&&cands[i].length===2&&cands[i].includes(a)&&cands[i].includes(b));
+  if(pairCells.length!==2)continue;
+  return {sol,board,meta:{a,b,c1,c2,witness:w,row}};
+ }
+ return null;
+}
+function genL6(){
+ for(let t=0;t<600;t++){
+  const sol=SudokuCore.generateSolved();
+  const band=(Math.random()*3)|0;
+  const sts=shuffleA([0,1,2]);
+  const stackA=sts[0],stackB=sts[1];
+  const rs=shuffleA([0,1,2]);
+  const r1=band*3+rs[0],r2=band*3+rs[1];
+  const d=1+((Math.random()*9)|0);
+  const p1=[...Array(9).keys()].map(c=>r1*9+c).find(i=>sol[i]===d);
+  const p2=[...Array(9).keys()].map(c=>r2*9+c).find(i=>sol[i]===d);
+  const cA=p1%9,cB=p2%9;
+  if(Math.floor(cA/3)===Math.floor(cB/3))continue;
+  const corners=[r1*9+cA,r1*9+cB,r2*9+cA,r2*9+cB];
+  const blanks=new Set(corners);
+  for(const c of corners){
+   const ch=corners.find(x=>x!==c&&SudokuCore.rowOf(x)===SudokuCore.rowOf(c));
+   const v=sol[ch];
+   const h=[...SudokuCore.peersOf[c]].find(j=>sol[j]===v&&SudokuCore.colOf(j)===SudokuCore.colOf(c));
+   if(h!=null)blanks.add(h);
+  }
+  const zRows=shuffleA([...Array(9).keys()].filter(r3=>Math.floor(r3/3)!==band));
+  let committed=null;
+  for(const zr of zRows){
+   const z=zr*9+cA;
+   const z1=[...Array(9).keys()].map(cc=>zr*9+cc).find(j=>sol[j]===d);
+   const z2=SudokuCore.UNITS[18+SudokuCore.boxOf(z)].find(j=>sol[j]===d&&j!==z);
+   const add=[...new Set([z1,z2].filter(j=>j!=null&&j!==z))];
+   const test=new Set([...blanks,z,...add]);
+   const b2=blankSet(sol,[...test]);
+   const c2=allCands(b2);
+   if(!c2[z].includes(d))continue;
+   if(corners.some(cc=>!(c2[cc].includes(d)&&c2[cc].length>=2)))continue;
+   committed={blanks:test,z};
+   break;
+  }
+  if(!committed)continue;
+  const bl=[...committed.blanks];
+  const board=blankSet(sol,bl);
+  const cands=allCands(board);
+  const rowD=r=>[...Array(9).keys()].map(cc=>r*9+cc).filter(i=>!board[i]&&cands[i].includes(d));
+  const rc1=rowD(r1),rc2=rowD(r2);
+  if(!(rc1.length===2&&rc1.includes(r1*9+cA)&&rc1.includes(r1*9+cB)))continue;
+  if(!(rc2.length===2&&rc2.includes(r2*9+cA)&&rc2.includes(r2*9+cB)))continue;
+  return {sol,board,meta:{digit:d,corners,witness:committed.z}};
+ }
+ return null;
+}
+
+const LESSONS=[
+ {name:'唯一候选数',en:'Naked Single',desc:'只剩一个候选数的格子',
+  theory:'扫描空格，数一数它的<b>行、列、宫</b>已经出现过哪些数字。当 8 个数字都被排除、只剩 1 个可选时，它就是答案。<b>秘诀：</b>每填对一个数字，它周围往往立刻产生新的唯一候选——像多米诺一样连锁下去。<br><b>本关：</b>连续找出唯一候选格并填数，清空整个棋盘即通关！',
+  gen:genL1,
+  steps:()=>[
+   {text:'点击一个只有唯一候选数的空格，然后输入数字',digit:'?',kind:'chain'}
+  ]},
+ {name:'行列排除',en:'Hidden Single · 行',desc:'一个数字在一行里只有一个家',
+  theory:'换个视角：<b>盯住一个数字</b>，而不是盯住格子。它在某一行里，其余空格都因行/列/宫已有该数字而被排除，只剩一格可放——这就是「隐性唯一」。<br><b>本关：</b>任务栏已给出目标数字，找到它在这一行的唯一落点。',
+  gen:genL2,
+  steps:m=>[
+   {text:`点击第 ${m.row+1} 行中唯一能放 ${m.digit} 的格子`,digit:String(m.digit),kind:'cell2'}
+  ]},
+ {name:'宫排除',en:'Hidden Single · 宫',desc:'一个数字在一宫里只有一个家',
+  theory:'同样的扫描在 <b>3×3 宫</b>里最常用：先数清宫内缺哪些数字，再逐格检查「这一格能不能放它」。被排除的格子越多，唯一落点越明显。<br><b>本关：</b>在指定宫内找到目标数字的唯一落点。',
+  gen:genL3,
+  steps:m=>[
+   {text:`点击第 ${m.box+1} 宫中唯一能放 ${m.digit} 的格子`,digit:String(m.digit),kind:'cell3'}
+  ]},
+ {name:'指向数对',en:'Pointing Pair',desc:'宫内候选锁定一行，排除同行其余',
+  theory:'若数字 d <b>在某宫内的候选位置全落在同一行</b>，那 d 必定占据这条「宫内行」——于是<b>这一行在宫外的格子</b>都能划掉候选 d。<br><b>本关：</b>先点出宫内的两格，再点击行内该被划掉 d 的格子。',
+  gen:genL4,
+  steps:m=>[
+   {text:`点出第 ${m.box+1} 宫内 ${m.digit} 的两个候选格`,digit:String(m.digit),kind:'pairSet',set:[m.p,m.q]},
+   {text:`数对锁定了这一行！点击行内（宫外）候选含 ${m.digit}、该被排除的格子`,digit:String(m.digit),kind:'cell',cell:m.witness,elim:[m.digit]}
+  ]},
+ {name:'显性数对',en:'Naked Pair',desc:'两格共享两个候选，锁定并排除',
+  theory:'同一单元内<b>两个格子的候选数完全相同</b>（都只有 a、b）→ a、b 必被这两格占据 → 同单元其他格子可划掉 a、b。<br><b>本关：</b>先找出数对两格，再点击行内同时含 a、b 候选、该被排除的格子。',
+  gen:genL5,
+  steps:m=>[
+   {text:`找出候选数正好是 ${m.a}、${m.b} 的两格`,digit:'ab',kind:'pairSet',set:[m.c1,m.c2]},
+   {text:`点击行内同时含 ${m.a}、${m.b} 候选、该被排除的格子`,digit:'ab',kind:'cell',cell:m.witness,elim:[m.a,m.b]}
+  ]},
+ {name:'矩形法 X-Wing',en:'X-Wing',desc:'两行两列构成矩形，交叉排除',
+  theory:'数字 d 在<b>两行中恰好都只能落在同样的两列</b> → 四格构成矩形：两行瓜分了两列 → <b>这两列在矩形外的格子</b>都可划掉 d。<br><b>本关：</b>先点出 4 个角，再点击列中该被划掉 d 的格子。',
+  gen:genL6,
+  steps:m=>[
+   {text:`点出数字 ${m.digit} 的 X-Wing 四角`,digit:String(m.digit),kind:'pairSet',set:m.corners},
+   {text:`矩形锁定！点击两列中（矩形外）候选含 ${m.digit}、该被排除的格子`,digit:String(m.digit),kind:'cell',cell:m.witness,elim:[m.digit]}
+  ]}
+];
+
+const lessonProg=()=>LS.get('lessonProg',{done:[],unlocked:1});
+let LSN=null;
+const lcellEls=[];
+
+function buildLessonBoard(){
+ const b=$('#lboard');
+ b.innerHTML='';
+ lcellEls.length=0;
+ for(let i=0;i<81;i++){
+  const r=SudokuCore.rowOf(i),c=SudokuCore.colOf(i);
+  const cell=document.createElement('div');
+  cell.className='cell'+(c%3===0&&c>0?' bl':'')+(r%3===0&&r>0?' bt':'');
+  cell.dataset.i=i;
+  const v=document.createElement('span');v.className='v';
+  const ns=document.createElement('div');ns.className='notes';
+  for(let n=1;n<=9;n++){const s=document.createElement('i');s.textContent=n;s.dataset.n=n;ns.appendChild(s);}
+  cell.appendChild(v);cell.appendChild(ns);
+  b.appendChild(cell);
+  lcellEls.push({root:cell,v,notes:ns,base:cell.className});
+ }
+ b.addEventListener('click',e=>{
+  const cell=e.target.closest('.cell');
+  if(cell)lessonTap(+cell.dataset.i);
+ });
+}
+function buildLessonPad(){
+ const nums=$('#lnums');
+ nums.innerHTML='';
+ for(let k=1;k<=9;k++){
+  const btn=document.createElement('button');
+  btn.className='key rip';btn.dataset.k=k;
+  btn.innerHTML=`<span>${k}</span>`;
+  btn.addEventListener('click',()=>lessonKey(k));
+  nums.appendChild(btn);
+ }
+}
+function startLesson(n){
+ const def=LESSONS[n];
+ const gen=def.gen();
+ if(!gen){toastMsg('出题失败，请再试一次');return;}
+ LSN={n,def,sol:gen.sol,board:gen.board.slice(),meta:gen.meta,step:0,taps:new Set(),showCands:n>0,elim:{},done:false,found:-1};
+ $('#lessonTitle').textContent=`第${n+1}关 · ${def.name}`;
+ $('#lessonTheory').innerHTML=def.theory;
+ $('#lessonDone').classList.remove('show');
+ show('lesson');
+ renderLesson();
+}
+function lessonCands(i){
+ const c=candArr(LSN.board,i);
+ return LSN.elim[i]?c.filter(v=>!LSN.elim[i].includes(v)):c;
+}
+function renderLesson(){
+ const steps=LSN.def.steps(LSN.meta);
+ const st=steps[Math.min(LSN.step,steps.length-1)];
+ const label=`步骤 ${Math.min(LSN.step+1,steps.length)}/${steps.length}`;
+ $('#lessonStepChip').textContent=label;
+ $('#taskStep').textContent=label;
+ $('#taskText').textContent=st.kind==='chain'?`清空棋盘！剩余 ${LSN.board.filter(v=>!v).length} 格 · 点击一个唯一候选格并填数`:st.text;
+ $('#taskDigit').textContent=st.digit;
+ for(let i=0;i<81;i++){
+  const e=lcellEls[i],v=LSN.board[i];
+  let cls=e.base;
+  if(v)cls+=' given';
+  if(LSN.taps.has(i))cls+=' sel';
+  if(e.root.className!==cls)e.root.className=cls;
+  e.v.textContent=v||'';
+  const c=(!v&&LSN.showCands)?lessonCands(i):[];
+  if(c.length){
+   e.notes.style.display='grid';
+   for(const sp of e.notes.children)sp.classList.toggle('on',c.includes(+sp.dataset.n));
+  }else e.notes.style.display='none';
+ }
+ $('#btnLNotes').classList.toggle('on',LSN.showCands);
+}
+function flashL(i,good){
+ const cell=lcellEls[i].root;
+ cell.classList.remove('shake','lflash');void cell.offsetWidth;
+ cell.classList.add(good?'lflash':'shake');
+ setTimeout(()=>cell.classList.remove('shake','lflash'),720);
+}
+function lessonAdvanceFill(i){
+ LSN.board[i]=LSN.sol[i];
+ flashL(i,true);
+}
+function lessonNextStep(msg){
+ const steps=LSN.def.steps(LSN.meta);
+ LSN.step++;
+ renderLesson();
+ if(LSN.step>=steps.length)completeLesson();
+ else toastMsg(msg||'正确！进入下一步');
+}
+function lessonTap(i){
+ if(!LSN||LSN.done)return;
+ const steps=LSN.def.steps(LSN.meta);
+ const st=steps[LSN.step];
+ if(LSN.board[i]){flashL(i);toastMsg('这是已给定的数字');return;}
+ if(st.kind==='chain'){
+  const c=candArr(LSN.board,i);
+  if(c.length!==1){flashL(i);toastMsg(`这个格子有 ${c.length} 个候选数——先找只有 1 个候选的格子`);return;}
+  LSN.found=i;
+  LSN.taps=new Set([i]);
+  renderLesson();
+  toastMsg('唯一候选！请输入数字');
+ }else if(st.kind==='cell2'||st.kind==='cell3'){
+  if(st.kind==='cell2'&&SudokuCore.rowOf(i)!==LSN.meta.row){flashL(i);toastMsg(`先聚焦第 ${LSN.meta.row+1} 行`);return;}
+  if(st.kind==='cell3'&&SudokuCore.boxOf(i)!==LSN.meta.box){flashL(i);toastMsg(`先聚焦第 ${LSN.meta.box+1} 宫`);return;}
+  const c=candArr(LSN.board,i);
+  if(i===LSN.meta.cell){lessonAdvanceFill(i);lessonNextStep();}
+  else if(!c.includes(LSN.meta.digit)){flashL(i);toastMsg(`${LSN.meta.digit} 不能放这里：同行/列/宫已经有 ${LSN.meta.digit}`);}
+  else{flashL(i);toastMsg('有可能，但不是唯一位置——继续排除其他格子');}
+ }else if(st.kind==='pairSet'){
+  if(!st.set.includes(i)){flashL(i);toastMsg(lessonPairHint(i,st));return;}
+  if(LSN.taps.has(i))return;
+  LSN.taps.add(i);
+  renderLesson();
+  if(st.set.every(x=>LSN.taps.has(x)))lessonNextStep('正确！进入下一步');
+ }else if(st.kind==='cell'){
+  const c=lessonCands(i);
+  const need=st.elim.filter(v=>c.includes(v));
+  if(i!==st.cell||!need.length){
+   flashL(i);
+   toastMsg(need.length?'再想想：哪个格子的候选里同时含有这些数字？':'这个格子里没有要划掉的候选数');
+   return;
+  }
+  LSN.elim[i]=(LSN.elim[i]||[]).concat(st.elim);
+  flashL(i,true);
+  lessonNextStep();
+ }
+}
+function lessonPairHint(i,st){
+ const c=candArr(LSN.board,i);
+ if(st.set.length===2){
+  const other=st.set.find(x=>x!==i);
+  const oc=candArr(LSN.board,other);
+  if(SudokuCore.boxOf(i)!==SudokuCore.boxOf(other)&&SudokuCore.rowOf(i)!==SudokuCore.rowOf(other)&&SudokuCore.colOf(i)!==SudokuCore.colOf(other))
+   return '这两个格子不在同一个行/列/宫，构不成数对';
+  if(!oc.some(v=>c.includes(v)))return '这两个格子没有共同的候选数';
+  return '候选不完全一致——数对要求两格的候选数完全相同';
+ }
+ return '这里不是模式的一角，结合候选数再找找';
+}
+function lessonKey(d){
+ if(!LSN||LSN.done)return;
+ const steps=LSN.def.steps(LSN.meta);
+ const st=steps[LSN.step];
+ if(st.kind==='chain'){
+  const cell=LSN.found;
+  if(cell<0){toastMsg('先点击一个唯一候选格');return;}
+  if(d===LSN.sol[cell]){
+   lessonAdvanceFill(cell);
+   LSN.taps.clear();LSN.found=-1;
+   renderLesson();
+   if(LSN.board.every(v=>v>0))completeLesson();
+   else vib(15);
+  }else{
+   flashL(cell);
+   toastMsg('不对哦——数一数它的行、列、宫里已有哪些数字');
+  }
+  return;
+ }
+ if(st.kind!=='digit'){toastMsg('本步骤不用填数字，按任务提示点击格子');return;}
+ const cell=LSN.found;
+ if(cell<0)return;
+ if(d===LSN.sol[cell]){
+  lessonAdvanceFill(cell);
+  lessonNextStep();
+ }else{
+  flashL(cell);
+  toastMsg('不对哦——数一数它的行、列、宫里已有哪些数字');
+ }
+}
+function lessonHint(){
+ if(!LSN||LSN.done)return;
+ const steps=LSN.def.steps(LSN.meta);
+ const st=steps[LSN.step];
+ let cells=[];
+ if(st.kind==='cell1')cells=[LSN.meta.cell];
+ else if(st.kind==='chain'){
+  const i=[...LSN.board.keys()].find(k=>!LSN.board[k]&&candArr(LSN.board,k).length===1);
+  cells=[i];
+ }
+ else if(st.kind==='digit')cells=[LSN.found>=0?LSN.found:LSN.meta.cell];
+ else if(st.kind==='cell2'||st.kind==='cell3')cells=[LSN.meta.cell];
+ else if(st.kind==='pairSet')cells=st.set.filter(x=>!LSN.taps.has(x));
+ else if(st.kind==='cell')cells=[st.cell];
+ for(const i of cells)flashL(i,true);
+ if(!LSN.showCands){LSN.showCands=true;renderLesson();}
+ toastMsg(cells.length>1?'已高亮相关格子（剩余）':'已高亮目标格子');
+}
+function completeLesson(){
+ LSN.done=true;
+ const prog=lessonProg();
+ if(!prog.done.includes(LSN.n))prog.done.push(LSN.n);
+ prog.unlocked=Math.max(prog.unlocked||1,Math.min(LESSONS.length,LSN.n+2));
+ LS.set('lessonProg',prog);
+ $('#lessonDoneSub').innerHTML=`「${LSN.def.name} · ${LSN.def.en}」已掌握`;
+ $('#btnLessonNext').textContent=LSN.n<LESSONS.length-1?'下一关':'返回课程列表';
+ $('#lessonDone').classList.add('show');
+ vib([30,50,80]);
+ setTimeout(()=>FX.burst(),200);
+ renderLessonList();
+}
+function renderLessonList(){
+ const prog=lessonProg();
+ $('#lessonListProg').textContent=`${prog.done.length}/${LESSONS.length}`;
+ const bp=$('#lessonsProg');
+ if(bp)bp.textContent=`${prog.done.length}/${LESSONS.length}`;
+ $('#lessonList').innerHTML=LESSONS.map((l,i)=>{
+  const done=prog.done.includes(i);
+  const locked=i>=(prog.unlocked||1);
+  return `<button class="lesson-row ${done?'done':''} ${locked?'locked':''}" data-n="${i}" ${locked?'disabled':''}>
+   <span class="lnum">${done?'✓':i+1}</span>
+   <span class="linfo"><span class="lname">${l.name} <span style="font-weight:400;color:var(--on-var);font-size:12px">${l.en}</span></span><br><span class="ldesc">${l.desc}</span></span>
+   <span class="lstate">${done?'已完成':locked?'🔒':'开始 →'}</span>
+  </button>`;
  }).join('');
 }
 
@@ -1215,6 +1725,22 @@ function bind(){
   toastMsg('数据已清除');
  });
  $('#btnLb').addEventListener('click',()=>{renderLb();openMask('#lbSheet');});
+ $('#lessonsBanner').addEventListener('click',()=>{renderLessonList();show('lessons');});
+ $('#btnLessonsBack').addEventListener('click',()=>show('home'));
+ $('#btnLessonBack').addEventListener('click',()=>{renderLessonList();show('lessons');});
+ $('#lessonList').addEventListener('click',e=>{
+  const row=e.target.closest('.lesson-row');
+  if(row&&!row.classList.contains('locked'))startLesson(+row.dataset.n);
+ });
+ $('#btnLNotes').addEventListener('click',()=>{if(!LSN)return;LSN.showCands=!LSN.showCands;renderLesson();});
+ $('#btnLHint').addEventListener('click',lessonHint);
+ $('#btnLReset').addEventListener('click',()=>{if(LSN)startLesson(LSN.n);});
+ $('#btnLessonNext').addEventListener('click',()=>{
+  $('#lessonDone').classList.remove('show');
+  if(LSN&&LSN.n<LESSONS.length-1)startLesson(LSN.n+1);
+  else{renderLessonList();show('lessons');}
+ });
+ $('#btnLessonList').addEventListener('click',()=>{$('#lessonDone').classList.remove('show');renderLessonList();show('lessons');});
  $('#lbTabs').addEventListener('click',e=>{const t=e.target.closest('.lb-tab');if(t){lbTab=t.dataset.diff;renderLb();}});
  $$('.sheet-close').forEach(b=>b.addEventListener('click',e=>{const m=e.target.closest('.sheet-mask');if(m)m.classList.remove('show');}));
  $$('.sheet-mask').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
@@ -1286,16 +1812,20 @@ function initDiffButtons(){
 }
 function init(){
  applyThemeSetting(themePref);
+ applySkin(skinPref);
  FX.init();
  initDiffButtons();
  buildBoard();
  buildPad();
+ buildLessonBoard();
+ buildLessonPad();
+ renderLessonList();
  bind();
  renderHome();
  startTicker();
 }
 init();
-window.__SDK__={get g(){return G;},restartSame};
+window.__SDK__={get g(){return G;},get L(){return LSN;},restartSame,LESSONS,startLesson};
 })();
 </script>
 </body>
