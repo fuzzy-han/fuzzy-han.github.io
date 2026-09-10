@@ -4,8 +4,8 @@
    ========================================================================== */
 
 import { spawn } from 'node:child_process'
-import { existsSync, readdirSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -42,6 +42,16 @@ export async function openCdp({
   height,
   mobile = false,
 } = {}) {
+  /*
+   * 每次运行都用全新的 profile 目录。
+   *
+   * 教训：固定路径的 profile 会在测试之间残留 IndexedDB，
+   * 上一次跑出来的「有库无表」损坏状态会带到下一次，
+   * 表现为「单独跑通过、连跑必挂」——排查成本极高。
+   * mkdtemp 保证绝对干净，进程退出时再删掉。
+   */
+  const profileDir = mkdtempSync(join(tmpdir(), `dsh-cdp-${port}-`))
+
   const chrome = spawn(
     findChrome(),
     [
@@ -49,7 +59,7 @@ export async function openCdp({
       '--disable-gpu',
       '--no-sandbox',
       `--remote-debugging-port=${port}`,
-      `--user-data-dir=/tmp/dsh-cdp-${port}`,
+      `--user-data-dir=${profileDir}`,
       'about:blank',
     ],
     { stdio: 'ignore' },
@@ -146,6 +156,63 @@ export async function openCdp({
       return true
     })()`)
 
+  /**
+   * 彻底重置应用状态：localStorage **和** IndexedDB。
+   *
+   * 只清 localStorage 是不够的——批改报告存在 IndexedDB 里，
+   * 上一个测试留下的记录会累积到下一个，导致「历史记录有 N 条」这类断言
+   * 只在连跑时随机失败，单独跑永远正常，最难排查。
+   *
+   * 为什么用「清空对象仓库」而不是 deleteDatabase：
+   * IDB 的 deleteDatabase 在存在活跃连接时不会执行、只会一直等，
+   * 而应用启动时就会打开连接。删库要么挂起、要么在重载后才发现没删掉。
+   * 清空仓库是事务性的，立刻生效。删除数据库本身交给「清空全部数据」按钮，
+   * 那边已经会在删除前先 closeDB()。
+   */
+  const resetAppState = async (dbName = 'kaoyan-writing-coach-db') => {
+    await ev(`localStorage.clear()`)
+
+    /*
+     * 清空报告仓库。用版本推进触发 upgradeneeded 里 clear()，
+     * 而不是自己 open() 再 clear() —— 后者若不建对象仓库，会把库
+     * 创建成「有库无表」的损坏状态，应用的写入会永久挂起。
+     *
+     * 全程自己兜超时：IDB 的 onblocked 可能永远不来，
+     * 页面里挂一个永不 resolve 的 Promise 会把测试进程一起吊死。
+     */
+    await ev(`new Promise((resolve) => {
+      let done = false
+      const finish = (why) => { if (!done) { done = true; resolve(why) } }
+      const guard = setTimeout(() => finish('timeout'), 4000)
+      try {
+        const probe = indexedDB.open(${JSON.stringify(dbName)})
+        probe.onsuccess = () => {
+          const version = probe.result.version
+          probe.result.close()
+          try {
+            const bump = indexedDB.open(${JSON.stringify(dbName)}, version + 1)
+            bump.onupgradeneeded = () => {
+              const db = bump.result
+              if (db.objectStoreNames.contains('reports')) {
+                db.transaction('reports', 'readwrite').objectStore('reports').clear()
+              } else {
+                db.createObjectStore('reports', { keyPath: 'id' })
+              }
+            }
+            bump.onsuccess = () => { clearTimeout(guard); bump.result.close(); finish('reset') }
+            bump.onerror = () => { clearTimeout(guard); finish('reset-error') }
+            bump.onblocked = () => { clearTimeout(guard); finish('reset-blocked') }
+          } catch (err) { clearTimeout(guard); finish('bump-threw') }
+        }
+        probe.onerror = () => { clearTimeout(guard); finish('probe-error') }
+        probe.onblocked = () => { clearTimeout(guard); finish('probe-blocked') }
+      } catch (err) { clearTimeout(guard); finish('threw') }
+    })`)
+
+    await send('Page.reload')
+    await sleep(1800)
+  }
+
   const results = []
   const check = (name, pass, detail = '') => {
     results.push({ name, pass })
@@ -181,9 +248,15 @@ export async function openCdp({
       /* 忽略 */
     }
     chrome.kill()
+    // 清了 profile，避免残留影响下一次运行
+    try {
+      rmSync(profileDir, { recursive: true, force: true })
+    } catch {
+      /* 删不掉也不影响：下次用的是新目录 */
+    }
   }
 
-  return { send, ev, waitFor, goto, setValue, check, summary, close, consoleErrors, results }
+  return { send, ev, waitFor, goto, setValue, check, summary, close, consoleErrors, results, resetAppState }
 }
 
 /* -------------------------------------------------------------------------- */

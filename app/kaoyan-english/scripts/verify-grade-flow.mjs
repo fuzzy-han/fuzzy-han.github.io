@@ -10,14 +10,11 @@
 import { openCdp, injectMockModelScript, sleep } from './lib/cdp.mjs'
 
 const cdp = await openCdp({ port: 9401 })
-const { ev, waitFor, goto, check, summary, close } = cdp
+const { ev, waitFor, goto, check, summary, close, resetAppState } = cdp
 
 await goto('workbench', 1800)
-
-// 清空后注入假模型配置
-await ev(`localStorage.clear()`)
-await ev(`window.location.hash = '#/workbench'`)
-await cdp.send('Page.reload')
+// 彻底重置：localStorage + IndexedDB，避免上一次测试的报告累积过来
+await resetAppState()
 await waitFor(`!!document.querySelector('.task-card')`, 8000, '首屏')
 await ev(injectMockModelScript())
 await cdp.send('Page.reload')

@@ -6,7 +6,7 @@ import { DEFAULT_SETTINGS, useConfigStore } from '@/app/store'
 import { toast } from '@/app/ui'
 import { TASK_ORDER, TASK_SPECS } from '@/lib/tasks'
 import { isRubricFilled } from '@/lib/rubric'
-import { STORES, idb } from '@/lib/storage'
+import { STORES, idb, closeDB } from '@/lib/storage'
 import type { AppSettings, ModelConfig, Rubric, TaskType } from '@/types/domain'
 
 /* ==========================================================================
@@ -89,6 +89,8 @@ export function SettingsPage() {
       return
     }
     localStorage.clear()
+    // 必须先关连接：否则 clear/delete 会一直挂起，用户看到的是「清空后一直转圈」
+    closeDB()
     await idb.clear(STORES.reports)
     toast.ok('已清空，正在重新载入…')
     setTimeout(() => window.location.reload(), 600)
@@ -263,6 +265,25 @@ export function SettingsPage() {
                   aria-label="输出逐句诊断"
                   className="switch"
                   onClick={() => updateSettings({ sentenceLevel: !settings.sentenceLevel })}
+                />
+              </div>
+
+              <div className="switch-row">
+                <div className="switch-row__text">
+                  <p className="field__label">优先保证结构化输出稳定</p>
+                  <p className="field__desc">
+                    开启后首次请求直接走非流式 + JSON 模式。实测流式请求不带 JSON 模式时，
+                    模型有不小概率回一篇文字报告而不是 JSON，会白白多花一轮重试。
+                    关闭则优先流式（能看到实时进度），但首轮失败率更高。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.preferReliableJson}
+                  aria-label="优先保证结构化输出稳定"
+                  className="switch"
+                  onClick={() => updateSettings({ preferReliableJson: !settings.preferReliableJson })}
                 />
               </div>
 

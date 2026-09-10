@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   proxyToken: '',
   timeoutSec: 120,
   autoRetry: true,
+  preferReliableJson: true,
   sentenceLevel: true,
   strictness: 'standard',
   locale: 'zh-CN',

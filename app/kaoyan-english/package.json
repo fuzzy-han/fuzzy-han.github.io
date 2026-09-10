@@ -11,12 +11,13 @@
     "typecheck": "tsc -b",
     "verify": "node scripts/verify-css-order.mjs",
     "check": "tsc -p tsconfig.json --noEmit && vite build && node scripts/verify-css-order.mjs",
-    "e2e": "node scripts/verify-json.mjs && node scripts/e2e.mjs && node scripts/verify-rubric.mjs && node scripts/verify-migration.mjs && node scripts/verify-guide.mjs && node scripts/verify-mobile.mjs && node scripts/verify-upload.mjs && node scripts/verify-grade-flow.mjs && node scripts/verify-report.mjs && node scripts/verify-proxy.mjs",
+    "e2e": "node scripts/verify-json.mjs && node scripts/e2e.mjs && node scripts/verify-rubric.mjs && node scripts/verify-migration.mjs && node scripts/verify-guide.mjs && node scripts/verify-mobile.mjs && node scripts/verify-upload.mjs && node scripts/verify-selfheal.mjs && node scripts/verify-grade-flow.mjs && node scripts/verify-report.mjs && node scripts/verify-proxy.mjs",
     "e2e:mobile": "node scripts/verify-mobile.mjs",
     "proxy": "node proxy/server.mjs",
     "mock:model": "node scripts/mock-model.mjs",
     "e2e:flow": "node scripts/verify-grade-flow.mjs && node scripts/verify-report.mjs && node scripts/verify-proxy.mjs",
-    "test:json": "node --experimental-strip-types scripts/verify-json.mjs"
+    "test:json": "node --experimental-strip-types scripts/verify-json.mjs",
+    "e2e:real": "node scripts/verify-real-model.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

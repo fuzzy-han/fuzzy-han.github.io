@@ -149,6 +149,14 @@ export interface AppSettings {
   timeoutSec: number
   /** JSON 解析失败时自动重试一次 */
   autoRetry: boolean
+  /**
+   * 优先保证结构化输出的稳定性。
+   *
+   * 开启后首次请求就走非流式 + json_object：实测流式请求不发 response_format 时，
+   * 模型有相当大概率回一篇人类可读的文字报告而不是 JSON，白白多花一轮重试。
+   * 关闭则优先流式（能看到实时进度），但首轮失败率更高。
+   */
+  preferReliableJson: boolean
   /** 是否在报告里要求逐句诊断（关闭可省钱，只出总评） */
   sentenceLevel: boolean
   /** 批改文体严格度：宽松 / 标准 / 严格 */

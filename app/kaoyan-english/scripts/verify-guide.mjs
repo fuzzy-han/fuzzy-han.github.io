@@ -7,7 +7,10 @@ const PORT=Number(process.env.DSH_CDP_PORT ?? 9360)
 const CHROME=process.env.DSH_CHROME ?? process.env.HOME+'/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome'
 const APP='http://127.0.0.1:5273'
 import { spawn } from 'node:child_process'
-const chrome=spawn(CHROME,['--headless=new','--disable-gpu','--no-sandbox',`--remote-debugging-port=${PORT}`,'--user-data-dir=/tmp/cdp-guide','about:blank'],{stdio:'ignore'})
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+const chrome=spawn(CHROME,['--headless=new','--disable-gpu','--no-sandbox',`--remote-debugging-port=${PORT}`,`--user-data-dir=${mkdtempSync(join(tmpdir(),'dsh-guide-'))}`,'about:blank'],{stdio:'ignore'})
 const sleep=ms=>new Promise(r=>setTimeout(r,ms))
 async function wsUrl(){for(let i=0;i<40;i++){try{const r=await fetch(`http://127.0.0.1:${PORT}/json/list`);const l=await r.json();const p=l.find(t=>t.type==='page');if(p?.webSocketDebuggerUrl)return p.webSocketDebuggerUrl}catch{}await sleep(250)}throw new Error('no cdp')}
 const ws=new WebSocket(await wsUrl());await new Promise(r=>ws.onopen=r)

@@ -199,7 +199,12 @@ export async function grade(
   return gradeWithBudget(input, model, rubricContent, settings, callbacks, {
     maxTokens: model.maxTokens,
     allowBudgetRetry: true,
-    forceNonStream: false,
+    /*
+     * 首轮是否直接走非流式，取决于稳定性开关。
+     * 实测：流式请求不发 response_format 时，模型常回人类可读的文字报告而非 JSON，
+     * 于是必然多花一轮重试。默认直接走非流式 + json_object，一次到位。
+     */
+    forceNonStream: settings.preferReliableJson,
   })
 }
 

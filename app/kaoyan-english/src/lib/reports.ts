@@ -5,7 +5,7 @@
    因此报告走 IndexedDB，设置与细则仍留在 localStorage。
    ========================================================================== */
 
-import { idb, STORES, makeId } from './storage'
+import { idb, STORES, makeId, closeDB } from './storage'
 import type { TaskType } from '@/types/domain'
 import type { GradingReport } from '@/types/report'
 import type { ReportDiagnostic } from './report'
@@ -58,5 +58,7 @@ export async function deleteReport(id: string): Promise<void> {
 }
 
 export async function clearReports(): Promise<void> {
+  // 同 Settings：清空之前先断开连接，否则会挂起
+  closeDB()
   await idb.clear(STORES.reports)
 }
