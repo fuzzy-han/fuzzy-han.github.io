@@ -7,6 +7,7 @@ import { extractJson, JSON_PREFILL } from './json'
 import { normalizeReport, type ReportDiagnostic } from './report'
 import { isRubricFilled } from './rubric'
 import { TASK_SPECS } from './tasks'
+import { resolveStartTokens, MAX_TOKENS_CEILING } from './models'
 import type { AppSettings, ModelConfig, TaskType } from '@/types/domain'
 import type { GradingReport } from '@/types/report'
 
@@ -197,7 +198,7 @@ export async function grade(
   callbacks: GradeCallbacks = {},
 ): Promise<GradeResult> {
   return gradeWithBudget(input, model, rubricContent, settings, callbacks, {
-    maxTokens: model.maxTokens,
+    maxTokens: resolveStartTokens(model.model, model.maxTokens),
     allowBudgetRetry: true,
     /*
      * 首轮是否直接走非流式，取决于稳定性开关。
@@ -306,7 +307,7 @@ async function gradeWithBudget(
        * 实测：思考型 / 长输出模型在 4096 下经常还没写完正文就撞上限，
        * 翻倍到 8192 仍可能不够（一次完整报告要 6000–9000 tokens）。
        */
-      const bigger = Math.min(Math.max(maxTokens * 2, 16384), 32768)
+      const bigger = Math.min(Math.max(maxTokens * 2, 16384), MAX_TOKENS_CEILING)
       callbacks.onStage?.(`输出额度可能不足，正在改用非流式请求、${bigger} tokens 重试…`)
       return gradeWithBudget(input, model, rubricContent, settings, callbacks, {
         maxTokens: bigger,

@@ -7,6 +7,7 @@
 
 import { readJSON, LS_KEYS } from './storage'
 import { ensureJsonKeyword, describeEmptyResponse, applyPrefill } from './json'
+import { isReasoningModelName } from './models'
 import type { AppSettings, ModelConfig } from '@/types/domain'
 
 /** 读取当前设置，供非 React 场景（如连接测试工具函数）使用 */
@@ -409,7 +410,14 @@ export async function testConnection(
         { role: 'user', content: 'ping' },
       ],
       temperature: 0,
-      maxTokens: 16,
+      /*
+       * 512 而不是 16。
+       * 原来给 16，是照着「回两个字」估的，但思考型模型光推理就不止 16 个 token，
+       * 正文还没开始就被截断 —— 返回 content 为空 + finish_reason=length，
+       * 用户看到「测试连接失败」，其实是测试本身额度给少了。
+       * 实测 deepseek-v4-flash-vision-exp 需要 41–46 个 token 才能吐出「就绪」。
+       */
+      maxTokens: 512,
     })
 
     /*
@@ -418,15 +426,15 @@ export async function testConnection(
      * 结果出现「测试通过、批改却报服务端返回空」这种最难查的情况。
      * 这里补三项静态检查，把隐患在配置阶段就挑明。
      */
-    if (/reasoner|thinking|think|r1|o1|o3|o4/i.test(model.model)) {
+    if (isReasoningModelName(model.model)) {
       warnings.push(
-        `模型名「${model.model}」看着像思考型模型。这类模型会先输出推理过程，正文可能被输出上限截断而返回空。批改建议用普通对话模型（如 deepseek-chat / moonshot-v1-8k / qwen-plus）。`,
+        `模型名「${model.model}」看着像思考型模型。平台已会自动为它放大输出额度并使用强制 JSON 输出，可以正常批改；但这类模型更慢（单次批改约 1 分钟）、更贵。追求速度与成本的话，换成普通对话模型（deepseek-chat / moonshot-v1-8k / qwen-plus）更划算。`,
       )
     }
 
     if (model.maxTokens < 4096) {
       warnings.push(
-        `单次输出上限只有 ${model.maxTokens}。逐句批改的报告 JSON 通常要 3000–6000 tokens，建议调到 8192，否则容易被截断成不完整的 JSON。`,
+        `单次输出上限设为 ${model.maxTokens}。逐句批改的报告 JSON 通常要 3000–6000 tokens，思考型模型还要更多。平台会在遇到截断时自动放大重试，但首轮就可能失败、多等一轮；建议直接调到 8192 以上。`,
       )
     }
 
@@ -444,6 +452,20 @@ export async function testConnection(
     }
   } catch (err) {
     if (err instanceof ApiError) {
+      /*
+       * 「推理过程占满额度」这类失败要单独解释：它其实是测试额度的问题，
+       * 不代表模型不可用。原文案让用户去改「输出上限」，方向是错的。
+       */
+      if (/推理过程|正文还没开始写/.test(err.message)) {
+        return {
+          ok: true,
+          message: '连接正常（该模型会先输出推理过程）',
+          detail: err.message,
+          warnings: [
+            '这个模型的回复里只有推理过程、没有正文，但连接本身是通的。批改时平台会自动放大输出额度并重试，通常可以直接使用。',
+          ],
+        }
+      }
       return { ok: false, message: err.message, detail: err.detail }
     }
     return { ok: false, message: err instanceof Error ? err.message : String(err) }

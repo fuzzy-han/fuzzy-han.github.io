@@ -258,6 +258,23 @@ openai    Allow-Origin: https://austcoder.cn  ✓
 自检里对「越界」判定做了豁免：处在 `overflow-x: auto/scroll` 容器内的元素
 （题型页签、筛选条）本来就比视口宽，不算缺陷——否则每加一个横滑条都会误报。
 
+## 「测试连接」失败但其实模型可用？
+
+如果测试连接报「模型只输出了推理过程，正文还没开始写就被截断」，那是**测试自己的额度给少了**，
+不代表模型不能用。
+
+原因：连接测试原本用 `max_tokens=16` 发一句 ping——那是照着「回两个字」估的，
+但思考型模型光推理就不止 16 个 token。实测 `deepseek-v4-flash-vision-exp`
+需要 41–46 个 token 才能吐出「就绪」。
+
+```
+max_tokens=16  → content=""      finish=length   ← 误判失败
+max_tokens=64  → content="就绪"  finish=stop     ✓
+```
+
+现在测试额度为 512；并且遇到「只有推理过程」时按**连接正常 + 隐患提示**呈现，
+不再报成失败。
+
 ## 思考型模型拿不到结果？
 
 如果你用 `deepseek-v4-flash-vision-exp`、`deepseek-reasoner` 这类模型，批改时只看到
@@ -269,7 +286,14 @@ openai    Allow-Origin: https://austcoder.cn  ✓
 
 平台现在的对策是 **assistant 预填充**：把回复的开头钉死成 JSON 的第一个字段
 （`{"band":"`），模型只能续写合法 JSON，没有机会改写成文字报告。
-实测该手段对这类模型有效（`deepseek-v4-flash-vision-exp` 可正常出分）。
+实测该手段对这类模型有效。
+
+另外，模型名匹配到思考型特征（`reasoner` / `thinking` / `o1-` / `vision-exp` 等）时，
+**首轮就直接给到 16384 额度**，不再经历 4096 → 8192 → 16384 三轮失败重试
+（那是白等两分钟）。这条规则集中在 `src/lib/models.ts`，连接测试与批改共用，
+不会两处漂移。
+
+实测（`maxTokens=4096` 的配置下）：思考型模型一次成功，53.5s 出分，无诊断警告。
 
 配套措施：
 
