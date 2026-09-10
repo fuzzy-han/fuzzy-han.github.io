@@ -1,5 +1,7 @@
 # 砚台 · 考研英语写作批改平台
 
+**线上地址：https://austcoder.cn/kaoyan-english/**
+
 面向考研英语一（大作文 / 小作文 / 翻译）的**评分 + 逐句语法优化 + 结构划分**平台。
 
 设计语言对齐 [anthropic.com](https://www.anthropic.com/)：暖白纸面、石板色行动色、陶土色稀疏强调、衬线标题 + 无衬线界面 + 等宽数字、低阴影暖描边。界面语言为中文。
@@ -79,6 +81,32 @@ notes[]                         → 手写图片无法辨认处需你确认
 > 否则报告页只能拿到纯文本，无法渲染逐句卡片与分数可视化。细则体检会对此给出提示。
 
 ---
+
+## 部署
+
+已部署到 `fuzzy-han.github.io` 仓库（Astro 站点，push 到 main 后 GitHub Actions 自动构建）。
+
+| 项 | 值 |
+|---|---|
+| 路由 | `/kaoyan-english/` |
+| 线上 | https://austcoder.cn/kaoyan-english/ |
+| 完整示例 | https://austcoder.cn/kaoyan-english/#/workbench |
+| 产物位置 | 站点仓库 `public/kaoyan-english/`（Astro 会原样复制进 `dist/`） |
+| 源码位置 | 站点仓库 `app/kaoyan-english/`（便于追溯与重建） |
+
+**为什么用 hash 路由**：`austcoder.cn` 是用户根站点，仓库里还有数独、贪吃蛇等其他项目。
+hash 路由把路径部分固定在一个子目录里，不需要任何服务端重写规则，
+也不会和站点上其他页面抢路由。
+
+从本机重新部署：
+
+```bash
+scripts/deploy-pages.sh /path/to/fuzzy-han.github.io          # 只构建并同步
+scripts/deploy-pages.sh /path/to/fuzzy-han.github.io --push    # 同步并提交推送
+```
+
+脚本会先跑类型检查与构建产物自检，并确认资源路径带了 `/kaoyan-english/` 前缀才同步——
+这个前缀一旦漏掉，线上就是整页白屏。
 
 ## 快速开始
 
