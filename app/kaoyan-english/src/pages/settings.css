@@ -1,0 +1,137 @@
+/* ==========================================================================
+   通用设置页样式
+   ========================================================================== */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--ds-5);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.settings-side {
+  position: sticky;
+  top: calc(var(--ds-topbar-h) + var(--ds-4));
+}
+
+@media (max-width: 1100px) {
+  .settings-side {
+    position: static;
+  }
+}
+
+/* —— 通道选择 —— */
+
+.channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--ds-3);
+}
+
+.channel-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+  padding: var(--ds-4);
+}
+
+.channel-card__name {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-md);
+  color: var(--ds-ink);
+}
+
+.channel-card__desc {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.channel-card__tag {
+  font-family: var(--ds-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-ink-faint);
+}
+
+.channel-card[aria-pressed='true'] .channel-card__tag {
+  color: var(--ds-clay);
+}
+
+.settings-proxy {
+  padding: var(--ds-5);
+  border: 1px dashed var(--ds-border-strong);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-sunken);
+}
+
+/* —— 汇总行 —— */
+
+.sumrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  width: 100%;
+  padding: var(--ds-1) 0;
+  font-size: var(--ds-text-sm);
+  text-align: left;
+}
+
+.sumrow--button {
+  cursor: pointer;
+  border-radius: var(--ds-radius);
+  padding: var(--ds-2) var(--ds-2);
+  margin: 0 calc(-1 * var(--ds-2));
+  transition: background-color 150ms var(--ds-ease);
+}
+
+.sumrow--button:hover {
+  background: var(--ds-surface-hover);
+}
+
+.sumrow__label {
+  color: var(--ds-ink-muted);
+  white-space: nowrap;
+}
+
+.sumrow__value {
+  color: var(--ds-ink);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* —— 统计 —— */
+
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-3);
+  padding-top: var(--ds-4);
+  border-top: 1px solid var(--ds-border);
+}
+
+.stats-row__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 110px;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.stats-row__num {
+  font-size: var(--ds-text-xl);
+  color: var(--ds-ink);
+  line-height: 1.1;
+}

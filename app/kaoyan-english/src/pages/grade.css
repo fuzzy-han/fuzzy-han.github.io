@@ -1,0 +1,360 @@
+/* ==========================================================================
+   批改台样式
+   ========================================================================== */
+
+/* —— 题型切换：横向可滚，窄屏不换行挤压 —— */
+.grade-tabs {
+  display: flex;
+  gap: var(--ds-2);
+  margin-bottom: var(--ds-5);
+  overflow-x: auto;
+  padding-bottom: var(--ds-1);
+  scrollbar-width: none;
+}
+
+.grade-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.grade-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-2);
+  flex: none;
+  padding: var(--ds-2) var(--ds-3);
+  border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-white);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-secondary);
+  transition:
+    border-color 160ms var(--ds-ease),
+    background-color 160ms var(--ds-ease),
+    color 160ms var(--ds-ease);
+}
+
+.grade-tab:hover {
+  border-color: var(--ds-border-strong);
+  color: var(--ds-ink);
+}
+
+.grade-tab[aria-selected='true'] {
+  background: var(--ds-ink);
+  border-color: var(--ds-ink);
+  color: var(--ds-ink-inverse);
+}
+
+.grade-tab__name {
+  font-weight: 500;
+}
+
+.grade-tab__meta {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.grade-tab[aria-selected='true'] .grade-tab__meta {
+  color: rgba(250, 249, 245, 0.7);
+}
+
+/* 有草稿的小圆点 */
+.grade-tab__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ds-clay);
+}
+
+.grade-tab[aria-selected='true'] .chip--warn {
+  background: rgba(250, 249, 245, 0.14);
+  border-color: transparent;
+  color: #f0d9cf;
+}
+
+/* —— 两栏布局 —— */
+.grade-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--ds-5);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .grade-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grade-side {
+    position: static !important;
+  }
+}
+
+.grade-side {
+  position: sticky;
+  top: calc(var(--ds-topbar-h) + var(--ds-4));
+}
+
+.grade-main {
+  min-width: 0;
+}
+
+.field__optional {
+  padding: 1px var(--ds-2);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ds-ink-faint);
+}
+
+/* 焦点在输入区内时给整个块加亮，提示「可以往这里粘贴图片」 */
+.grade-drop--focused {
+  border-color: var(--ds-ink);
+  box-shadow: 0 0 0 3px rgba(44, 132, 219, 0.14);
+}
+
+.grade-drop__action {
+  flex: none;
+}
+
+.grade-drop__hint {
+  margin-left: auto;
+  text-align: right;
+}
+
+.field__counter {
+  margin-left: auto;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+/* —— 输入块 —— */
+.grade-drop {
+  border: 1px solid var(--ds-border-input);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-white);
+  transition:
+    border-color 160ms var(--ds-ease),
+    background-color 160ms var(--ds-ease);
+  overflow: hidden;
+}
+
+.grade-drop:focus-within {
+  border-color: var(--ds-ink);
+  box-shadow: 0 0 0 3px rgba(44, 132, 219, 0.14);
+}
+
+.grade-drop--over {
+  border-color: var(--ds-clay);
+  background: var(--ds-clay-soft);
+}
+
+.grade-textarea {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  min-height: 120px;
+}
+
+.grade-textarea:focus {
+  box-shadow: none !important;
+}
+
+.grade-drop__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-3);
+  padding: var(--ds-2) var(--ds-3);
+  border-top: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken);
+  flex-wrap: wrap;
+}
+
+/* —— 图片缩略图 —— */
+.grade-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--ds-3);
+  margin-top: var(--ds-2);
+}
+
+.grade-thumb {
+  position: relative;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  overflow: hidden;
+  background: var(--ds-white);
+}
+
+.grade-thumb img {
+  display: block;
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  background: var(--ds-surface);
+}
+
+.grade-thumb__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--ds-2) var(--ds-2) var(--ds-2);
+}
+
+.grade-thumb__name {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grade-thumb__size {
+  font-size: 10px;
+  color: var(--ds-ink-faint);
+}
+
+.grade-thumb__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 20, 19, 0.72);
+  color: var(--ds-ink-inverse);
+}
+
+.grade-thumb__remove:hover {
+  background: var(--ds-danger);
+}
+
+/* —— 右侧状态行 —— */
+.grade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  font-size: var(--ds-text-sm);
+  padding: var(--ds-1) 0;
+}
+
+.grade-row__label {
+  color: var(--ds-ink-muted);
+  white-space: nowrap;
+}
+
+.grade-row__value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-1);
+  color: var(--ds-ink);
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grade-row__icon {
+  color: #4f7200;
+  flex: none;
+}
+
+.grade-row__icon--warn {
+  color: #8a5b13;
+}
+
+/* —— 进度 —— */
+.grade-progress {
+  padding: var(--ds-3);
+  border-radius: var(--ds-radius);
+  background: var(--ds-surface-sunken);
+  border: 1px solid var(--ds-border);
+}
+
+.grade-progress__chars {
+  margin-top: var(--ds-1);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+  padding-left: 26px;
+}
+
+/* —— 提示词预览 —— */
+.grade-preview {
+  max-height: 340px;
+  overflow-y: auto;
+  font-size: var(--ds-text-xs);
+}
+
+.grade-preview__sep {
+  margin: var(--ds-4) 0 var(--ds-3);
+  text-align: center;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.grade-tips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+  list-style: disc;
+  padding-left: var(--ds-5);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   手机端
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .grade-tabs {
+    /* 贴边横滑，视觉上暗示还能往右滚。
+       注意右侧内边距不能只是「回补负边距」：容器内边距在滚动区之内，
+       最后一个页签仍需与视口边缘留出距离，否则会溢出几个像素。 */
+    margin-left: calc(-1 * var(--ds-4));
+    margin-right: calc(-1 * var(--ds-4));
+    padding-left: var(--ds-4);
+    padding-right: calc(var(--ds-4) + var(--ds-2));
+  }
+
+  .grade-thumbs {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+
+  .grade-thumb img {
+    height: 80px;
+  }
+
+  .grade-drop__bar {
+    gap: var(--ds-2);
+    row-gap: var(--ds-2);
+  }
+
+  .grade-drop__hint {
+    flex: 1 1 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  /* 预览区在手机上不设高，避免双层滚动 */
+  .grade-preview {
+    max-height: none;
+  }
+
+  .grade-side .panel__foot {
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .grade-tabs {
+    margin-left: calc(-1 * var(--ds-3));
+    margin-right: calc(-1 * var(--ds-3));
+    padding-left: var(--ds-3);
+    padding-right: calc(var(--ds-3) + var(--ds-2));
+  }
+}

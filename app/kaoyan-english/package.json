@@ -1,0 +1,34 @@
+{
+  "name": "kaoyan-writing-coach",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "考研英语作文指导平台 — 评分、逐句语法优化与结构划分",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "verify": "node scripts/verify-css-order.mjs",
+    "check": "tsc -p tsconfig.json --noEmit && vite build && node scripts/verify-css-order.mjs",
+    "e2e": "node scripts/verify-json.mjs && node scripts/e2e.mjs && node scripts/verify-rubric.mjs && node scripts/verify-migration.mjs && node scripts/verify-guide.mjs && node scripts/verify-mobile.mjs && node scripts/verify-upload.mjs && node scripts/verify-grade-flow.mjs && node scripts/verify-report.mjs && node scripts/verify-proxy.mjs",
+    "e2e:mobile": "node scripts/verify-mobile.mjs",
+    "proxy": "node proxy/server.mjs",
+    "mock:model": "node scripts/mock-model.mjs",
+    "e2e:flow": "node scripts/verify-grade-flow.mjs && node scripts/verify-report.mjs && node scripts/verify-proxy.mjs",
+    "test:json": "node --experimental-strip-types scripts/verify-json.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

@@ -1,0 +1,232 @@
+/* ==========================================================================
+   设计系统 Token — 对齐 anthropic.com 的公开视觉语言
+   配色取自 Anthropic 公开 CSS 的实测值：
+     Ivory 表面阶梯  #faf9f5 / #f0eee6 / #e8e6dc
+     Slate 行动色系  #141413 / #3d3d3a
+     Clay 强调色     #d97757（稀疏使用）
+     焦点环          #2c84db
+   规则：暖色描边 + 低阴影、阅读优先、数字用 Mono + tabular-nums
+   ========================================================================== */
+
+:root {
+  /* —— 表面阶梯 —— */
+  --ds-page: #faf9f5;
+  --ds-surface: #f0eee6;
+  --ds-surface-hover: #e8e6dc;
+  --ds-surface-sunken: #f3f1ea;
+  --ds-white: #ffffff;
+
+  /* —— 文字 —— */
+  --ds-ink: #141413;
+  --ds-ink-secondary: #3d3d3a;
+  --ds-ink-muted: #6b6a63;
+  --ds-ink-faint: #93918a;
+  --ds-ink-inverse: #faf9f5;
+
+  /* —— 描边 —— */
+  --ds-border: #e3e0d6;
+  --ds-border-strong: #cfcbbc;
+  --ds-border-input: #d5d1c5;
+
+  /* —— 强调 —— */
+  --ds-clay: #d97757;
+  --ds-clay-hover: #c9674a;
+  --ds-clay-soft: #f7ece7;
+  --ds-clay-border: #e8cdc2;
+
+  /* —— 语义 —— */
+  --ds-success: #6ea100;
+  --ds-success-soft: #eef3e2;
+  --ds-success-border: #d5e0bc;
+  --ds-warn: #b6791f;
+  --ds-warn-soft: #f8f0df;
+  --ds-warn-border: #e6d5b2;
+  --ds-danger: #b4432c;
+  --ds-danger-soft: #f9ece8;
+  --ds-danger-border: #e8c9c0;
+
+  --ds-focus: #2c84db;
+
+  /* —— 字体 —— */
+  --ds-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Source Han Serif SC",
+    "Noto Serif CJK SC", "Songti SC", "STSong", Georgia, serif;
+  --ds-font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --ds-font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --ds-text-xs: 0.75rem;
+  --ds-text-sm: 0.8125rem;
+  --ds-text-base: 0.9375rem;
+  --ds-text-md: 1rem;
+  --ds-text-lg: 1.125rem;
+  --ds-text-xl: 1.375rem;
+  --ds-text-2xl: 1.75rem;
+  --ds-text-3xl: 2.25rem;
+  --ds-text-4xl: 2.75rem;
+
+  /* —— 间距：4 / 8px 基线网格 —— */
+  --ds-1: 4px;
+  --ds-2: 8px;
+  --ds-3: 12px;
+  --ds-4: 16px;
+  --ds-5: 20px;
+  --ds-6: 24px;
+  --ds-8: 32px;
+  --ds-10: 40px;
+  --ds-12: 48px;
+  --ds-16: 64px;
+
+  /* —— 圆角 —— */
+  --ds-radius-sm: 6px;
+  --ds-radius: 8px;
+  --ds-radius-lg: 12px;
+  --ds-radius-pill: 999px;
+
+  /* —— 阴影：克制，仅用于浮层 —— */
+  --ds-shadow-none: none;
+  --ds-shadow-pop:
+    0 1px 2px rgba(20, 20, 19, 0.06), 0 8px 24px rgba(20, 20, 19, 0.08);
+
+  /* —— 布局 —— */
+  --ds-sidebar-w: 244px;
+  --ds-topbar-h: 56px;
+  --ds-reading-max: 68ch;
+  --ds-page-max: 1180px;
+
+  --ds-z-dropdown: 40;
+  --ds-z-toast: 60;
+
+  --ds-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ==========================================================================
+   基础重置
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ds-page);
+  color: var(--ds-ink);
+  font-family: var(--ds-font-sans);
+  font-size: var(--ds-text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--ds-font-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ds-ink);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--ds-font-mono);
+  font-size: 0.9em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-sm);
+}
+
+::selection {
+  background: #f0d9cf;
+  color: var(--ds-ink);
+}
+
+/* 滚动条：纤细、暖色、不抢视线 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ds-border-strong);
+  border: 3px solid transparent;
+  border-radius: var(--ds-radius-pill);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-ink-faint);
+  background-clip: content-box;
+}

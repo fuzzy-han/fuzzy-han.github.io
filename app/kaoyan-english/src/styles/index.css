@@ -1,0 +1,24 @@
+/* ==========================================================================
+   样式总入口 —— 全站唯一的 CSS 引入点，顺序即层叠顺序
+
+   为什么必须集中在这里：
+   Vite 会把各模块 import 的 CSS 按模块图顺序注入产物。如果页面自己 import
+   自己的 CSS（如 pages/Rubrics.tsx → './rubrics.css'），这些页面样式会被
+   注入到 components.css **之前**，于是同特异性的选择器会被组件层反向覆盖
+   （曾导致 .rubric-textarea 的 560px 高度被 .textarea 的 88px 静默吃掉）。
+
+   因此规定：所有样式文件只在这里 @import，组件/页面里一律不再 import CSS。
+   顺序必须是 tokens（变量）→ components（组件）→ pages（页面覆盖）。
+   ========================================================================== */
+
+@import './tokens.css';
+@import './components.css';
+
+/* —— 页面级样式：允许覆盖组件层 —— */
+@import '../pages/workbench.css';
+@import '../pages/grade.css';
+@import '../pages/report.css';
+@import '../pages/history.css';
+@import '../pages/rubrics.css';
+@import '../pages/models.css';
+@import '../pages/settings.css';

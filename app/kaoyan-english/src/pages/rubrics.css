@@ -1,0 +1,392 @@
+/* ==========================================================================
+   评分细则页专属样式
+   ========================================================================== */
+
+.rubric-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ds-3);
+  margin-bottom: var(--ds-5);
+}
+
+.rubric-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+  padding: var(--ds-4) var(--ds-4);
+  text-align: left;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  transition:
+    background-color 180ms var(--ds-ease),
+    border-color 180ms var(--ds-ease),
+    box-shadow 180ms var(--ds-ease);
+}
+
+.rubric-tab:hover {
+  background: var(--ds-surface-hover);
+  border-color: var(--ds-border-strong);
+}
+
+.rubric-tab[aria-selected='true'] {
+  background: var(--ds-white);
+  border-color: var(--ds-border-strong);
+  box-shadow: inset 0 0 0 1px var(--ds-ink);
+}
+
+.rubric-tab__name {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-md);
+  color: var(--ds-ink);
+}
+
+.rubric-tab__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-2);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+.rubric-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 336px;
+  gap: var(--ds-5);
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .rubric-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rubric-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .rubric-tabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* —— 编辑器 —— */
+
+.rubric-editor {
+  overflow: hidden;
+}
+
+.rubric-textarea {
+  min-height: 560px;
+  height: 560px;
+  border-radius: var(--ds-radius);
+  background: var(--ds-white);
+  font-size: var(--ds-text-sm);
+}
+
+.rubric-preview {
+  min-height: 560px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding: var(--ds-4) var(--ds-5);
+  background: var(--ds-surface-sunken);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+}
+
+.rubric-editor__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-3);
+  flex-wrap: wrap;
+  padding: var(--ds-3) var(--ds-5);
+  border-top: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken);
+}
+
+.rubric-savenote {
+  flex: 1;
+  min-width: 200px;
+}
+
+.rubric-savenote .input {
+  height: 32px;
+  font-size: var(--ds-text-xs);
+  background: var(--ds-white);
+}
+
+.rubric-count {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+  white-space: nowrap;
+}
+
+.rubric-kbd {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+  white-space: nowrap;
+}
+
+.rubric-kbd kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--ds-border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-white);
+  font-size: 10px;
+  color: var(--ds-ink-muted);
+}
+
+/* —— 右侧栏 —— */
+
+.rubric-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-4);
+  position: sticky;
+  top: calc(var(--ds-topbar-h) + var(--ds-4));
+}
+
+@media (max-width: 1180px) {
+  .rubric-side {
+    position: static;
+  }
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-3);
+}
+
+.checklist__item {
+  display: flex;
+  gap: var(--ds-3);
+  align-items: flex-start;
+}
+
+.checklist__mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+}
+
+.checklist__item--ok .checklist__mark {
+  background: var(--ds-success-soft);
+  border: 1px solid var(--ds-success-border);
+  color: #4f7200;
+}
+
+.checklist__item--warn .checklist__mark {
+  background: var(--ds-warn-soft);
+  border: 1px solid var(--ds-warn-border);
+  color: #8a5b13;
+}
+
+.checklist__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.checklist__label {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink);
+  line-height: 1.45;
+}
+
+.checklist__hint {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+  line-height: 1.5;
+}
+
+.rubric-disclaimer {
+  display: flex;
+  gap: var(--ds-2);
+  align-items: flex-start;
+  margin-top: var(--ds-4);
+  padding-top: var(--ds-3);
+  border-top: 1px solid var(--ds-border);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+  line-height: 1.55;
+}
+
+/* —— 分值结构 —— */
+
+.scoremap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-3);
+}
+
+.scoremap__row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: var(--ds-3);
+  font-size: var(--ds-text-xs);
+}
+
+.scoremap__name {
+  color: var(--ds-ink-secondary);
+  white-space: nowrap;
+}
+
+.scoremap__bar {
+  height: 4px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface);
+  overflow: hidden;
+}
+
+.scoremap__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-ink);
+}
+
+.scoremap__val {
+  text-align: right;
+  color: var(--ds-ink);
+  font-size: var(--ds-text-xs);
+}
+
+.bandlist {
+  margin-top: var(--ds-4);
+  padding-top: var(--ds-3);
+  border-top: 1px solid var(--ds-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-1);
+}
+
+.bandlist__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--ds-text-xs);
+  padding: 2px 0;
+}
+
+.bandlist__label {
+  color: var(--ds-ink-secondary);
+}
+
+.bandlist__range {
+  color: var(--ds-ink-faint);
+}
+
+/* —— 版本历史 —— */
+
+.rubric-empty-hint {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+  line-height: 1.6;
+}
+
+.versionlist {
+  display: flex;
+  flex-direction: column;
+}
+
+.versionlist__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  padding: var(--ds-2) 0;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.versionlist__row:last-child {
+  border-bottom: none;
+}
+
+.versionlist__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.versionlist__note {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.versionlist__time {
+  font-size: 10px;
+  color: var(--ds-ink-faint);
+}
+
+.versionlist__actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+
+/* --------------------------------------------------------------------------
+   手机端
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  /* 编辑器不再强占 560px 高度，交给内容撑开，避免手机上一屏全是输入框 */
+  .rubric-editor .rubric-textarea,
+  .rubric-preview {
+    height: auto;
+    min-height: 40vh;
+    max-height: none;
+  }
+
+  /* iOS 上输入框字号小于 16px 会触发自动放大页面，必须压住 */
+  .rubric-editor .rubric-textarea {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .rubric-editor__foot {
+    gap: var(--ds-2);
+  }
+
+  .rubric-savenote {
+    flex: 1 1 100%;
+  }
+
+  .rubric-kbd {
+    display: none;
+  }
+
+  /* 版本历史的操作按钮给足触控宽度 */
+  .versionlist__row {
+    flex-wrap: wrap;
+    row-gap: var(--ds-2);
+  }
+
+  .versionlist__actions .btn {
+    min-width: 40px;
+  }
+
+  .scoremap__row {
+    grid-template-columns: 64px minmax(0, 1fr) 22px;
+  }
+}

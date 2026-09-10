@@ -1,0 +1,526 @@
+/* ==========================================================================
+   批改台样式
+   ========================================================================== */
+
+.wb-hero {
+  padding-bottom: var(--ds-8);
+  border-bottom: 1px solid var(--ds-border);
+  margin-bottom: var(--ds-6);
+}
+
+.wb-hero__title {
+  font-size: var(--ds-text-4xl);
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+  max-width: 20ch;
+}
+
+.wb-hero__em {
+  display: block;
+  font-style: normal;
+  color: var(--ds-clay);
+}
+
+.wb-hero__desc {
+  margin-top: var(--ds-5);
+  max-width: 62ch;
+  color: var(--ds-ink-muted);
+  font-size: var(--ds-text-md);
+  line-height: 1.7;
+}
+
+/* —— 就绪检查 —— */
+
+.readiness {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--ds-3);
+  margin-bottom: var(--ds-10);
+}
+
+.readiness__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-3);
+  padding: var(--ds-4);
+  border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-white);
+}
+
+/* 未完成是待办，不是错误：琥珀色。danger 只留给「配了但填错」。 */
+.readiness__item--warn {
+  background: var(--ds-warn-soft);
+  border-color: var(--ds-warn-border);
+}
+
+.readiness__item--danger {
+  background: var(--ds-danger-soft);
+  border-color: var(--ds-danger-border);
+}
+
+.readiness__icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ds-white);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-ink-muted);
+}
+
+.readiness__item--ok .readiness__icon {
+  background: var(--ds-success-soft);
+  border-color: var(--ds-success-border);
+  color: #4f7200;
+}
+
+.readiness__item--warn .readiness__icon {
+  border-color: var(--ds-warn-border);
+  color: #8a5b13;
+}
+
+.readiness__item--danger .readiness__icon {
+  border-color: var(--ds-danger-border);
+  color: var(--ds-danger);
+}
+
+.readiness__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.readiness__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-2);
+  font-size: var(--ds-text-sm);
+  font-weight: 500;
+  color: var(--ds-ink);
+}
+
+.readiness__detail {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+  line-height: 1.5;
+}
+
+/* —— 分区 —— */
+
+.wb-section {
+  margin-bottom: var(--ds-12);
+}
+
+.wb-section__head {
+  margin-bottom: var(--ds-5);
+}
+
+.wb-section__title {
+  font-size: var(--ds-text-xl);
+}
+
+.wb-section__desc {
+  margin-top: var(--ds-2);
+  max-width: 62ch;
+  color: var(--ds-ink-muted);
+  font-size: var(--ds-text-sm);
+  line-height: 1.65;
+}
+
+/* —— 题型卡片 —— */
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  gap: var(--ds-4);
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-4);
+  padding: var(--ds-5);
+}
+
+/* 禁用态：换底色与描边，而不是整体降透明度。
+   opacity: .55 会把卡片标题压到 4.06:1、维度名压到 2.25:1，
+   首屏直接变成「一片读不清的灰」。这里保持文字可读，只把表面压平。 */
+.task-card:disabled,
+.task-card[aria-disabled='true'] {
+  cursor: not-allowed;
+  background: var(--ds-page);
+  border-color: var(--ds-border);
+}
+
+.task-card:disabled .task-card__name,
+.task-card:disabled .task-card__score {
+  color: var(--ds-ink-secondary);
+}
+
+.task-card:disabled .task-card__dim-name,
+.task-card:disabled .task-card__dim-val,
+.task-card:disabled .task-card__meta {
+  color: var(--ds-ink-muted);
+}
+
+.task-card:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--ds-border);
+}
+
+.task-card:disabled:hover::before {
+  opacity: 0;
+}
+
+.task-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-3);
+}
+
+.task-card__name {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-lg);
+  color: var(--ds-ink);
+}
+
+.task-card__score {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-muted);
+  white-space: nowrap;
+}
+
+.task-card__dims {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+}
+
+.task-card__dim {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: var(--ds-3);
+  font-size: var(--ds-text-xs);
+}
+
+.task-card__dim-name {
+  color: var(--ds-ink-muted);
+  white-space: nowrap;
+}
+
+.task-card__dim-bar {
+  height: 3px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface);
+  overflow: hidden;
+}
+
+.task-card__dim-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--ds-radius-pill);
+  /* 用 ink-muted 而非 border-strong：后者对卡底只有 1.6:1，
+     读起来像分隔线，看不出 40% / 30% / 20% 的长短差别。 */
+  background: var(--ds-ink-muted);
+  transition: background-color 180ms var(--ds-ease);
+}
+
+.task-card:hover .task-card__dim-bar > span {
+  background: var(--ds-clay);
+}
+
+.task-card__dim-val {
+  text-align: right;
+  color: var(--ds-ink-secondary);
+}
+
+.task-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  padding-top: var(--ds-4);
+  border-top: 1px solid var(--ds-border);
+  flex-wrap: wrap;
+}
+
+.task-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-2);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+/* —— 报告预告 —— */
+
+.preview-frame {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-white);
+  overflow: hidden;
+}
+
+.preview-frame__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  padding: var(--ds-3) var(--ds-5);
+  border-bottom: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken);
+}
+
+.preview-frame__body {
+  padding: var(--ds-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-6);
+}
+
+.preview-score {
+  display: grid;
+  grid-template-columns: 152px minmax(0, 1fr);
+  gap: var(--ds-8);
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .preview-score {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-5);
+  }
+}
+
+.preview-ring {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  display: grid;
+  place-items: center;
+}
+
+.preview-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.preview-ring__track {
+  fill: none;
+  stroke: var(--ds-surface);
+  stroke-width: 9;
+}
+
+.preview-ring__fill {
+  fill: none;
+  stroke: var(--ds-ink);
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.preview-ring__num {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.preview-ring__num strong {
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.preview-ring__num span {
+  margin-top: 4px;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.preview-dims {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-3);
+}
+
+.preview-dim {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: var(--ds-3);
+  font-size: var(--ds-text-sm);
+}
+
+.preview-dim__name {
+  color: var(--ds-ink-secondary);
+  white-space: nowrap;
+}
+
+.preview-dim__bar {
+  height: 5px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface);
+  overflow: hidden;
+}
+
+.preview-dim__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-ink);
+}
+
+.preview-dim__val {
+  text-align: right;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+.preview-band {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-2);
+  margin-top: var(--ds-2);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+.preview-label {
+  font-family: var(--ds-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-ink-faint);
+}
+
+/* 示意用的句子卡 */
+
+.preview-sentence__no {
+  flex: none;
+  width: 20px;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.preview-sentence__text {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.preview-sentence__delta {
+  flex: none;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+.preview-sentence__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-4);
+  background: var(--ds-surface-sunken);
+}
+
+.preview-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+}
+
+.preview-block__label {
+  font-family: var(--ds-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-ink-faint);
+}
+
+.preview-block p {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-secondary);
+  line-height: 1.65;
+}
+
+.preview-block__en {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-md) !important;
+  color: var(--ds-ink) !important;
+}
+
+.preview-block--ok {
+  padding: var(--ds-3) var(--ds-4);
+  background: var(--ds-success-soft);
+  border: 1px solid var(--ds-success-border);
+  border-radius: var(--ds-radius);
+}
+
+
+/* --------------------------------------------------------------------------
+   手机端：报告预告的句子行
+   宽屏是「序号 + 标签组 + 原句 + 扣分 + 箭头」一行；390px 下这一行放不下，
+   原句会撑到视口外。窄屏改为纵向堆叠：序号与扣分一行，原句独占一行。
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .preview-frame__body {
+    padding: var(--ds-4);
+    gap: var(--ds-4);
+  }
+
+  .preview-sentence .disclosure__summary {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: var(--ds-2);
+  }
+
+  .preview-sentence__no {
+    width: auto;
+  }
+
+  .preview-sentence .row--wrap {
+    flex: 1 1 100%;
+    order: 3;
+    /* 标签与句子的容器不再撑宽 */
+    min-width: 0;
+  }
+
+  .preview-sentence__text {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    flex: 1 1 100%;
+    line-height: 1.55;
+  }
+
+  .preview-sentence__delta {
+    margin-left: auto;
+  }
+
+  /* 分数环与维度条改为上下排列 */
+  .preview-score {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: var(--ds-5);
+  }
+
+  .preview-dims {
+    width: 100%;
+  }
+
+  .preview-dim {
+    grid-template-columns: 68px minmax(0, 1fr) 48px;
+  }
+}

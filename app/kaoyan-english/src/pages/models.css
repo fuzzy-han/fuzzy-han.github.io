@@ -1,0 +1,135 @@
+/* ==========================================================================
+   模型配置页专属样式
+   ========================================================================== */
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(252px, 1fr));
+  gap: var(--ds-3);
+}
+
+.provider-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+  padding: var(--ds-4);
+  min-height: 116px;
+}
+
+.provider-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-2);
+}
+
+.provider-card__name {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-md);
+  color: var(--ds-ink);
+}
+
+.provider-card__note {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.provider-card__url {
+  font-size: 10px;
+  color: var(--ds-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-card__url--empty {
+  font-family: var(--ds-font-sans);
+  font-style: italic;
+}
+
+/* —— 模型卡片 —— */
+
+.model-card__head {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.model-card__ident {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+  min-width: 0;
+}
+
+.model-card__name {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-lg);
+  color: var(--ds-ink);
+}
+
+.model-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-5);
+}
+
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-5) var(--ds-4);
+}
+
+.model-grid__wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .model-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.model-card__switch {
+  padding: var(--ds-4);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  background: var(--ds-surface-sunken);
+}
+
+/* 温度滑块 */
+.range {
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface-hover);
+  outline: none;
+}
+
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ds-ink);
+  border: 2px solid var(--ds-page);
+  box-shadow: 0 0 0 1px var(--ds-border-strong);
+  cursor: pointer;
+}
+
+.range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ds-ink);
+  border: 2px solid var(--ds-page);
+  box-shadow: 0 0 0 1px var(--ds-border-strong);
+  cursor: pointer;
+}
+
+.field__label .link-quiet {
+  margin-left: auto;
+  font-weight: 400;
+}
