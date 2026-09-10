@@ -6,7 +6,7 @@
    ========================================================================== */
 
 import { readJSON, LS_KEYS } from './storage'
-import { ensureJsonKeyword, describeEmptyResponse } from './json'
+import { ensureJsonKeyword, describeEmptyResponse, applyPrefill } from './json'
 import type { AppSettings, ModelConfig } from '@/types/domain'
 
 /** 读取当前设置，供非 React 场景（如连接测试工具函数）使用 */
@@ -34,6 +34,14 @@ export interface ChatRequest {
   maxTokens?: number
   /** 强制 JSON 输出（部分服务商支持，失败时上层做容错解析） */
   jsonMode?: boolean
+  /**
+   * assistant 回合的预填充。
+   *
+   * 把回复的开头钉死成 JSON 的第一个字段，模型就只能续写合法 JSON。
+   * 实测这是对付「模型坚持按批改指令输出文字报告」最有效的手段：
+   * 单靠在提示词里请求，deepseek-v4 系列会一直写散文直到被 max_tokens 截断。
+   */
+  prefill?: string
   signal?: AbortSignal
 }
 
@@ -102,6 +110,18 @@ function resolveEndpoint(req: ChatRequest): { url: string; headers: Record<strin
   }
 }
 
+/**
+ * 组装真正发出去的消息列表。
+ * jsonMode 时保证提示词含 json；有 prefill 时追加 assistant 回合。
+ */
+function buildWireMessages(req: ChatRequest): ChatMessage[] {
+  let messages = req.jsonMode ? ensureJsonKeyword(req.messages) : req.messages
+  if (req.prefill) {
+    messages = [...messages, { role: 'assistant', content: req.prefill }]
+  }
+  return messages
+}
+
 /** 把各家五花八门的错误响应压成一句人话 */
 function humanizeError(status: number, body: string): string {
   const lower = body.toLowerCase()
@@ -142,7 +162,7 @@ export async function chatComplete(req: ChatRequest): Promise<ChatResult> {
       signal: controller.signal,
       body: JSON.stringify({
         model: req.model.model,
-        messages: req.jsonMode ? ensureJsonKeyword(req.messages) : req.messages,
+        messages: buildWireMessages(req),
         temperature: req.temperature ?? req.model.temperature,
         max_tokens: req.maxTokens ?? req.model.maxTokens,
         stream: false,
@@ -198,8 +218,11 @@ export async function chatComplete(req: ChatRequest): Promise<ChatResult> {
       throw new ApiError(describeEmptyResponse(choice, data), response.status, text.slice(0, 900))
     }
 
+    // 预填充的钱要还给调用方：把钉死的开头拼回去，才是完整的 JSON
+    const fullContent = req.prefill ? applyPrefill(req.prefill, content) : content
+
     return {
-      content,
+      content: fullContent,
       usage: {
         promptTokens: data.usage?.prompt_tokens ?? null,
         completionTokens: data.usage?.completion_tokens ?? null,
@@ -259,7 +282,7 @@ export async function chatStream(req: StreamChatRequest): Promise<ChatResult> {
       signal: controller.signal,
       body: JSON.stringify({
         model: req.model.model,
-        messages: req.messages,
+        messages: buildWireMessages(req),
         temperature: req.temperature ?? req.model.temperature,
         max_tokens: req.maxTokens ?? req.model.maxTokens,
         stream: true,
@@ -331,7 +354,12 @@ export async function chatStream(req: StreamChatRequest): Promise<ChatResult> {
       )
     }
 
-    return { content: full, usage, endpoint: url, elapsedMs: Date.now() - startedAt }
+    return {
+      content: req.prefill ? applyPrefill(req.prefill, full) : full,
+      usage,
+      endpoint: url,
+      elapsedMs: Date.now() - startedAt,
+    }
   } catch (err) {
     if (err instanceof ApiError) throw err
     if (err instanceof DOMException && err.name === 'AbortError') {

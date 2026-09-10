@@ -7,10 +7,12 @@
    ========================================================================== */
 
 import { extractJson } from '../src/lib/json.ts'
-import { ensureJsonKeyword, describeEmptyResponse } from '../src/lib/json.ts'
+import { ensureJsonKeyword, describeEmptyResponse, applyPrefill, JSON_PREFILL } from '../src/lib/json.ts'
 
 let failed = 0
+let total = 0
 const check = (name, pass, detail = '') => {
+  total += 1
   if (!pass) failed += 1
   console.log(`${pass ? '  PASS' : '  FAIL'}  ${name}${detail ? '  → ' + detail : ''}`)
 }
@@ -160,12 +162,12 @@ const diagCases = [
   {
     name: '思考型模型耗尽输出上限',
     choice: { message: { content: '', reasoning_content: '让我想想……' }, finish_reason: 'length' },
-    expect: (t) => t.includes('推理过程') && t.includes('max_tokens'),
+    expect: (t) => t.includes('推理过程') && t.includes('16384'),
   },
   {
     name: '普通模型被 max_tokens 截断',
     choice: { message: { content: '' }, finish_reason: 'length' },
-    expect: (t) => t.includes('截断') && t.includes('8192'),
+    expect: (t) => t.includes('截断') && t.includes('16384'),
   },
   {
     name: '只返回 reasoning_content',
@@ -200,6 +202,25 @@ for (const c of diagCases) {
   check(c.name, c.expect(text), text.slice(0, 60))
 }
 
-const total = cases.length + diagCases.length + 8
+/* --------------------------------------------------------------------------
+   预填充拼回：服务商有的回显、有的不回显，拼出来必须恰好一个 prefill 开头
+   -------------------------------------------------------------------------- */
+console.log('\n── 骨架预填充拼回 ──')
+
+const prefillCases = [
+  { name: '服务商不回显', returned: '13–16分","total":15}', expect: (o) => o.startsWith('{"band":"13–16分"') },
+  { name: '服务商回显了 {', returned: '{"band":"13–16分","total":15}', expect: (o) => o === '{"band":"13–16分","total":15}' },
+  { name: '服务商回显了完整前缀', returned: '{"band":"13–16分"}', expect: (o) => (o.match(/\{/g) ?? []).length === 1 },
+  { name: '服务商回显且带前导空白', returned: '  {"band":"x"}', expect: (o) => o.startsWith('{"band":"x"') },
+  { name: '内容为空', returned: '', expect: (o) => o === JSON_PREFILL },
+]
+for (const c of prefillCases) {
+  const out = applyPrefill(JSON_PREFILL, c.returned)
+  // 拼回结果必须是合法 JSON 的前缀形态：以 prefill 开头，且不含重复的 {"band":"{"band"
+  const noDupe = !out.includes('"band":"{"band"')
+  check(c.name, c.expect(out) && noDupe, JSON.stringify(out.slice(0, 40)))
+}
+
+// total 由 check 自己累计，不手工估算——估算会随着用例增减而失准
 console.log(`\n══════ ${total - failed}/${total} 通过 ══════`)
 process.exit(failed ? 1 : 0)

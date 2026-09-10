@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import { chatComplete, chatStream, ApiError, type ChatMessage } from './api'
-import { extractJson } from './json'
+import { extractJson, JSON_PREFILL } from './json'
 import { normalizeReport, type ReportDiagnostic } from './report'
 import { isRubricFilled } from './rubric'
 import { TASK_SPECS } from './tasks'
@@ -254,6 +254,12 @@ async function gradeWithBudget(
   let retried = false
 
   try {
+    /*
+     * 两种路径都带上 prefill：
+     * 把回复开头钉成 JSON 的第一个字段，模型就只能续写合法 JSON。
+     * 不加的时候，模型会优先照做批改指令里的「一、整体评价与评分…」，
+     * 写出一篇几千字的文字报告，直到撞上 max_tokens 被截断——永远等不到 JSON。
+     */
     if (forceNonStream) {
       callbacks.onStage?.('正在用非流式请求重新批改…')
       const plain = await chatComplete({
@@ -262,6 +268,7 @@ async function gradeWithBudget(
         messages,
         maxTokens,
         jsonMode: true,
+        prefill: JSON_PREFILL,
         signal: callbacks.signal,
       })
       raw = plain.content
@@ -272,6 +279,7 @@ async function gradeWithBudget(
         settings: transport,
         messages,
         maxTokens,
+        prefill: JSON_PREFILL,
         signal: callbacks.signal,
         onDelta: (delta, full) => {
           callbacks.onStage?.('模型正在批改…')
@@ -293,7 +301,12 @@ async function gradeWithBudget(
      */
     const budgetProblem = /截断|推理过程|reasoning_content|内容为空|没有任何正文/.test(message)
     if (budgetProblem && allowBudgetRetry) {
-      const bigger = Math.min(maxTokens * 2, 32768)
+      /*
+       * 放大到至少 16384。
+       * 实测：思考型 / 长输出模型在 4096 下经常还没写完正文就撞上限，
+       * 翻倍到 8192 仍可能不够（一次完整报告要 6000–9000 tokens）。
+       */
+      const bigger = Math.min(Math.max(maxTokens * 2, 16384), 32768)
       callbacks.onStage?.(`输出额度可能不足，正在改用非流式请求、${bigger} tokens 重试…`)
       return gradeWithBudget(input, model, rubricContent, settings, callbacks, {
         maxTokens: bigger,
@@ -341,6 +354,7 @@ async function gradeWithBudget(
       ],
       maxTokens,
       jsonMode: true,
+      prefill: JSON_PREFILL,
       signal: callbacks.signal,
     })
     raw = retry.content

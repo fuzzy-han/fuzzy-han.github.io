@@ -17,7 +17,8 @@
     "mock:model": "node scripts/mock-model.mjs",
     "e2e:flow": "node scripts/verify-grade-flow.mjs && node scripts/verify-report.mjs && node scripts/verify-proxy.mjs",
     "test:json": "node --experimental-strip-types scripts/verify-json.mjs",
-    "e2e:real": "node scripts/verify-real-model.mjs"
+    "e2e:real": "node scripts/verify-real-model.mjs",
+    "e2e:reasoning": "node scripts/verify-reasoning-model.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

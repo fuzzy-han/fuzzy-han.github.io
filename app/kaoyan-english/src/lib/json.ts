@@ -202,9 +202,15 @@ export function describeEmptyResponse(
   const hasReasoning = typeof reasoning === 'string' && reasoning.trim() !== ''
 
   if (finish === 'length' || finish === 'max_tokens') {
+    /*
+     * 注意区分：正文为空且推理很长，才是「推理吃掉额度」；
+     * 正文非空（这里 content 已被判定为空，但可能有其它字段）时更常见的是
+     * 模型写成了长篇文字而没有按 JSON 输出，写到一半撞上限。
+     * 之前的文案把两者混为一谈，会把人引向错误的排查方向。
+     */
     return hasReasoning
-      ? '输出上限被推理过程耗尽了：这是思考型模型，它把 max_tokens 全用在思考上，还没开始写正文就被截断。请换用普通对话模型（如 deepseek-chat），或在「模型配置」里把输出上限调到 8192 以上。'
-      : '输出被 max_tokens 截断了，正文还没生成完。请在「模型配置」里把单次输出上限调大（建议 8192）。'
+      ? '模型只输出了推理过程，正文还没开始写就被输出上限截断（finish_reason=length）。请在「模型配置」里把输出上限调到 16384 以上；若仍不行，请换用普通对话模型（如 deepseek-chat）。'
+      : '输出被 max_tokens 截断了，正文没写完。请把「单次输出上限」调到 16384 以上再试。'
   }
 
   if (hasReasoning) {
@@ -216,4 +222,41 @@ export function describeEmptyResponse(
   }
 
   return `服务端返回了 HTTP 200，但 choices[0].message.content 是空的（finish_reason=${finish || '未提供'}）。常见原因：模型名与服务商不匹配、该模型是思考型模型只输出推理过程，或中转网关吞掉了正文。`
+}
+
+/* -------------------------------------------------------------------------- */
+/*  骨架预填充                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * assistant 回合的预填充内容。
+ *
+ * 为什么需要：批改指令是写给读者看的（「一、整体评价与评分…」），
+ * 模型会优先照做，输出一篇几千字的文字报告而不是 JSON。实测 deepseek-v4
+ * 系列尤其明显：它会一直写散文直到撞上 max_tokens 被截断，于是永远等不到 JSON。
+ *
+ * 把 assistant 回合的开头「钉死」成 JSON 的第一个字段，模型就只能续写合法 JSON——
+ * 这是比在提示词里请求更硬的约束。
+ */
+export const JSON_PREFILL = '{"band":"'
+
+/** 把预填充拼回模型返回的内容 */
+export function applyPrefill(prefill: string, returned: string): string {
+  /*
+   * 有些服务商会把预填充原样回显（返回内容里已经带了 "{" 或 "band"），
+   * 直接拼接会变成 {{ 导致解析失败。这里按已经带了多少做裁剪，
+   * 拼出来的结果一定是恰好一个 prefill 开头。
+   */
+  const trimmed = returned.replace(/^\s+/, '')
+  if (trimmed.startsWith(prefill)) return trimmed
+  if (trimmed.startsWith(prefill.trim())) return prefill + trimmed.slice(prefill.trim().length)
+
+  // 已回显了开头几个字符，逐级裁掉
+  const head = prefill.trim().replace(/\s/g, '')
+  let matched = 0
+  for (let i = 0; i < head.length && i < trimmed.length; i += 1) {
+    if (trimmed[i] === head[i]) matched += 1
+    else break
+  }
+  return prefill + trimmed.slice(matched)
 }
