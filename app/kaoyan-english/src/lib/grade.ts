@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import { chatComplete, chatStream, ApiError, type ChatMessage } from './api'
-import { extractJson, JSON_PREFILL } from './json'
+import { extractJson } from './json'
 import { normalizeReport, type ReportDiagnostic } from './report'
 import { isRubricFilled } from './rubric'
 import { TASK_SPECS } from './tasks'
@@ -256,10 +256,15 @@ async function gradeWithBudget(
 
   try {
     /*
-     * 两种路径都带上 prefill：
-     * 把回复开头钉成 JSON 的第一个字段，模型就只能续写合法 JSON。
-     * 不加的时候，模型会优先照做批改指令里的「一、整体评价与评分…」，
-     * 写出一篇几千字的文字报告，直到撞上 max_tokens 被截断——永远等不到 JSON。
+     * 首次请求就用 jsonMode（response_format: json_object）。
+     *
+     * 这是唯一真正有效的手段，来自受控对比实验：
+     *   裸请求          → 11000 字散文，完全不是 JSON
+     *   仅加 jsonMode   → 合法 JSON ✓ 且输出最短最快
+     *   仅加预填充      → 把散文塞进第一个字段，更糟
+     *   预填充 + jsonMode → 预填充反而破坏解析
+     * 原因：批改指令里明确写了「一、整体评价与评分…」，模型会优先照做；
+     * 只有服务商层的 JSON 模式能压过这个指令。
      */
     if (forceNonStream) {
       callbacks.onStage?.('正在用非流式请求重新批改…')
@@ -269,18 +274,20 @@ async function gradeWithBudget(
         messages,
         maxTokens,
         jsonMode: true,
-        prefill: JSON_PREFILL,
         signal: callbacks.signal,
       })
       raw = plain.content
       usage = plain.usage
     } else {
+      /*
+       * 流式路径拿不到 response_format（多数服务商不支持流式 + JSON 模式），
+       * 所以默认走非流式。想看到实时进度可关闭「优先保证结构化输出稳定」。
+       */
       const streamed = await chatStream({
         model,
         settings: transport,
         messages,
         maxTokens,
-        prefill: JSON_PREFILL,
         signal: callbacks.signal,
         onDelta: (delta, full) => {
           callbacks.onStage?.('模型正在批改…')
@@ -355,7 +362,6 @@ async function gradeWithBudget(
       ],
       maxTokens,
       jsonMode: true,
-      prefill: JSON_PREFILL,
       signal: callbacks.signal,
     })
     raw = retry.content

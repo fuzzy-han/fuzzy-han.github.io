@@ -92,6 +92,35 @@ const TRANSLATION = {
   notes: ['第 2 句未提供译文，无法评分。'],
 }
 
+
+/** 模板提炼请求的假响应 */
+const TEMPLATES = JSON.stringify({
+  templates: [
+    {
+      category: 'grammar',
+      title: '主谓一致的第三人称单数',
+      body: 'The picture shows two climbers...',
+      meaning: '主语是单数时谓语动词要加 s；这是最容易在考场上一紧张就写错的地方。',
+      usage: '写作时先找出主语，判断单复数，再落笔谓语。描述图画时主语常是 The picture / The chart。',
+      scene: '图画描述段首句',
+      example: 'The picture shows two climbers helping each other.',
+      wrongExample: 'The picture show two climbers who help each other.',
+      problemTags: ['主谓一致'],
+    },
+    {
+      category: 'collocation',
+      title: '表达「培养合作精神」',
+      body: 'cultivate a cooperative spirit',
+      meaning: '培育合作精神；比 learn the spirit of cooperation 更地道。',
+      usage: 'cultivate 后接抽象名词，如 cultivate a habit / a sense of responsibility。',
+      scene: '论证段落点题',
+      example: 'We should cultivate a cooperative spirit in our daily life.',
+      wrongExample: 'We should learn the spirit of cooperation.',
+      problemTags: ['搭配', '中式表达'],
+    },
+  ],
+})
+
 const server = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Headers', '*')
@@ -102,9 +131,23 @@ const server = createServer(async (req, res) => {
   for await (const chunk of req) body += chunk
 
   const parsed = body ? JSON.parse(body) : {}
-  const isTranslation = JSON.stringify(parsed.messages ?? []).includes('翻译')
-  const payload = isTranslation ? TRANSLATION : SAMPLE
-  const content = JSON.stringify(payload)
+  const rawMessages = JSON.stringify(parsed.messages ?? [])
+  // 模板提炼请求：提示词里会出现「提炼」「模板」这类字样
+  const isTemplateRequest = rawMessages.includes('提炼') && rawMessages.includes('模板')
+  const isTranslation = rawMessages.includes('翻译')
+  const payload = isTemplateRequest ? null : isTranslation ? TRANSLATION : SAMPLE
+  /*
+   * 忠实模拟真实行为：只有带了 response_format: json_object 才回 JSON，
+   * 否则像真实模型一样回一段人类可读的文字报告。
+   * 这一点很关键 —— 假模型如果无条件回 JSON，就会掩盖
+   * 「模型不听契约、首轮拿不到 JSON」这类真实故障。
+   */
+  const wantsJson = Boolean(parsed.response_format?.type === 'json_object')
+  const content = wantsJson
+    ? (isTemplateRequest ? TEMPLATES : JSON.stringify(payload))
+    : (isTemplateRequest
+        ? '一、可复用模板\n\n1. 主谓一致：The picture shows...\n2. 搭配：cultivate a cooperative spirit'
+        : '一、整体评价与评分\n\n切题情况：本文围绕合作展开。\n\n二、逐句批改\n\n1. The picture show... → The picture shows...')
 
   if (parsed.stream) {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })

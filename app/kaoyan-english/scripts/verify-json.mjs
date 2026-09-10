@@ -7,7 +7,7 @@
    ========================================================================== */
 
 import { extractJson } from '../src/lib/json.ts'
-import { ensureJsonKeyword, describeEmptyResponse, applyPrefill, JSON_PREFILL } from '../src/lib/json.ts'
+import { ensureJsonKeyword, describeEmptyResponse } from '../src/lib/json.ts'
 
 let failed = 0
 let total = 0
@@ -202,25 +202,85 @@ for (const c of diagCases) {
   check(c.name, c.expect(text), text.slice(0, 60))
 }
 
-/* --------------------------------------------------------------------------
-   预填充拼回：服务商有的回显、有的不回显，拼出来必须恰好一个 prefill 开头
-   -------------------------------------------------------------------------- */
-console.log('\n── 骨架预填充拼回 ──')
-
-const prefillCases = [
-  { name: '服务商不回显', returned: '13–16分","total":15}', expect: (o) => o.startsWith('{"band":"13–16分"') },
-  { name: '服务商回显了 {', returned: '{"band":"13–16分","total":15}', expect: (o) => o === '{"band":"13–16分","total":15}' },
-  { name: '服务商回显了完整前缀', returned: '{"band":"13–16分"}', expect: (o) => (o.match(/\{/g) ?? []).length === 1 },
-  { name: '服务商回显且带前导空白', returned: '  {"band":"x"}', expect: (o) => o.startsWith('{"band":"x"') },
-  { name: '内容为空', returned: '', expect: (o) => o === JSON_PREFILL },
-]
-for (const c of prefillCases) {
-  const out = applyPrefill(JSON_PREFILL, c.returned)
-  // 拼回结果必须是合法 JSON 的前缀形态：以 prefill 开头，且不含重复的 {"band":"{"band"
-  const noDupe = !out.includes('"band":"{"band"')
-  check(c.name, c.expect(out) && noDupe, JSON.stringify(out.slice(0, 40)))
-}
-
 // total 由 check 自己累计，不手工估算——估算会随着用例增减而失准
+/* --------------------------------------------------------------------------
+   模板合并：同一问题反复出现必须合并，而不是堆重复条目
+   -------------------------------------------------------------------------- */
+console.log('\n── 模板合并去重 ──')
+
+const { mergeDrafts } = await import('../src/lib/templateMerge.ts')
+
+const mkDraft = (over) => ({
+  category: 'phrase', title: '', body: '', meaning: '', usage: '', scene: '',
+  example: '', wrongExample: '', problemTags: [], ...over,
+})
+
+// 中文标题（无空格）—— 曾经因为按词切而完全无法匹配
+const cn = mergeDrafts(
+  [mkDraft({ title: '图画作文三段式框架（描述—阐释—评论）', body: '第一段描述图画，第二段阐释寓意，第三段评论。' })],
+  [{
+    id: 'a', createdAt: 0, updatedAt: 0, category: 'phrase',
+    title: '图画作文三段式框架', body: '第一段描述图画，第二段阐释寓意，第三段评论。',
+    meaning: '', usage: '', scene: '', example: '', wrongExample: '',
+    problemTags: [], taskTypes: [], recurrence: 1, sourceReportIds: ['r1'], origin: 'llm',
+  }],
+  { reportId: 'r2', taskType: 'eng1_big' },
+)
+check('中文标题相似时合并', cn.merged === 1 && cn.added === 0, `merged=${cn.merged} added=${cn.added}`)
+check('合并后出现次数累加', cn.templates[0].recurrence === 2, `recurrence=${cn.templates[0].recurrence}`)
+check('合并后记录第二个来源', cn.templates[0].sourceReportIds.length === 2)
+
+// 英文搭配
+const en = mergeDrafts(
+  [mkDraft({ title: '表达「培养合作精神」', body: 'cultivate a cooperative spirit' })],
+  [{
+    id: 'b', createdAt: 0, updatedAt: 0, category: 'phrase',
+    title: '表达合作精神', body: 'cultivate a cooperative spirit',
+    meaning: '', usage: '', scene: '', example: '', wrongExample: '',
+    problemTags: [], taskTypes: [], recurrence: 1, sourceReportIds: ['r1'], origin: 'llm',
+  }],
+  { reportId: 'r2', taskType: 'eng1_big' },
+)
+check('英文搭配相同时合并', en.merged === 1 && en.added === 0, `merged=${en.merged} added=${en.added}`)
+
+// 明显不同的不应误并
+const diff = mergeDrafts(
+  [mkDraft({ title: '部分倒装句', body: 'Only by working together can we overcome difficulties.' })],
+  [{
+    id: 'c', createdAt: 0, updatedAt: 0, category: 'phrase',
+    title: '表达合作精神', body: 'cultivate a cooperative spirit',
+    meaning: '', usage: '', scene: '', example: '', wrongExample: '',
+    problemTags: [], taskTypes: [], recurrence: 1, sourceReportIds: ['r1'], origin: 'llm',
+  }],
+  { reportId: 'r2', taskType: 'eng1_big' },
+)
+check('不同模板不会被误并', diff.added === 1 && diff.merged === 0, `added=${diff.added} merged=${diff.merged}`)
+
+// 手动改过的不参与合并
+const editedCase = mergeDrafts(
+  [mkDraft({ title: '表达合作精神', body: 'cultivate a cooperative spirit' })],
+  [{
+    id: 'd', createdAt: 0, updatedAt: 0, category: 'phrase',
+    title: '表达合作精神', body: 'cultivate a cooperative spirit',
+    meaning: '', usage: '', scene: '', example: '', wrongExample: '',
+    problemTags: [], taskTypes: [], recurrence: 1, sourceReportIds: ['r1'], origin: 'llm', edited: true,
+  }],
+  { reportId: 'r2', taskType: 'eng1_big' },
+)
+check('手动编辑过的模板不被自动合并覆盖', editedCase.added === 1 && editedCase.merged === 0)
+
+// 分类不同不应合并
+const diffCat = mergeDrafts(
+  [mkDraft({ category: 'grammar', title: '表达合作精神', body: 'cultivate a cooperative spirit' })],
+  [{
+    id: 'e', createdAt: 0, updatedAt: 0, category: 'phrase',
+    title: '表达合作精神', body: 'cultivate a cooperative spirit',
+    meaning: '', usage: '', scene: '', example: '', wrongExample: '',
+    problemTags: [], taskTypes: [], recurrence: 1, sourceReportIds: ['r1'], origin: 'llm',
+  }],
+  { reportId: 'r2', taskType: 'eng1_big' },
+)
+check('跨分类不合并', diffCat.added === 1 && diffCat.merged === 0)
+
 console.log(`\n══════ ${total - failed}/${total} 通过 ══════`)
 process.exit(failed ? 1 : 0)

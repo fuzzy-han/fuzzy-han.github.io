@@ -114,6 +114,31 @@
   background: var(--ds-clay);
 }
 
+.hist-item__tpl {
+  flex: none;
+  width: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-white);
+  color: var(--ds-ink-muted);
+  transition:
+    color 160ms var(--ds-ease),
+    border-color 160ms var(--ds-ease),
+    background-color 160ms var(--ds-ease);
+}
+
+.hist-item__tpl:hover:not(:disabled) {
+  color: var(--ds-ink);
+  border-color: var(--ds-ink);
+}
+
+.hist-item__tpl:disabled {
+  cursor: not-allowed;
+  color: var(--ds-ink-faint);
+}
+
 .hist-item__del {
   flex: none;
   width: 40px;
@@ -246,7 +271,8 @@
     width: auto;
   }
 
-  .hist-item__del {
+  .hist-item__del,
+  .hist-item__tpl {
     width: 44px;
   }
 }

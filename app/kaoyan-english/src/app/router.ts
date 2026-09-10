@@ -11,6 +11,7 @@ export type RouteName =
   | 'grade'
   | 'report'
   | 'history'
+  | 'templates'
   | 'rubrics'
   | 'models'
   | 'settings'
@@ -26,6 +27,7 @@ const ROUTE_NAMES: RouteName[] = [
   'grade',
   'report',
   'history',
+  'templates',
   'rubrics',
   'models',
   'settings',

@@ -50,10 +50,12 @@ export function removeKey(key: string): void {
 /* -------------------------------------------------------------------------- */
 
 const DB_NAME = `${NAMESPACE}-db`
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export const STORES = {
   reports: 'reports',
+  /** 从批改记录里提炼出的可复用模板 */
+  templates: 'templates',
 } as const
 
 let dbPromise: Promise<IDBDatabase | null> | null = null
@@ -84,6 +86,11 @@ function openDB(): Promise<IDBDatabase | null> {
         store.createIndex('createdAt', 'createdAt')
         store.createIndex('taskType', 'taskType')
       }
+      if (!db.objectStoreNames.contains(STORES.templates)) {
+        const store = db.createObjectStore(STORES.templates, { keyPath: 'id' })
+        store.createIndex('category', 'category')
+        store.createIndex('recurrence', 'recurrence')
+      }
     }
 
     request.onsuccess = () => {
@@ -98,7 +105,7 @@ function openDB(): Promise<IDBDatabase | null> {
        * 浏览器回收数据不完整。这里主动升一个版本号把仓库补回来。
        * 注意必须先把本连接关掉，否则 upgrade 会被自己阻塞。
        */
-      if (!db.objectStoreNames.contains(STORES.reports)) {
+      if (!db.objectStoreNames.contains(STORES.reports) || !db.objectStoreNames.contains(STORES.templates)) {
         console.warn('[storage] 检测到数据库缺少对象仓库，正在修复（升版本重建）')
         const targetVersion = db.version + 1
         db.close()

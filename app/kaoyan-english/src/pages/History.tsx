@@ -6,7 +6,10 @@ import { TASK_SPECS, TASK_ORDER } from '@/lib/tasks'
 import { listReports, deleteReport, type StoredReport } from '@/lib/reports'
 import { formatTime } from '@/lib/storage'
 import { formatScore } from '@/components/Score'
-import { IconAlert, IconHistory, IconSpark, IconTrash } from '@/components/Icon'
+import { IconAlert, IconBook, IconHistory, IconSpark, IconTrash } from '@/components/Icon'
+import { useConfigStore, useDefaultModel } from '@/app/store'
+import { listTemplates, saveTemplates } from '@/lib/templates'
+import { generateTemplates } from '@/lib/templateActions'
 import type { TaskType } from '@/types/domain'
 import './history.css'
 
@@ -21,6 +24,31 @@ export function HistoryPage() {
   const [records, setRecords] = useState<StoredReport[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<TaskType | 'all'>('all')
+  const [extractingId, setExtractingId] = useState<string | null>(null)
+  const settings = useConfigStore((s) => s.settings)
+  const model = useDefaultModel()
+
+  /** 从某条记录提炼模板，提炼完直接去模板库看结果 */
+  async function extractTemplates(record: StoredReport) {
+    if (!model) {
+      toast.error('请先在「模型配置」里添加并启用一个模型')
+      return
+    }
+    setExtractingId(record.id)
+    try {
+      const existing = await listTemplates()
+      const result = await generateTemplates(record, model, settings, existing)
+      await saveTemplates(result.templates)
+      toast.ok(
+        `新增 ${result.added} 条模板${result.merged > 0 ? `，合并 ${result.merged} 条` : ''}`,
+      )
+      navigate('templates')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '提炼失败')
+    } finally {
+      setExtractingId(null)
+    }
+  }
 
   useEffect(() => {
     listReports().then((rows) => {
@@ -62,10 +90,16 @@ export function HistoryPage() {
       title="批改记录"
       crumbs={<span>批改 / 记录</span>}
       actions={
-        <button type="button" className="btn btn--secondary btn--sm" onClick={() => navigate('workbench')}>
-          <IconSpark size={13} />
-          去批改
-        </button>
+        <>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('templates')}>
+            <IconBook size={13} />
+            模板库
+          </button>
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => navigate('workbench')}>
+            <IconSpark size={13} />
+            去批改
+          </button>
+        </>
       }
     >
       {loading ? (
@@ -159,6 +193,17 @@ export function HistoryPage() {
                         />
                       </span>
                     </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="hist-item__tpl"
+                    disabled={extractingId !== null}
+                    onClick={() => extractTemplates(record)}
+                    aria-label="从这条记录提炼模板"
+                    title="提炼成可复用的模板"
+                  >
+                    {extractingId === record.id ? <span className="spinner" /> : <IconBook size={13} />}
                   </button>
 
                   <button

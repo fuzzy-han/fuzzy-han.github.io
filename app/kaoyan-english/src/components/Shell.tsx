@@ -131,10 +131,12 @@ export function Shell({
 
           <p className="nav__section">资料</p>
           <NavList
-            entries={[{ name: 'history', label: '错题本（后续）', icon: <IconBook /> }]}
+            entries={[{ name: 'templates', label: '模板库', icon: <IconBook /> }]}
             current={activeNav}
-            onNavigate={() => undefined}
-            disabled
+            onNavigate={(n) => {
+              closeNav()
+              navigate(n)
+            }}
           />
         </nav>
 

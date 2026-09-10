@@ -8,7 +8,11 @@ import { TASK_SPECS, getProviderName } from '@/lib/tasks'
 import { countByLevel, LEVEL_LABEL } from '@/lib/report'
 import { getReport, type StoredReport } from '@/lib/reports'
 import { formatTime } from '@/lib/storage'
-import { IconAlert, IconCaret, IconCheck, IconInfo, IconSpark } from '@/components/Icon'
+import { IconAlert, IconBook, IconCaret, IconCheck, IconInfo, IconSpark } from '@/components/Icon'
+import { useConfigStore, useDefaultModel } from '@/app/store'
+import { listTemplates, saveTemplates } from '@/lib/templates'
+import { generateTemplates } from '@/lib/templateActions'
+import { toast } from '@/app/ui'
 import { POINT_STATUS_LABEL, isTranslationReport, type EssaySentence, type TranslationSentence } from '@/types/report'
 import './report.css'
 
@@ -99,6 +103,35 @@ export function ReportPage({ reportId }: { reportId?: string | null }) {
 
 function ReportView({ record }: { record: StoredReport }) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [makingTemplates, setMakingTemplates] = useState(false)
+  const settings = useConfigStore((s) => s.settings)
+  const model = useDefaultModel()
+
+  /*
+   * 从这份报告提炼可复用模板。
+   * 放在报告页而不是只放模板库：学生刚看完自己的问题，此刻最愿意把
+   * 「错→对」记下来，转化率最高。
+   */
+  async function handleMakeTemplates() {
+    if (!model) {
+      toast.error('请先在「模型配置」里添加并启用一个模型')
+      return
+    }
+    setMakingTemplates(true)
+    try {
+      const existing = await listTemplates()
+      const result = await generateTemplates(record, model, settings, existing)
+      await saveTemplates(result.templates)
+      toast.ok(
+        `已加入模板库：新增 ${result.added} 条${result.merged > 0 ? `，合并 ${result.merged} 条（反复出现 +1）` : ''}`,
+      )
+      navigate('templates')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '提炼失败')
+    } finally {
+      setMakingTemplates(false)
+    }
+  }
 
   const spec = TASK_SPECS[record.taskType]
   const { report } = record
@@ -137,8 +170,18 @@ function ReportView({ record }: { record: StoredReport }) {
       actions={
         <>
           <CopyButton label="复制报告" text={reportToText(record)} />
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('history')}>
-            批改记录
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            disabled={makingTemplates}
+            onClick={handleMakeTemplates}
+            title="把这次的问题与优化句整理成可复用的模板"
+          >
+            {makingTemplates ? <span className="spinner" /> : <IconBook size={13} />}
+            {makingTemplates ? '提炼中…' : '提炼模板'}
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('templates')}>
+            模板库
           </button>
           <button
             type="button"

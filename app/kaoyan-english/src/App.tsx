@@ -7,6 +7,7 @@ import { ModelsPage } from '@/pages/Models'
 import { SettingsPage } from '@/pages/Settings'
 import { ReportPage } from '@/pages/Report'
 import { HistoryPage } from '@/pages/History'
+import { TemplatesPage } from '@/pages/Templates'
 import { ToastHost } from '@/components/Toast'
 
 export function App() {
@@ -31,6 +32,8 @@ export function App() {
         <ReportPage reportId={route.query.get('id')} />
       ) : route.name === 'history' ? (
         <HistoryPage />
+      ) : route.name === 'templates' ? (
+        <TemplatesPage />
       ) : (
         <WorkbenchPage />
       )}

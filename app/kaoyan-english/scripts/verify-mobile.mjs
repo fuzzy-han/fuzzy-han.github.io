@@ -28,7 +28,7 @@ await send('Emulation.setDeviceMetricsOverride',{width:W,height:H,deviceScaleFac
 const r=[];const check=(n,p,d='')=>{r.push({n,p,d});console.log(`${p?'  PASS':'  FAIL'}  ${n}${d?'  → '+d:''}`)}
 
 // 各页面横向溢出检查：这是手机端最常见的崩坏
-for (const page of ['workbench','grade?task=eng1_big','rubrics','models','settings','history','report']) {
+for (const page of ['workbench','grade?task=eng1_big','rubrics','models','settings','history','templates','report']) {
   await send('Page.navigate',{url:`${APP}/#/${page}`})
   await sleep(2000)
   const m = await evaluate(`(()=>{
