@@ -164,6 +164,15 @@ export const IconUpload = (p: IconProps) => (
   </Svg>
 )
 
+export const IconVocab = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3.2 3.4h3.6a1.6 1.6 0 0 1 1.6 1.6v7.6a1.3 1.3 0 0 0-1.3-1.3H3.2V3.4Z" />
+    <path d="M12.8 3.4H9.2a1.6 1.6 0 0 0-1.6 1.6" />
+    <path d="M12.8 3.4v7.9H9.2" />
+    <path d="M5.2 6h1.9M5.2 8.2h1.9M10.8 6h1.6" />
+  </Svg>
+)
+
 export const IconCamera = (p: IconProps) => (
   <Svg {...p}>
     <path d="M2.6 5.6h2.1l.9-1.4h4.8l.9 1.4h2.1a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7H2.6a.7.7 0 0 1-.7-.7V6.3a.7.7 0 0 1 .7-.7Z" />

@@ -1,0 +1,496 @@
+/* ==========================================================================
+   词汇广场样式
+   左：检索与浏览；右：词条详情（含相似词串联）
+   ========================================================================== */
+
+.vocab-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: var(--ds-5);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .vocab-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.vocab-main {
+  min-width: 0;
+}
+
+.vocab-detail {
+  position: sticky;
+  top: calc(var(--ds-topbar-h) + var(--ds-4));
+  max-height: calc(100vh - var(--ds-topbar-h) - var(--ds-6));
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+  .vocab-detail {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* —— 搜索 —— */
+.vocab-search {
+  display: flex;
+  gap: var(--ds-2);
+  margin-bottom: var(--ds-4);
+}
+
+.vocab-search__input {
+  height: 44px;
+  font-size: 16px;
+}
+
+.vocab-count {
+  margin-bottom: var(--ds-3);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-muted);
+}
+
+.vocab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--ds-4);
+}
+
+.vocab-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-2);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-secondary);
+  cursor: pointer;
+}
+
+/* —— 首字母导航 —— */
+.vocab-letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-1);
+  margin-bottom: var(--ds-4);
+}
+
+.vocab-letter {
+  min-width: 30px;
+  height: 30px;
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-white);
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-secondary);
+  transition:
+    background-color 140ms var(--ds-ease),
+    color 140ms var(--ds-ease),
+    border-color 140ms var(--ds-ease);
+}
+
+.vocab-letter:hover {
+  border-color: var(--ds-border-strong);
+  color: var(--ds-ink);
+}
+
+.vocab-letter[aria-current='true'] {
+  background: var(--ds-ink);
+  border-color: var(--ds-ink);
+  color: var(--ds-ink-inverse);
+}
+
+/* —— 词条行 —— */
+.vocab-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-1);
+}
+
+.vrow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ds-2);
+  border-radius: var(--ds-radius);
+  border: 1px solid transparent;
+  transition:
+    background-color 140ms var(--ds-ease),
+    border-color 140ms var(--ds-ease);
+}
+
+.vrow:hover {
+  background: var(--ds-surface-sunken);
+  border-color: var(--ds-border);
+}
+
+.vrow--active {
+  background: var(--ds-white);
+  border-color: var(--ds-ink);
+}
+
+/* 已掌握的淡化，注意力留给没记住的 */
+.vrow--mastered {
+  opacity: 0.55;
+}
+
+.vrow--mastered:hover {
+  opacity: 1;
+}
+
+.vrow__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ds-2) var(--ds-3);
+  text-align: left;
+}
+
+.vrow__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-2);
+  flex-wrap: wrap;
+}
+
+.vrow__word {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-md);
+  color: var(--ds-ink);
+}
+
+.vrow__phone {
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.vrow__def {
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vrow__check {
+  flex: none;
+  width: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ds-radius);
+  color: var(--ds-ink-faint);
+  transition: color 140ms var(--ds-ease);
+}
+
+.vrow__check:hover {
+  color: #4f7200;
+}
+
+.vrow--mastered .vrow__check {
+  color: #4f7200;
+}
+
+/* —— 词条详情 —— */
+.vdetail {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-white);
+  overflow: hidden;
+}
+
+.vdetail__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-3);
+  padding: var(--ds-4);
+  border-bottom: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken);
+}
+
+.vdetail__word {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-2xl);
+  letter-spacing: -0.02em;
+}
+
+.vdetail__phones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-3);
+  margin-top: var(--ds-2);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+.vdetail__rank {
+  font-family: var(--ds-font-sans);
+  color: var(--ds-clay);
+}
+
+.vdetail__section {
+  padding: var(--ds-4);
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.vdetail__section:last-of-type {
+  border-bottom: none;
+}
+
+.vdetail__label {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-2);
+  margin-bottom: var(--ds-3);
+  font-family: var(--ds-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-ink-faint);
+}
+
+.vdetail__count {
+  padding: 1px 5px;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-ink-muted);
+  letter-spacing: 0;
+}
+
+.vdefs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+}
+
+.vdefs li {
+  display: flex;
+  gap: var(--ds-2);
+  font-size: var(--ds-text-sm);
+  line-height: 1.6;
+  color: var(--ds-ink-secondary);
+}
+
+.vdefs__pos {
+  flex: none;
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-clay);
+  padding-top: 2px;
+  min-width: 26px;
+}
+
+.vsentence {
+  margin-bottom: var(--ds-3);
+}
+
+.vsentence:last-child {
+  margin-bottom: 0;
+}
+
+.vsentence__en {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-base);
+  line-height: 1.65;
+  color: var(--ds-ink);
+}
+
+.vsentence__en strong {
+  color: var(--ds-clay);
+  font-weight: 600;
+}
+
+.vsentence__cn {
+  margin-top: var(--ds-1);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink-muted);
+}
+
+.vphrases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+}
+
+.vphrases li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vphrases__en {
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink);
+}
+
+.vphrases__cn {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-muted);
+}
+
+/* —— 相似词串联 —— */
+.vlinks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-4);
+}
+
+.vlinks__group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-2);
+  margin-bottom: var(--ds-1);
+}
+
+.vlinks__kind {
+  font-size: var(--ds-text-sm);
+  font-weight: 500;
+}
+
+.vlinks__kind--synonym {
+  color: var(--ds-ink);
+}
+
+.vlinks__kind--form {
+  color: #8a5b13;
+}
+
+.vlinks__kind--spelling {
+  color: #9c4a2f;
+}
+
+.vlinks__count {
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+}
+
+.vlinks__desc {
+  margin-bottom: var(--ds-2);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-ink-faint);
+  line-height: 1.55;
+}
+
+.vlinks__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-1);
+}
+
+.vlink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-1);
+  padding: 3px var(--ds-2);
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken);
+  font-family: var(--ds-font-serif);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-ink);
+  transition:
+    background-color 140ms var(--ds-ease),
+    border-color 140ms var(--ds-ease);
+}
+
+.vlink:hover:not(:disabled) {
+  background: var(--ds-white);
+  border-color: var(--ds-ink);
+}
+
+.vlink--out {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vlink__out {
+  font-family: var(--ds-font-sans);
+  font-size: 10px;
+  color: var(--ds-ink-faint);
+}
+
+.vdetail__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--ds-3) var(--ds-4);
+  border-top: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken);
+}
+
+/* --------------------------------------------------------------------------
+   手机端
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .vocab-search__input {
+    height: 42px;
+  }
+
+  .vocab-letters {
+    /* 贴边横滑，字母太多 */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-left: calc(-1 * var(--ds-4));
+    margin-right: calc(-1 * var(--ds-4));
+    padding-left: var(--ds-4);
+    padding-right: calc(var(--ds-4) + var(--ds-2));
+    scrollbar-width: none;
+  }
+
+  .vocab-letters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vocab-letter {
+    flex: none;
+    min-width: 34px;
+    height: 34px;
+  }
+
+  .vocab-toolbar {
+    gap: var(--ds-2);
+  }
+
+  .vrow__main {
+    padding: var(--ds-3) var(--ds-3);
+  }
+
+  .vrow__check {
+    width: 40px;
+  }
+
+  /* 手机上详情在下方，脱离粘性定位并由内容撑开 */
+  .vocab-detail {
+    position: static;
+    max-height: none;
+  }
+
+  .vdetail__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vdetail__word {
+    font-size: var(--ds-text-xl);
+  }
+
+  .vdetail__section {
+    padding: var(--ds-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .vocab-letters {
+    margin-left: calc(-1 * var(--ds-3));
+    margin-right: calc(-1 * var(--ds-3));
+    padding-left: var(--ds-3);
+    padding-right: calc(var(--ds-3) + var(--ds-2));
+  }
+}

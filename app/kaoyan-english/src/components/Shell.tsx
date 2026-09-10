@@ -7,6 +7,7 @@ import { isRubricFilled } from '@/lib/rubric'
 import { modelStatus } from '@/app/store'
 import {
   IconBook,
+  IconVocab,
   IconHistory,
   IconModel,
   IconRubric,
@@ -131,7 +132,10 @@ export function Shell({
 
           <p className="nav__section">资料</p>
           <NavList
-            entries={[{ name: 'templates', label: '模板库', icon: <IconBook /> }]}
+            entries={[
+              { name: 'templates', label: '模板库', icon: <IconBook /> },
+              { name: 'vocab', label: '词汇广场', icon: <IconVocab /> },
+            ]}
             current={activeNav}
             onNavigate={(n) => {
               closeNav()

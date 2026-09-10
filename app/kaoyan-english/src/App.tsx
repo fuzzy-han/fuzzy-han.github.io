@@ -8,6 +8,7 @@ import { SettingsPage } from '@/pages/Settings'
 import { ReportPage } from '@/pages/Report'
 import { HistoryPage } from '@/pages/History'
 import { TemplatesPage } from '@/pages/Templates'
+import { VocabPage } from '@/pages/Vocab'
 import { ToastHost } from '@/components/Toast'
 
 export function App() {
@@ -34,6 +35,8 @@ export function App() {
         <HistoryPage />
       ) : route.name === 'templates' ? (
         <TemplatesPage />
+      ) : route.name === 'vocab' ? (
+        <VocabPage />
       ) : (
         <WorkbenchPage />
       )}

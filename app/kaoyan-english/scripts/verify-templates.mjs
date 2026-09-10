@@ -55,16 +55,24 @@ await sleep(1500)
 check('模板已入库', (await ev(`document.querySelectorAll('.tpl').length`)) === 2,
   `${await ev(`document.querySelectorAll('.tpl').length`)} 条`)
 check('总数统计更新', ((await ev(`document.querySelector('.tpl-stat__num')?.textContent`)) ?? '') === '2')
-check('按分类显示', ((await ev(`document.body.innerText`)) ?? '').includes('常错点') && ((await ev(`document.body.innerText`)) ?? '').includes('固定搭配'))
-check('显示错→对对照', ((await ev(`document.querySelector('.tpl__wrong')?.textContent`)) ?? '').includes('The picture show'))
-check('显示问题类型标签', ((await ev(`document.querySelector('.tpl__foot')?.textContent`)) ?? '').includes('主谓一致'))
+const pageText = (await ev(`document.body.innerText`)) ?? ''
+check('按分类显示', pageText.includes('常错点') && pageText.includes('固定搭配'))
+// 不假定哪张卡在前：模板按更新时间排序，两次提炼的先后顺序不固定
+const allWrong = await ev(`[...document.querySelectorAll('.tpl__wrong')].map(e=>e.textContent).join(' | ')`)
+const allRight = await ev(`[...document.querySelectorAll('.tpl__right, .tpl__example')].map(e=>e.textContent).join(' | ')`)
+check('显示错→对对照',
+  allWrong.includes('The picture show') && allRight.includes('The picture shows'),
+  `错=${allWrong.slice(0,40)}` )
+const allTags = await ev(`[...document.querySelectorAll('.tpl__foot')].map(e=>e.textContent).join(' | ')`)
+check('显示问题类型标签', allTags.includes('主谓一致') && allTags.includes('搭配'), allTags.slice(0, 60))
 
 console.log('\n── 3. 相同问题再次出现应合并而非重复 ──')
 const before = await ev(`document.querySelectorAll('.tpl').length`)
 await grade()
 await ev(`(() => { const b=[...document.querySelectorAll('.btn')].find(b=>b.textContent.includes('提炼模板')); if (b) b.click() })()`)
 await waitFor(`location.hash.startsWith('#/templates')`, 30000, '模板库')
-await sleep(1500)
+await waitFor(`document.querySelectorAll('.tpl').length >= 2`, 20000, '模板卡渲染')
+await sleep(600)
 const after = await ev(`document.querySelectorAll('.tpl').length`)
 check('条目数没有增加（合并了）', after === before, `提炼前 ${before} → 提炼后 ${after}`)
 check('出现次数累加到 2', ((await ev(`document.body.innerText`)) ?? '').includes('出现 2 次'))
