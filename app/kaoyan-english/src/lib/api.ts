@@ -6,6 +6,7 @@
    ========================================================================== */
 
 import { readJSON, LS_KEYS } from './storage'
+import { ensureJsonKeyword, describeEmptyResponse } from './json'
 import type { AppSettings, ModelConfig } from '@/types/domain'
 
 /** 读取当前设置，供非 React 场景（如连接测试工具函数）使用 */
@@ -141,7 +142,7 @@ export async function chatComplete(req: ChatRequest): Promise<ChatResult> {
       signal: controller.signal,
       body: JSON.stringify({
         model: req.model.model,
-        messages: req.messages,
+        messages: req.jsonMode ? ensureJsonKeyword(req.messages) : req.messages,
         temperature: req.temperature ?? req.model.temperature,
         max_tokens: req.maxTokens ?? req.model.maxTokens,
         stream: false,
@@ -163,13 +164,38 @@ export async function chatComplete(req: ChatRequest): Promise<ChatResult> {
     }
 
     const data = payload as {
-      choices?: { message?: { content?: string } }[]
+      choices?: {
+        message?: { content?: unknown; reasoning_content?: unknown }
+        finish_reason?: string
+      }[]
       usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
+      error?: { message?: string }
     }
 
-    const content = data.choices?.[0]?.message?.content
-    if (typeof content !== 'string' || content.trim() === '') {
-      throw new ApiError('服务端返回内容为空', response.status, text.slice(0, 600))
+    const choice = data.choices?.[0]
+    const rawContent = choice?.message?.content
+
+    /*
+     * content 可能是字符串，也可能是分段数组（少数网关会这么回）。
+     * 之前只判断 typeof === 'string'，遇到数组会被误判成「内容为空」。
+     */
+    const content =
+      typeof rawContent === 'string'
+        ? rawContent
+        : Array.isArray(rawContent)
+          ? rawContent
+              .map((part) =>
+                typeof part === 'string'
+                  ? part
+                  : typeof (part as { text?: unknown })?.text === 'string'
+                    ? String((part as { text: string }).text)
+                    : '',
+              )
+              .join('')
+          : ''
+
+    if (content.trim() === '') {
+      throw new ApiError(describeEmptyResponse(choice, data), response.status, text.slice(0, 900))
     }
 
     return {
@@ -197,6 +223,7 @@ export async function chatComplete(req: ChatRequest): Promise<ChatResult> {
     req.signal?.removeEventListener('abort', onExternalAbort)
   }
 }
+
 
 /* -------------------------------------------------------------------------- */
 /*  流式调用（SSE）                                                            */
@@ -299,7 +326,9 @@ export async function chatStream(req: StreamChatRequest): Promise<ChatResult> {
     }
 
     if (!full.trim()) {
-      throw new ApiError('流式响应为空，可能是该模型不支持流式输出')
+      throw new ApiError(
+        '流式响应里没有任何正文内容。可能原因：该模型不支持流式输出；或这是思考型模型（推理过程不通过流式正文下发）。可在「模型配置」里换一个对话模型，重试时会自动改用非流式请求。',
+      )
     }
 
     return { content: full, usage, endpoint: url, elapsedMs: Date.now() - startedAt }
@@ -329,6 +358,8 @@ export interface TestResult {
   elapsedMs?: number
   endpoint?: string
   reply?: string
+  /** 附加警告：连接通了，但配置有隐患 */
+  warnings?: string[]
 }
 
 /**
@@ -339,6 +370,8 @@ export async function testConnection(
   model: ModelConfig,
   settings: Pick<AppSettings, 'transport' | 'proxyBaseUrl' | 'proxyToken' | 'timeoutSec'>,
 ): Promise<TestResult> {
+  const warnings: string[] = []
+
   try {
     const result = await chatComplete({
       model,
@@ -350,12 +383,36 @@ export async function testConnection(
       temperature: 0,
       maxTokens: 16,
     })
+
+    /*
+     * 只 ping 一句是不够的：它用 max_tokens=16 就能成功，
+     * 但真正批改要输出几千字，思考型模型会把额度全用在推理上，
+     * 结果出现「测试通过、批改却报服务端返回空」这种最难查的情况。
+     * 这里补三项静态检查，把隐患在配置阶段就挑明。
+     */
+    if (/reasoner|thinking|think|r1|o1|o3|o4/i.test(model.model)) {
+      warnings.push(
+        `模型名「${model.model}」看着像思考型模型。这类模型会先输出推理过程，正文可能被输出上限截断而返回空。批改建议用普通对话模型（如 deepseek-chat / moonshot-v1-8k / qwen-plus）。`,
+      )
+    }
+
+    if (model.maxTokens < 4096) {
+      warnings.push(
+        `单次输出上限只有 ${model.maxTokens}。逐句批改的报告 JSON 通常要 3000–6000 tokens，建议调到 8192，否则容易被截断成不完整的 JSON。`,
+      )
+    }
+
+    if (settings.transport === 'direct' && model.baseUrl.includes('localhost')) {
+      warnings.push('Base URL 指向 localhost：只有本机浏览器能访问，换设备或部署到线上后都会失败。')
+    }
+
     return {
       ok: true,
-      message: '连接正常',
+      message: warnings.length > 0 ? '连接正常（有隐患，见下）' : '连接正常',
       reply: result.content.trim().slice(0, 40),
       elapsedMs: result.elapsedMs,
       endpoint: result.endpoint,
+      warnings: warnings.length > 0 ? warnings : undefined,
     }
   } catch (err) {
     if (err instanceof ApiError) {

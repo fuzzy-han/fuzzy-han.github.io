@@ -373,9 +373,18 @@ function ModelCard({
             <div className="note__body">
               <p className="note__title">{test.result.message}</p>
               {test.result.ok ? (
-                <p className="numeric" style={{ fontSize: 'var(--ds-text-xs)', color: 'var(--ds-ink-muted)' }}>
-                  模型回复「{test.result.reply}」 · 耗时 {test.result.elapsedMs} ms
-                </p>
+                <>
+                  <p className="numeric" style={{ fontSize: 'var(--ds-text-xs)', color: 'var(--ds-ink-muted)' }}>
+                    模型回复「{test.result.reply}」 · 耗时 {test.result.elapsedMs} ms
+                  </p>
+                  {test.result.warnings?.length ? (
+                    <ul className="model-warn">
+                      {test.result.warnings.map((w) => (
+                        <li key={w}>{w}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
               ) : (
                 <p style={{ fontSize: 'var(--ds-text-xs)', color: 'var(--ds-ink-muted)' }}>
                   {test.result.detail ? test.result.detail.slice(0, 300) : '请检查 Base URL、API Key 与模型名称。'}

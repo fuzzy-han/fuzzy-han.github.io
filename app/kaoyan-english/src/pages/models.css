@@ -133,3 +133,18 @@
   margin-left: auto;
   font-weight: 400;
 }
+
+/* 连接测试的隐患提示：连上了但有配置风险 */
+.model-warn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-2);
+  margin-top: var(--ds-3);
+  padding-top: var(--ds-3);
+  border-top: 1px dashed var(--ds-warn-border);
+  font-size: var(--ds-text-xs);
+  color: #7a4f10;
+  line-height: 1.6;
+  list-style: disc;
+  padding-left: var(--ds-4);
+}

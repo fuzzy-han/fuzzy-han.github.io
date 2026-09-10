@@ -136,3 +136,84 @@ export function extractJson(raw: string): ExtractResult {
     }
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/*  与 OpenAI 兼容响应相关的两个纯函数                                          */
+/*  放在这里而不是 api.ts：api.ts 依赖 storage（要读 localStorage），          */
+/*  放进来的话这些纯逻辑就没法在 Node 里直接单测了。                            */
+/* -------------------------------------------------------------------------- */
+
+/** 只依赖最小形状，避免与 api.ts 循环引用 */
+export interface MinimalMessage {
+  role: string
+  content: string | { type: string; text?: string }[]
+}
+
+/**
+ * DeepSeek 等厂商在 response_format=json_object 时**硬性要求提示词里出现 "json"**，
+ * 否则直接返回 400：
+ *   Prompt must contain the word 'json' in some form to use 'response_format' of type 'json_object'
+ *
+ * 平台自己的契约文本里恰好写了 "JSON"，但这是巧合：一旦有人改写细则措辞、
+ * 或走的是只带一小段上下文的请求，就会莫名其妙 400。
+ * 这里不赌运气，缺了就补一句，保证任何路径下都不会因此失败。
+ */
+export function ensureJsonKeyword<T extends MinimalMessage>(messages: T[]): T[] {
+  const mentionsJson = messages.some((m) =>
+    typeof m.content === 'string'
+      ? /json/i.test(m.content)
+      : m.content.some((part) => part.type === 'text' && /json/i.test(part.text ?? '')),
+  )
+
+  if (mentionsJson) return messages
+
+  const reminder = '请以 JSON 格式输出结果。'
+  return messages.map((m, i) =>
+    i === messages.length - 1
+      ? typeof m.content === 'string'
+        ? ({ ...m, content: `${m.content}\n\n${reminder}` } as T)
+        : ({ ...m, content: [...m.content, { type: 'text', text: reminder }] } as T)
+      : m,
+  )
+}
+
+/**
+ * 说明「为什么这次返回是空的」。
+ *
+ * 空响应有几种完全不同的成因，笼统报一句「服务端返回内容为空」
+ * 用户根本不知道该改什么。这里按证据分情况说明。
+ */
+export function describeEmptyResponse(
+  choice:
+    | { message?: { content?: unknown; reasoning_content?: unknown }; finish_reason?: string }
+    | undefined,
+  data: { error?: { message?: string } },
+): string {
+  if (data.error?.message) {
+    return `服务端报错：${data.error.message}`
+  }
+
+  if (!choice) {
+    return '服务端没有返回 choices 字段，响应结构不符合 OpenAI 兼容格式。请确认 Base URL 指到了 /v1 这样的对话补全端点。'
+  }
+
+  const finish = choice.finish_reason ?? ''
+  const reasoning = choice.message?.reasoning_content
+  const hasReasoning = typeof reasoning === 'string' && reasoning.trim() !== ''
+
+  if (finish === 'length' || finish === 'max_tokens') {
+    return hasReasoning
+      ? '输出上限被推理过程耗尽了：这是思考型模型，它把 max_tokens 全用在思考上，还没开始写正文就被截断。请换用普通对话模型（如 deepseek-chat），或在「模型配置」里把输出上限调到 8192 以上。'
+      : '输出被 max_tokens 截断了，正文还没生成完。请在「模型配置」里把单次输出上限调大（建议 8192）。'
+  }
+
+  if (hasReasoning) {
+    return '服务端只返回了 reasoning_content（推理过程），没有返回正文 content。这是思考型模型的典型表现，平台需要的是正文。请换用普通对话模型。'
+  }
+
+  if (finish === 'content_filter') {
+    return '内容被服务端的安全策略拦截了（finish_reason=content_filter）。可尝试改写输入或更换服务商。'
+  }
+
+  return `服务端返回了 HTTP 200，但 choices[0].message.content 是空的（finish_reason=${finish || '未提供'}）。常见原因：模型名与服务商不匹配、该模型是思考型模型只输出推理过程，或中转网关吞掉了正文。`
+}

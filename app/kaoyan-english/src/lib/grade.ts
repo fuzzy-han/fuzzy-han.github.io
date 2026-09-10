@@ -196,6 +196,42 @@ export async function grade(
   settings: AppSettings,
   callbacks: GradeCallbacks = {},
 ): Promise<GradeResult> {
+  return gradeWithBudget(input, model, rubricContent, settings, callbacks, {
+    maxTokens: model.maxTokens,
+    allowBudgetRetry: true,
+    forceNonStream: false,
+  })
+}
+
+interface BudgetOptions {
+  maxTokens: number
+  /** 是否还允许再放大一次（只放大一次，避免配置真错时无限烧钱） */
+  allowBudgetRetry: boolean
+  /**
+   * 强制走非流式。
+   * 放大额度重试时必须置 true：首次流式既然没吐出正文，
+   * 再流式一次大概率还是空；换成非流式才能拿到完整的 finish_reason，
+   * 也能绕开「网关不支持流式」这类问题。
+   */
+  forceNonStream: boolean
+}
+
+/**
+ * 带输出上限的批改，支持在「输出被截断 / 正文为空」时自动放大额度换非流式重来。
+ *
+ * 为什么需要：思考型模型会把 max_tokens 全用在推理上，正文一个字都没写就被截断，
+ * 对外表现就是「测试连接正常、批改却报服务端返回空」——最难自查的一类问题。
+ * 与其让用户反复试参数，不如自动放大一次。
+ */
+async function gradeWithBudget(
+  input: GradeInput,
+  model: ModelConfig,
+  rubricContent: string,
+  settings: AppSettings,
+  callbacks: GradeCallbacks,
+  budget: BudgetOptions,
+): Promise<GradeResult> {
+  const { maxTokens, allowBudgetRetry, forceNonStream } = budget
   const messages = buildMessages(input, rubricContent, settings)
   const startedAt = Date.now()
 
@@ -213,22 +249,55 @@ export async function grade(
   let retried = false
 
   try {
-    const streamed = await chatStream({
-      model,
-      settings: transport,
-      messages,
-      signal: callbacks.signal,
-      onDelta: (delta, full) => {
-        callbacks.onStage?.('模型正在批改…')
-        callbacks.onDelta?.(delta, full)
-      },
-    })
-    raw = streamed.content
-    usage = streamed.usage
+    if (forceNonStream) {
+      callbacks.onStage?.('正在用非流式请求重新批改…')
+      const plain = await chatComplete({
+        model,
+        settings: transport,
+        messages,
+        maxTokens,
+        jsonMode: true,
+        signal: callbacks.signal,
+      })
+      raw = plain.content
+      usage = plain.usage
+    } else {
+      const streamed = await chatStream({
+        model,
+        settings: transport,
+        messages,
+        maxTokens,
+        signal: callbacks.signal,
+        onDelta: (delta, full) => {
+          callbacks.onStage?.('模型正在批改…')
+          callbacks.onDelta?.(delta, full)
+        },
+      })
+      raw = streamed.content
+      usage = streamed.usage
+    }
   } catch (err) {
-    // 流式不可用（网关不支持、被中间层缓冲等）时降级到非流式，而不是直接失败
     if (callbacks.signal?.aborted) throw err
+
     const message = err instanceof ApiError ? err.message : String(err)
+
+    /*
+     * 输出额度不够时放大重试。
+     * 判据用错误原文而不是随便重试：只有明确是「被截断 / 空正文」才值得加额度，
+     * 鉴权失败、模型不存在这类问题加多少额度都没用。
+     */
+    const budgetProblem = /截断|推理过程|reasoning_content|内容为空|没有任何正文/.test(message)
+    if (budgetProblem && allowBudgetRetry) {
+      const bigger = Math.min(maxTokens * 2, 32768)
+      callbacks.onStage?.(`输出额度可能不足，正在改用非流式请求、${bigger} tokens 重试…`)
+      return gradeWithBudget(input, model, rubricContent, settings, callbacks, {
+        maxTokens: bigger,
+        allowBudgetRetry: false,
+        forceNonStream: true,
+      })
+    }
+
+    // 流式不可用（网关不支持、被中间层缓冲等）时降级到非流式，而不是直接失败
     callbacks.onStage?.(`流式调用不可用，改用普通请求重试（${message}）`)
     retried = true
 
@@ -236,6 +305,7 @@ export async function grade(
       model,
       settings: transport,
       messages,
+      maxTokens,
       jsonMode: true,
       signal: callbacks.signal,
     })
@@ -264,6 +334,7 @@ export async function grade(
             '你上面的回复不是可解析的 JSON。请只输出 JSON 本体，不要任何解释文字、不要 ``` 代码块、不要注释。',
         },
       ],
+      maxTokens,
       jsonMode: true,
       signal: callbacks.signal,
     })

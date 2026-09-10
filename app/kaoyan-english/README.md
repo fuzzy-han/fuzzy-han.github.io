@@ -241,6 +241,30 @@ Vite 会把各模块 `import` 的 CSS 按模块图顺序注入产物。若页面
 自检里对「越界」判定做了豁免：处在 `overflow-x: auto/scroll` 容器内的元素
 （题型页签、筛选条）本来就比视口宽，不算缺陷——否则每加一个横滑条都会误报。
 
+## 服务端返回空？先看这里
+
+「服务端返回内容为空」有几种完全不同的成因，平台会按证据给出**不同的**可执行建议，
+而不是笼统一句话。排查顺序：
+
+| 现象 | 成因 | 处理 |
+|---|---|---|
+| `finish_reason=length` 且只有 reasoning_content | 用了思考型模型，`max_tokens` 全被推理吃掉 | 平台会**自动放大额度并用非流式重试一次**；仍失败就换 `deepseek-chat` 这类普通对话模型 |
+| 只返回 reasoning_content | 同上 | 同上 |
+| HTTP 400 `Prompt must contain the word 'json'` | 开了 `response_format: json_object` 但提示词里没有 "json" | 已自动兜底：`ensureJsonKeyword` 会在缺失时补一句 |
+| 没有 `choices` 字段 | Base URL 指错了（不是对话补全端点） | 检查 Base URL 是否到 `/v1` |
+| `finish_reason=content_filter` | 被服务商安全策略拦截 | 改写输入或换服务商 |
+
+**注意**：「测试连接」用的是 `max_tokens=16` 的一句 ping，它通过**不代表**批改能通过。
+现在连接测试会额外检查三项隐患并给出警告：模型名像思考型模型、输出上限低于 4096、
+Base URL 指向 localhost。
+
+三个相关的自动兜底（都在 `src/lib/` 里，有单元测试覆盖）：
+
+- `json.ts → ensureJsonKeyword`：`jsonMode` 时保证提示词含 "json"，避免必然 400
+- `json.ts → describeEmptyResponse`：按 `finish_reason` / `reasoning_content` 分情况说明
+- `grade.ts → gradeWithBudget`：识别到「被截断 / 正文为空」时，翻倍 `max_tokens`
+  并**改用非流式**重试一次（首次流式都已吐不出正文，再流式一次大概率还是空）
+
 ## 「已填写」是怎么判定的
 
 细则的填写状态是**显式标记**（`Rubric.filled`），只在这两种情况下为真：
