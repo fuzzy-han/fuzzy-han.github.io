@@ -208,6 +208,23 @@ Vite 会把各模块 `import` 的 CSS 按模块图顺序注入产物。若页面
 
 ---
 
+## 线上用哪个通道？
+
+**线上请用「浏览器直连」。** 实测五家服务商都允许本站跨域调用：
+
+```
+deepseek  Allow-Origin: https://austcoder.cn  ✓
+kimi      Allow-Origin: https://austcoder.cn  ✓
+qwen      Allow-Origin: *                      ✓
+glm       Allow-Origin: https://austcoder.cn  ✓
+openai    Allow-Origin: https://austcoder.cn  ✓
+```
+
+**本地代理在线上不可用**：站点是 HTTPS，代理是 `http://127.0.0.1:8787`，
+浏览器会按「混合内容」直接拦掉，表现为「网络请求失败 / Failed to fetch」。
+这个组合在本地开发（`http://127.0.0.1:5273`）时完全正常，一部署就失效——
+设置页现在会在检测到这个组合时给出明确提示。
+
 ## 输入方式
 
 **题目是可选的。** 不填题目也能批改——按批改指令，此时只批语言与结构、不给确定总分，

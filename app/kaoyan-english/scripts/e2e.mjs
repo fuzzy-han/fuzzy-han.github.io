@@ -261,7 +261,10 @@ check('通道卡 2 个', (await evaluate(`document.querySelectorAll('.channel-ca
 await evaluate(`document.querySelectorAll('.channel-card')[1].click()`)
 await sleep(600)
 check('切到本地代理后出现代理表单', await evaluate(`!!document.querySelector('.settings-proxy')`))
-check('代理模式提示仍为待交付', (await evaluate(`document.querySelector('.settings-proxy').textContent.includes('后续阶段提供')`)) === true)
+// 代理早已交付：现在应提示如何启动，而不是「后续阶段提供」
+check('代理模式提示启动方式', (await evaluate(`document.querySelector('.settings-proxy').textContent.includes('pnpm proxy')`)) === true)
+// 本地开发是 http 站点，不应误报混合内容风险
+check('本地开发不误报混合内容风险', (await evaluate(`!document.querySelector('.settings-proxy').textContent.includes('混合内容')`)) === true)
 await evaluate(`document.querySelectorAll('.channel-card')[0].click()`)
 await sleep(500)
 

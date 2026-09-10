@@ -33,6 +33,18 @@ export function SettingsPage() {
   const [includeSecrets, setIncludeSecrets] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  /*
+   * 站点跑在 https 上、而代理是 http://127.0.0.1 时，浏览器会按「混合内容」
+   * 直接拦掉请求（表现为 Failed to fetch / 网络请求失败）。
+   * 这个组合在本地开发时完全正常，一部署到线上就失效，属于最容易踩的坑之一，
+   * 所以直接在这里提示，而不是让用户去猜。
+   */
+  const isHttpsSite = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const proxyIsLocalHttp =
+    settings.proxyBaseUrl.trim().startsWith('http://') &&
+    /(127\.0\.0\.1|localhost|0\.0\.0\.0)/.test(settings.proxyBaseUrl)
+  const mixedContentRisk = isHttpsSite && proxyIsLocalHttp
+
   function handleExport() {
     const payload: BackupPayload = {
       kind: 'kaoyan-writing-coach-backup',
@@ -149,8 +161,9 @@ export function SettingsPage() {
                   <span className="channel-card__name">浏览器直连</span>
                   <span className="channel-card__desc">
                     Key 只存在本机，请求直接从浏览器发往服务商。零部署，隐私最佳。
+                    主流服务商都允许本站直连，线上使用请选这一项。
                   </span>
-                  <span className="channel-card__tag">默认</span>
+                  <span className="channel-card__tag">推荐</span>
                 </button>
                 <button
                   type="button"
@@ -196,18 +209,38 @@ export function SettingsPage() {
                       onChange={(e) => updateSettings({ proxyToken: e.target.value.trim() })}
                     />
                   </label>
-                  <div className="note note--warn">
-                    <span className="note__icon">
-                      <IconAlert size={13} />
-                    </span>
-                    <div className="note__body">
-                      <p className="note__title">代理后端将在后续阶段提供</p>
-                      <p>
-                        代理服务（约 200 行的 Node 脚本）安排在 P2 一并交付。当前选择此项后，
-                        批改功能会因找不到服务而报错——若只是想先用起来，请切回「浏览器直连」。
-                      </p>
+                  {mixedContentRisk ? (
+                    <div className="note note--danger">
+                      <span className="note__icon">
+                        <IconAlert size={13} />
+                      </span>
+                      <div className="note__body">
+                        <p className="note__title">当前是 HTTPS 站点，无法访问本机 HTTP 代理</p>
+                        <p>
+                          当前页面走 HTTPS，而代理地址是 <code>{settings.proxyBaseUrl}</code>，
+                          浏览器会按「混合内容」直接拦掉这个请求，表现为「网络请求失败 / Failed to fetch」。
+                        </p>
+                        <p style={{ marginTop: 'var(--ds-2)' }}>
+                          <strong>日常使用请切回「浏览器直连」</strong>——DeepSeek、Kimi、通义、智谱、
+                          OpenAI 都允许从本站直接调用。本地代理只在你自己电脑上跑开发环境
+                          （http://127.0.0.1:5273）时才可用。
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="note note--ok">
+                      <span className="note__icon">
+                        <IconCheck size={13} />
+                      </span>
+                      <div className="note__body">
+                        <p className="note__title">请在另一终端启动代理</p>
+                        <p>
+                          在项目目录执行 <code>pnpm proxy</code>，代理默认监听 8787 端口。
+                          前端请求会带上上游地址与密钥，由代理转发；批改内容不会落盘。
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : null}
             </div>
