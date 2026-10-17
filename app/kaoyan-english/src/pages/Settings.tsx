@@ -1,26 +1,30 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Shell } from '@/components/Shell'
 import { IconAlert, IconCheck, IconDownload, IconSettings, IconTrash, IconUpload } from '@/components/Icon'
 import { navigate } from '@/app/router'
-import { DEFAULT_SETTINGS, useConfigStore } from '@/app/store'
+import { useConfigStore } from '@/app/store'
 import { toast } from '@/app/ui'
 import { TASK_ORDER, TASK_SPECS } from '@/lib/tasks'
 import { isRubricFilled } from '@/lib/rubric'
-import { STORES, idb, closeDB } from '@/lib/storage'
-import type { AppSettings, ModelConfig, Rubric, TaskType } from '@/types/domain'
+import { STORES, idb, closeDB, LS_KEYS } from '@/lib/storage'
+import {
+  normalizeBackup,
+  summarizeBackup,
+  type BackupPayload,
+  type BackupSummary,
+} from '@/lib/backup'
+import { applyBackup, collectBackup, downloadBackup, localCounts, type ImportMode } from '@/lib/backupIO'
 
 /* ==========================================================================
    通用设置 — 传输通道、批改参数、数据导入导出
    ========================================================================== */
 
-interface BackupPayload {
-  kind: 'kaoyan-writing-coach-backup'
-  version: 1
-  exportedAt: string
-  settings: AppSettings
-  models: ModelConfig[]
-  rubrics: Record<TaskType, Rubric>
-  includesSecrets: boolean
+/** 已读取、等待使用者决定「合并还是覆盖」的备份 */
+interface PendingImport {
+  payload: BackupPayload
+  name: string
+  warnings: string[]
+  summary: BackupSummary
 }
 
 export function SettingsPage() {
@@ -31,7 +35,21 @@ export function SettingsPage() {
   const resetSettings = useConfigStore((s) => s.resetSettings)
 
   const [includeSecrets, setIncludeSecrets] = useState(false)
+  const [pending, setPending] = useState<PendingImport | null>(null)
+  const [local, setLocal] = useState<{ reports: number; templates: number } | null>(null)
+  const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // 本机现有条数：让使用者在导出前就知道这份备份里会有多少东西
+  useEffect(() => {
+    let alive = true
+    void localCounts().then((counts) => {
+      if (alive) setLocal(counts)
+    }).catch(() => { if (alive) setLocal(null) })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   /*
    * 站点跑在 https 上、而代理是 http://127.0.0.1 时，浏览器会按「混合内容」
@@ -45,65 +63,85 @@ export function SettingsPage() {
     /(127\.0\.0\.1|localhost|0\.0\.0\.0)/.test(settings.proxyBaseUrl)
   const mixedContentRisk = isHttpsSite && proxyIsLocalHttp
 
-  function handleExport() {
-    const payload: BackupPayload = {
-      kind: 'kaoyan-writing-coach-backup',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      settings,
-      models: includeSecrets ? models : models.map((m) => ({ ...m, apiKey: '' })),
-      rubrics,
-      includesSecrets: includeSecrets,
+  async function handleExport() {
+    setBusy(true)
+    try {
+      const payload = await collectBackup({ includeSecrets })
+      const summary = summarizeBackup(payload)
+      downloadBackup(payload)
+      toast.ok(
+        `已导出 ${summary.reports} 条批改记录、${summary.templates} 条模板、${summary.drafts} 份输入草稿` +
+          (includeSecrets ? '（含 API Key，请妥善保管）' : '（不含 API Key）'),
+      )
+    } catch (err) {
+      toast.error(`导出失败：${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setBusy(false)
     }
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `砚台配置备份-${new Date().toISOString().slice(0, 10)}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-    toast.ok(includeSecrets ? '已导出（含 API Key，请妥善保管）' : '已导出（不含 API Key）')
   }
 
-  async function handleImport(file: File) {
+  /**
+   * 读文件只做到「看清里面有什么」为止，落盘交给使用者点合并 / 覆盖。
+   * 为什么不让导入一步到位：这一步会覆盖或补进批改记录，
+   * 是不可逆的写入，使用者需要先看到条数再决定。
+   */
+  async function handlePickFile(file: File) {
+    setPending(null)
     try {
       const text = await file.text()
-      const payload = JSON.parse(text) as Partial<BackupPayload>
-
-      if (payload.kind !== 'kaoyan-writing-coach-backup') {
-        toast.error('这不是本平台的备份文件')
+      const parsed = normalizeBackup(JSON.parse(text))
+      if (!parsed.ok) {
+        toast.error(parsed.reason)
         return
       }
-
-      const ok = window.confirm(
-        '导入会覆盖当前的模型配置、评分细则与设置。建议先导出一次现有配置。继续？',
-      )
-      if (!ok) return
-
-      useConfigStore.setState({
-        settings: { ...DEFAULT_SETTINGS, ...(payload.settings ?? {}) },
-        models: Array.isArray(payload.models) ? payload.models : [],
-        rubrics: { ...rubrics, ...(payload.rubrics ?? {}) },
+      setPending({
+        payload: parsed.payload,
+        name: file.name,
+        warnings: parsed.warnings,
+        summary: summarizeBackup(parsed.payload),
       })
-      toast.ok('导入完成')
+    } catch (err) {
+      toast.error(`导入失败：文件不是合法的 JSON（${err instanceof Error ? err.message : String(err)}）`)
+    }
+  }
+
+  async function handleApply(mode: ImportMode) {
+    if (!pending) return
+    setBusy(true)
+    try {
+      const result = await applyBackup(pending.payload, mode)
+      const head =
+        mode === 'merge'
+          ? `已合并：本机现有 ${result.reports} 条批改记录、${result.templates} 条模板`
+          : `已覆盖：${result.reports} 条批改记录、${result.templates} 条模板`
+      toast.ok(`${head}${result.warnings.length ? `；${result.warnings[0]}` : ''}`)
+      setPending(null)
+      // 词表与模板页在挂载时读 localStorage，重载一次保证各处都看到新数据
+      setTimeout(() => window.location.reload(), 800)
     } catch (err) {
       toast.error(`导入失败：${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setBusy(false)
     }
   }
 
   async function handleClearAll() {
-    const ok = window.confirm('清空本机所有数据（模型配置、评分细则、批改记录）？此操作不可撤销。')
+    const ok = window.confirm(
+      '清空本机所有数据（模型配置、评分细则、批改记录、模板与掌握标记）？此操作不可撤销。',
+    )
     if (!ok) return
     const typed = window.prompt('请输入「清空」以确认：')
     if (typed !== '清空') {
       toast.info('已取消')
       return
     }
-    localStorage.clear()
+    Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key))
     // 必须先关连接：否则 clear/delete 会一直挂起，用户看到的是「清空后一直转圈」
     closeDB()
+    // 批改记录与模板都要清：只清报告会留下模板库里的条目，
+    // 使用者以为「清空」是把本机数据清干净，留下的一半反而更难理解
     await idb.clear(STORES.reports)
+    await idb.clear(STORES.templates)
     toast.ok('已清空，正在重新载入…')
     setTimeout(() => window.location.reload(), 600)
   }
@@ -362,7 +400,9 @@ export function SettingsPage() {
               <div>
                 <h3 className="panel__title">数据</h3>
                 <p className="panel__desc">
-                  所有配置与批改记录都存放在本机浏览器。换电脑或换浏览器时，用导出 / 导入迁移。
+                  批改记录、模板、输入草稿与掌握标记都存放在本机浏览器。换电脑或换浏览器时，
+                  用「导出全部数据 / 导入备份」整体迁移——导出的文件里带着每一篇作文的题目原文
+                  与逐句批改结论，导入后仍可回看、可继续提炼模板。
                 </p>
               </div>
             </div>
@@ -384,37 +424,120 @@ export function SettingsPage() {
                 />
               </div>
 
-              <div className="row row--wrap" style={{ gap: 'var(--ds-2)' }}>
-                <button type="button" className="btn btn--secondary btn--sm" onClick={handleExport}>
-                  <IconDownload size={13} />
-                  导出配置
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--secondary btn--sm"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <IconUpload size={13} />
-                  导入配置
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="application/json,.json"
-                  hidden
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) void handleImport(file)
-                    e.target.value = ''
-                  }}
-                />
-                <button type="button" className="btn btn--danger btn--sm" onClick={handleClearAll}>
-                  <IconTrash size={13} />
-                  清空全部数据
-                </button>
-              </div>
+              {pending ? (
+                /* —— 已读到备份，等使用者决定合并还是覆盖 —— */
+                <div className="note note--clay">
+                  <span className="note__icon">
+                    <IconAlert size={14} />
+                  </span>
+                  <div className="note__body stack stack--3" style={{ flex: 1 }}>
+                    <p className="note__title">待导入：{pending.name}</p>
+                    <div className="stats-row">
+                      <span className="stats-row__item">
+                        <span className="numeric stats-row__num">{pending.summary.reports}</span>
+                        <span>批改记录</span>
+                      </span>
+                      <span className="stats-row__item">
+                        <span className="numeric stats-row__num">{pending.summary.withPrompt}</span>
+                        <span>含题目原文</span>
+                      </span>
+                      <span className="stats-row__item">
+                        <span className="numeric stats-row__num">{pending.summary.templates}</span>
+                        <span>模板</span>
+                      </span>
+                      <span className="stats-row__item">
+                        <span className="numeric stats-row__num">{pending.summary.drafts}</span>
+                        <span>输入草稿</span>
+                      </span>
+                      <span className="stats-row__item">
+                        <span className="numeric stats-row__num">{pending.summary.models}</span>
+                        <span>模型配置</span>
+                      </span>
+                    </div>
+                    {pending.warnings.map((text) => (
+                      <p key={text} className="field__desc">
+                        {text}
+                      </p>
+                    ))}
+                    <div className="row row--wrap" style={{ gap: 'var(--ds-2)' }}>
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--sm"
+                        disabled={busy}
+                        onClick={() => void handleApply('merge')}
+                      >
+                        合并到现有数据
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--sm"
+                        disabled={busy}
+                        onClick={() => void handleApply('replace')}
+                      >
+                        覆盖现有数据
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        disabled={busy}
+                        onClick={() => setPending(null)}
+                      >
+                        取消
+                      </button>
+                    </div>
+                    <p className="field__desc">
+                      合并会保留本机已有的批改记录，两侧记录按 id 去重后取并集；
+                      覆盖则让本机数据完全等于这份备份，本机现有的记录会被清掉。
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="row row--wrap" style={{ gap: 'var(--ds-2)' }}>
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--sm"
+                    disabled={busy}
+                    onClick={() => void handleExport()}
+                  >
+                    <IconDownload size={13} />
+                    导出全部数据
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--sm"
+                    disabled={busy}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <IconUpload size={13} />
+                    导入备份
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    hidden
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) void handlePickFile(file)
+                      e.target.value = ''
+                    }}
+                  />
+                  <button type="button" className="btn btn--danger btn--sm" onClick={handleClearAll}>
+                    <IconTrash size={13} />
+                    清空全部数据
+                  </button>
+                </div>
+              )}
 
               <div className="stats-row">
+                <span className="stats-row__item">
+                  <span className="numeric stats-row__num">{local?.reports ?? '—'}</span>
+                  <span>批改记录</span>
+                </span>
+                <span className="stats-row__item">
+                  <span className="numeric stats-row__num">{local?.templates ?? '—'}</span>
+                  <span>模板</span>
+                </span>
                 <span className="stats-row__item">
                   <span className="numeric stats-row__num">{models.length}</span>
                   <span>模型配置</span>

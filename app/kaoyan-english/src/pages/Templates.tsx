@@ -9,7 +9,7 @@ import { listReports, type StoredReport } from '@/lib/reports'
 import { listTemplates, deleteTemplate, saveTemplate, saveTemplates } from '@/lib/templates'
 import { generateTemplates } from '@/lib/templateActions'
 import { TASK_SPECS } from '@/lib/tasks'
-import { formatTime } from '@/lib/storage'
+import { formatTime, LS_KEYS } from '@/lib/storage'
 import {
   getCategoryMeta,
   isRecurring,
@@ -36,7 +36,8 @@ import './templates.css'
    · 标记「已掌握」，把注意力留给还没记住的
    ========================================================================== */
 
-const MASTERED_KEY = 'kaoyan-writing-coach:template-mastered'
+/* 键名登记在 LS_KEYS 里，见 lib/vocab.ts 中同一条注释 */
+const MASTERED_KEY = LS_KEYS.templateMastered
 
 function loadMastered(): Record<string, boolean> {
   try {

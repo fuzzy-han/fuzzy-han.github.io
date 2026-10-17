@@ -12,7 +12,23 @@ export const LS_KEYS = {
   rubrics: `${NAMESPACE}:rubrics`,
   /** 批改台的输入草稿（按题型分别存） */
   drafts: `${NAMESPACE}:drafts`,
+  /** 词汇广场的「已掌握」标记 */
+  vocabMastered: `${NAMESPACE}:vocab-mastered`,
+  /** 模板库的「已掌握」标记 */
+  templateMastered: `${NAMESPACE}:template-mastered`,
 } as const
+
+/**
+ * 导出/导入需要原样搬走的 localStorage 键。
+ *
+ * 这里必须列全：漏掉一个键，使用者换浏览器后就会少一类数据，
+ * 而且不会报错 —— 只表现为「怎么少了一块」。新增键时同步加到这里。
+ */
+export const BACKED_UP_LS_KEYS = [
+  LS_KEYS.drafts,
+  LS_KEYS.vocabMastered,
+  LS_KEYS.templateMastered,
+] as const
 
 /* -------------------------------------------------------------------------- */
 /*  localStorage 读写（带容错：解析失败不炸应用）                                */
@@ -72,74 +88,41 @@ function openDB(): Promise<IDBDatabase | null> {
       return
     }
 
-    let request: IDBOpenDBRequest
-    try {
-      request = indexedDB.open(DB_NAME, DB_VERSION)
-    } catch (err) {
-      console.warn('[storage] IndexedDB 不可用，报告将不会持久化', err)
-      resolve(null)
-      return
-    }
-
-    request.onupgradeneeded = () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains(STORES.reports)) {
-        const store = db.createObjectStore(STORES.reports, { keyPath: 'id' })
-        store.createIndex('createdAt', 'createdAt')
-        store.createIndex('taskType', 'taskType')
-      }
-      if (!db.objectStoreNames.contains(STORES.templates)) {
-        const store = db.createObjectStore(STORES.templates, { keyPath: 'id' })
-        store.createIndex('category', 'category')
-        store.createIndex('recurrence', 'recurrence')
-      }
-      if (!db.objectStoreNames.contains(STORES.vocab)) {
-        db.createObjectStore(STORES.vocab, { keyPath: 'id' })
-      }
-    }
-
-    request.onsuccess = () => {
-      const db = request.result
-
-      /*
-       * 自愈：库存在但对象仓库缺失时，onupgradeneeded 不会再触发，
-       * 于是所有事务都会因「找不到对象仓库」而失败——而且 IDB 在这种情况下
-       * 既不报错也不回调，调用方会永久挂起（用户看到批改卡在「正在校验评分」）。
-       *
-       * 这种半损坏状态可能来自：其他工具/标签页建过同名库、升级中途失败、
-       * 浏览器回收数据不完整。这里主动升一个版本号把仓库补回来。
-       * 注意必须先把本连接关掉，否则 upgrade 会被自己阻塞。
-       */
-      if (
-        !db.objectStoreNames.contains(STORES.reports) ||
-        !db.objectStoreNames.contains(STORES.templates) ||
-        !db.objectStoreNames.contains(STORES.vocab)
-      ) {
-        console.warn('[storage] 检测到数据库缺少对象仓库，正在修复（升版本重建）')
-        const targetVersion = db.version + 1
-        db.close()
-        openConnection = null
-        dbPromise = null
-        try {
-          indexedDB.open(DB_NAME, targetVersion).onsuccess = () => {
-            // 修复连接建好即关，让下一次访问重新走正常流程拿到带仓库的库
-            dbPromise = null
-            openConnection = null
+    const connect = (version?: number) => {
+      let request: IDBOpenDBRequest
+      try { request = version === undefined ? indexedDB.open(DB_NAME) : indexedDB.open(DB_NAME, version) }
+      catch { resolve(null); return }
+      const timer = setTimeout(() => { dbPromise = null; resolve(null) }, 8000)
+      request.onupgradeneeded = () => {
+        const db = request.result
+        for (const name of Object.values(STORES)) {
+          if (!db.objectStoreNames.contains(name)) {
+            const store = db.createObjectStore(name, { keyPath: 'id' })
+            if (name === STORES.reports) { store.createIndex('createdAt', 'createdAt'); store.createIndex('taskType', 'taskType') }
+            if (name === STORES.templates) { store.createIndex('category', 'category'); store.createIndex('recurrence', 'recurrence') }
           }
-        } catch (err) {
-          console.warn('[storage] 自动修复失败，批改记录将不会持久化', err)
         }
-        resolve(null)
-        return
       }
-
-      openConnection = db
-      resolve(openConnection)
+      request.onsuccess = () => {
+        clearTimeout(timer)
+        const db = request.result
+        if (Object.values(STORES).some(name => !db.objectStoreNames.contains(name))) {
+          const nextVersion = db.version + 1
+          db.close()
+          connect(nextVersion)
+          return
+        }
+        db.onversionchange = () => { db.close(); openConnection = null; dbPromise = null }
+        openConnection = db
+        resolve(db)
+      }
+      request.onerror = () => {
+        clearTimeout(timer)
+        if (request.error?.name === 'VersionError') connect()
+        else { dbPromise = null; resolve(null) }
+      }
     }
-    request.onerror = () => {
-      console.warn('[storage] 打开 IndexedDB 失败', request.error)
-      resolve(null)
-    }
+    connect(DB_VERSION)
   })
 
   return dbPromise
@@ -220,6 +203,55 @@ function tx<T>(
         }
       }),
   )
+}
+
+/** Backup operations must fail explicitly and wait for transaction commit. */
+export async function readUserData(): Promise<{ reports: unknown[]; templates: unknown[] }> {
+  const db = await openDB()
+  if (!db) throw new Error('无法读取本机数据库，请关闭占用的标签页后重试；未生成不完整备份')
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.reports, STORES.templates], 'readonly')
+    const reports = transaction.objectStore(STORES.reports).getAll()
+    const templates = transaction.objectStore(STORES.templates).getAll()
+    const timer = setTimeout(() => transaction.abort(), TX_TIMEOUT_MS)
+    transaction.oncomplete = () => { clearTimeout(timer); resolve({ reports: reports.result, templates: templates.result }) }
+    transaction.onabort = transaction.onerror = () => { clearTimeout(timer); reject(new Error('读取历史数据失败，请检查浏览器存储权限')) }
+  })
+}
+
+/** Commit reports/templates together; restore localStorage if the transaction fails. */
+export async function replaceUserData(
+  reports: unknown[], templates: unknown[], values: Record<string, unknown>,
+): Promise<void> {
+  const db = await openDB()
+  if (!db) throw new Error('数据库不可用，未导入数据')
+  const previous = Object.fromEntries(Object.keys(values).map(key => [key, localStorage.getItem(key)]))
+  const restore = () => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === null) localStorage.removeItem(key)
+      else localStorage.setItem(key, value)
+    }
+  }
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([STORES.reports, STORES.templates], 'readwrite')
+    const timer = setTimeout(() => transaction.abort(), TX_TIMEOUT_MS)
+    transaction.oncomplete = () => { clearTimeout(timer); resolve() }
+    transaction.onabort = transaction.onerror = () => {
+      clearTimeout(timer)
+      try { restore() } catch { /* Original error remains actionable. */ }
+      reject(new Error('导入写入失败，已撤回本次修改；请检查存储空间和权限'))
+    }
+    try {
+      for (const [store, rows] of [[STORES.reports, reports], [STORES.templates, templates]] as const) {
+        const target = transaction.objectStore(store)
+        target.clear()
+        for (const row of rows) target.put(row)
+      }
+      for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value))
+    } catch {
+      transaction.abort()
+    }
+  })
 }
 
 export const idb = {

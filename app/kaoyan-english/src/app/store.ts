@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 }
 
 /** 构造默认细则：有内置指令的题型直接填入，其余给空白骨架 */
-function buildDefaultRubrics(): Record<TaskType, Rubric> {
+export function buildDefaultRubrics(): Record<TaskType, Rubric> {
   return buildRubrics({}, []).rubrics
 }
 

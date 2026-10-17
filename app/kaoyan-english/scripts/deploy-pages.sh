@@ -20,7 +20,7 @@ if [[ -z "$REPO_DIR" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$REPO_DIR/.git" ]]; then
+if ! git -C "$REPO_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "错误: $REPO_DIR 不是一个 git 仓库" >&2
   exit 1
 fi

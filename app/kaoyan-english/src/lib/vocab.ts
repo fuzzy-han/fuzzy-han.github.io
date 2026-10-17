@@ -8,7 +8,7 @@
    · 相似词分三类（同义 / 同根 / 形近），因为它们的记忆价值完全不同
    ========================================================================== */
 
-import { idb, STORES } from './storage'
+import { idb, LS_KEYS, STORES } from './storage'
 import type {
   LinkKind,
   VocabData,
@@ -248,7 +248,12 @@ export function buildWordIndex(words: VocabWord[]): Map<string, VocabWord> {
 /*  掌握度                                                                     */
 /* -------------------------------------------------------------------------- */
 
-const MASTERED_KEY = 'kaoyan-writing-coach:vocab-mastered'
+/*
+ * 「已掌握」标记。键名统一登记在 storage.ts 的 LS_KEYS 里 —— 导出备份时要照着
+ * 那张登记表把这一类数据整体搬走，散落各处的字面量键一定会漏掉一个，
+ * 而漏掉的表现是「换浏览器后标记全没了」，不报错、不崩溃。
+ */
+const MASTERED_KEY = LS_KEYS.vocabMastered
 
 export function loadMasteredWords(): Record<string, boolean> {
   try {
