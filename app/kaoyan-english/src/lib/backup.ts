@@ -263,7 +263,11 @@ export function mergeReports(
 ): StoredReport[] {
   const byId = new Map<string, StoredReport>()
   for (const row of old) byId.set(row.id, row)
-  for (const row of incoming) byId.set(row.id, row)
+  for (const row of incoming) {
+    const previous = byId.get(row.id)
+    const turns = new Map([...(previous?.learning?.turns ?? []), ...(row.learning?.turns ?? [])].map(turn => [turn.id, turn]))
+    byId.set(row.id, turns.size ? { ...row, learning: { turns: [...turns.values()].sort((a, b) => a.createdAt - b.createdAt) } } : row)
+  }
   return [...byId.values()].sort((a, b) => b.createdAt - a.createdAt)
 }
 

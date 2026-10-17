@@ -111,7 +111,7 @@ export function mergeDrafts(
       const index = result.findIndex((t) => t.id === hit.id)
       result[index] = {
         ...hit,
-        recurrence: hit.recurrence + 1,
+        recurrence: hit.recurrence + (hit.sourceReportIds.includes(context.reportId) ? 0 : 1),
         updatedAt: now,
         sourceReportIds: hit.sourceReportIds.includes(context.reportId)
           ? hit.sourceReportIds
@@ -136,6 +136,8 @@ export function mergeDrafts(
         scene: draft.scene,
         example: draft.example,
         wrongExample: draft.wrongExample,
+        practice: draft.practice,
+        answer: draft.answer,
         problemTags: draft.problemTags,
         taskTypes: [context.taskType],
         recurrence: 1,

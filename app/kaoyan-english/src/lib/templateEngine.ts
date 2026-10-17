@@ -65,8 +65,8 @@ ${CATEGORY_LIST}
 4. 如果是学生**反复犯的错误**，wrongExample 填错的那句、body 填正确写法，
    problemTags 填问题类型（如 主谓一致 / 时态 / 搭配 / 中式表达 / 指代 / 衔接）。
 5. meaning 用中文，body 保留英文（翻译题除外，翻译题用中文记技巧）。
-6. usage 写清「怎么用、注意什么」，不要说空话。
-7. scene 写适用场景，例如「描述图表趋势」「论证段开头」「书信结尾」。
+6. usage 写清可操作的套用步骤和语法限制；body 用 [占位符] 标出可替换内容，避免堆砌整段范文。
+7. 每条只解决一个知识点。scene 写适用场景和使用边界，例如「描述图表趋势」「论证段开头」「书信结尾」。
 
 ## 输出格式
 只输出 JSON 本体，不要解释文字，不要 \`\`\` 代码块：
@@ -81,6 +81,8 @@ ${CATEGORY_LIST}
       "scene": "适用场景",
       "example": "完整例句，优先取学生自己的句子",
       "wrongExample": "学生写错的原句；本条不是纠错类则填空字符串",
+      "practice": "更换话题后的仿写任务，不直接给答案",
+      "answer": "仿写任务的参考答案",
       "problemTags": ["问题类型标签，没有则空数组"]
     }
   ]
@@ -166,6 +168,8 @@ function parseDrafts(raw: unknown): DraftTemplate[] {
         scene: toText(t.scene),
         example: toText(t.example),
         wrongExample: toText(t.wrongExample),
+        practice: toText(t.practice),
+        answer: toText(t.answer),
         problemTags: toTags(t.problemTags),
       }
     })

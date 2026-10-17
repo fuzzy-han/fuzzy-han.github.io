@@ -9,7 +9,7 @@ import { isRubricFilled } from '@/lib/rubric'
 import { buildInputSections } from '@/lib/rubric'
 import { validateInput, grade, type GradeInput } from '@/lib/grade'
 import { compressImage, readDocument, formatBytes } from '@/lib/ingest'
-import { transcribeImage } from '@/lib/ocr'
+import { transcribeImage, appendRecognizedText } from '@/lib/ocr'
 import { saveReport } from '@/lib/reports'
 import { ApiError } from '@/lib/api'
 import {
@@ -53,6 +53,8 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
 
   const [busy, setBusy] = useState<null | 'ocr' | 'grading'>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [ocrPreview, setOcrPreview] = useState<{ task: TaskType; prompt: string; essay: string; transcripts: Map<string, string>; note: string } | null>(null)
+  useEffect(() => () => abortRef.current?.abort(), [])
   const abortRef = useRef<AbortController | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -79,7 +81,7 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
 
   const validation = validateInput(input, rubric)
   const modelReady = model ? modelStatus(model).ok : false
-  const canSubmit = validation.ok && modelReady && busy === null && job.phase !== 'running'
+  const canSubmit = validation.ok && modelReady && busy === null && ocrPreview === null && job.phase !== 'running'
 
   const composedTokens = model
     ? estimateTokens(rubric.content) + estimateTokens(draft.prompt + draft.essay + draft.extras + draft.reference)
@@ -98,7 +100,7 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
         payloads.push({ ...compressed, role })
       }
       const key = role === 'prompt' ? 'promptImages' : 'essayImages'
-      updateDraft(activeTask, { [key]: [...draft[key], ...payloads] } as Partial<typeof draft>)
+      updateDraft(activeTask, { [key]: [...draft[key], ...payloads.filter(image => !draft[key].some(old => old.dataUrl === image.dataUrl))] } as Partial<typeof draft>)
 
       const saved = payloads.reduce((sum, p) => sum + (p.originalBytes - p.compressedBytes), 0)
       if (saved > 0) {
@@ -116,17 +118,19 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
 
   async function ocrAll() {
     if (!model) return
-    const targets = [...draft.promptImages, ...draft.essayImages]
-    if (targets.length === 0) return
+    const targets = [...draft.promptImages, ...draft.essayImages].filter(image => image.transcript === undefined)
+    if (targets.length === 0) { toast.info('图片已识别，无需重复追加；需要重新识别时请移除后重新上传'); return }
 
     setBusy('ocr')
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
       const uncertainAll: string[] = []
       const summaries: string[] = []
 
       // 作文图逐张转录，结果拼接进 essay 字段
-      let essayText = draft.essay
-      let promptText = draft.prompt
+      let essayText = ''
+      let promptText = ''
       // 转录结果回写进图片，避免重复识别
       const transcripts = new Map<string, string>()
 
@@ -138,8 +142,10 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
           model,
           settings,
           image.role === 'essay' ? spec.shortName : '题目',
+          controller.signal,
         )
 
+        if (!result.text.trim()) throw new Error(`${image.name} 未识别到文字，请重新拍摄或手动输入`)
         if (image.role === 'essay') {
           essayText = essayText ? `${essayText}\n\n${result.text}` : result.text
         } else {
@@ -151,32 +157,35 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
         if (result.summary) summaries.push(`${image.name}：${result.summary}`)
       }
 
-      updateDraft(activeTask, {
-        prompt: promptText,
-        essay: essayText,
-        promptImages: draft.promptImages.map((img) => ({
-          ...img,
-          transcript: transcripts.get(img.dataUrl) ?? img.transcript,
-        })),
-        essayImages: draft.essayImages.map((img) => ({
-          ...img,
-          transcript: transcripts.get(img.dataUrl) ?? img.transcript,
-        })),
-        transcriptionNote: uncertainAll.length
-          ? `以下地方识别存疑，请人工核对后再提交：\n- ${uncertainAll.join('\n- ')}`
-          : '',
+      if (controller.signal.aborted) return
+      setOcrPreview({ task: activeTask, prompt: promptText, essay: essayText, transcripts,
+        note: uncertainAll.length ? `以下地方识别存疑，请人工核对：\n- ${uncertainAll.join('\n- ')}` : '',
       })
 
       if (uncertainAll.length > 0) {
         toast.info(`识别完成，有 ${uncertainAll.length} 处存疑已列出，请核对`)
       } else {
-        toast.ok('识别完成，请核对文字后再提交')
+        toast.ok('识别完成，请在预览中选择替换或追加')
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '识别失败')
+      if (!controller.signal.aborted) toast.error(err instanceof Error ? err.message : '识别失败')
     } finally {
       setBusy(null)
+      abortRef.current = null
     }
+  }
+
+  function applyOcr(mode: 'replace' | 'append') {
+    if (!ocrPreview) return
+    const current = useGradeStore.getState().drafts[ocrPreview.task]
+    updateDraft(ocrPreview.task, {
+      prompt: ocrPreview.prompt ? (mode === 'replace' ? ocrPreview.prompt : appendRecognizedText(current.prompt, ocrPreview.prompt)) : current.prompt,
+      essay: ocrPreview.essay ? (mode === 'replace' ? ocrPreview.essay : appendRecognizedText(current.essay, ocrPreview.essay)) : current.essay,
+      promptImages: current.promptImages.map(image => ({ ...image, transcript: ocrPreview.transcripts.get(image.dataUrl) ?? image.transcript })),
+      essayImages: current.essayImages.map(image => ({ ...image, transcript: ocrPreview.transcripts.get(image.dataUrl) ?? image.transcript })),
+      transcriptionNote: ocrPreview.note,
+    })
+    setOcrPreview(null)
   }
 
   /* ---------------- 文件 ---------------- */
@@ -231,6 +240,7 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
       })
 
       const stored = await saveReport({
+        rubricSnapshot: rubric.content,
         taskType: activeTask,
         input: {
           year: draft.year,
@@ -312,6 +322,20 @@ export function GradePage({ taskParam }: { taskParam?: string | null }) {
         </>
       }
     >
+      {ocrPreview ? <section className="panel" aria-label="识别结果预览">
+        <div className="panel__body stack stack--4">
+          <h3>识别结果预览 · {TASK_SPECS[ocrPreview.task].shortName}</h3>
+          <p>当前文字尚未改变。核对后选择替换，或仅追加不重复的内容。</p>
+          {ocrPreview.prompt ? <label className="field">题目<textarea className="textarea" value={ocrPreview.prompt} onChange={e => setOcrPreview({ ...ocrPreview, prompt: e.target.value })} /></label> : null}
+          {ocrPreview.essay ? <label className="field">作答<textarea className="textarea" value={ocrPreview.essay} onChange={e => setOcrPreview({ ...ocrPreview, essay: e.target.value })} /></label> : null}
+          {ocrPreview.note ? <p>{ocrPreview.note}</p> : null}
+          <div className="row row--wrap" style={{ gap: 8 }}>
+            <button className="btn btn--primary" onClick={() => applyOcr('replace')}>替换对应文本</button>
+            <button className="btn btn--secondary" onClick={() => applyOcr('append')}>追加不重复内容</button>
+            <button className="btn btn--ghost" onClick={() => setOcrPreview(null)}>取消识别结果</button>
+          </div>
+        </div>
+      </section> : null}
       {/* 题型切换 */}
       <div className="grade-tabs" role="tablist" aria-label="选择题型">
         {TASK_ORDER.map((type) => {

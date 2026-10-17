@@ -88,6 +88,11 @@ export function isTemplateCategory(value: unknown): value is TemplateCategory {
 /* -------------------------------------------------------------------------- */
 
 export interface WritingTemplate {
+  /** Active recall exercise, optional for legacy cards. */
+  practice?: string
+  answer?: string
+  practiceAttempt?: string
+
   id: string
   createdAt: number
   updatedAt: number
@@ -141,6 +146,8 @@ export function isRecurring(template: WritingTemplate): boolean {
 
 /** 从模型返回里解析出来的原始模板（未入库） */
 export interface DraftTemplate {
+  practice?: string
+  answer?: string
   category: TemplateCategory
   title: string
   body: string

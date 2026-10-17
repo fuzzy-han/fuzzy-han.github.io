@@ -254,6 +254,19 @@ export async function replaceUserData(
   })
 }
 
+/** Persist a user record only after its IndexedDB transaction commits. */
+export async function putUserRecord(store: string, value: unknown): Promise<void> {
+  const db = await openDB()
+  if (!db) throw new Error('浏览器存储不可用，内容尚未保存')
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(store, 'readwrite')
+    const timer = setTimeout(() => transaction.abort(), TX_TIMEOUT_MS)
+    transaction.oncomplete = () => { clearTimeout(timer); resolve() }
+    transaction.onabort = transaction.onerror = () => { clearTimeout(timer); reject(new Error('保存失败，请检查存储空间后重试')) }
+    try { transaction.objectStore(store).put(value) } catch { transaction.abort() }
+  })
+}
+
 export const idb = {
   get<T>(store: string, key: string): Promise<T | null> {
     return tx<T>(store, 'readonly', (os) => os.get(key) as IDBRequest<T>)

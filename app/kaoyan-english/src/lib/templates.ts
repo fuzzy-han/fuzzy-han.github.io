@@ -3,7 +3,7 @@
    模板数量会随时间累积（几十到几百条），放 IndexedDB 而不是 localStorage。
    ========================================================================== */
 
-import { closeDB, idb, makeId, STORES } from './storage'
+import { closeDB, idb, makeId, STORES, putUserRecord } from './storage'
 import type { TemplateCategory, WritingTemplate } from '@/types/template'
 
 export async function listTemplates(): Promise<WritingTemplate[]> {
@@ -13,13 +13,13 @@ export async function listTemplates(): Promise<WritingTemplate[]> {
 }
 
 export async function saveTemplate(template: WritingTemplate): Promise<void> {
-  await idb.put(STORES.templates, template)
+  await putUserRecord(STORES.templates, template)
 }
 
 /** 批量写入（合并后整体覆盖） */
 export async function saveTemplates(templates: WritingTemplate[]): Promise<void> {
   for (const template of templates) {
-    await idb.put(STORES.templates, template)
+    await putUserRecord(STORES.templates, template)
   }
 }
 

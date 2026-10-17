@@ -52,6 +52,7 @@ export async function transcribeImage(
   model: ModelConfig,
   settings: Pick<AppSettings, 'transport' | 'proxyBaseUrl' | 'proxyToken' | 'timeoutSec'>,
   taskName: string,
+  signal?: AbortSignal,
 ): Promise<TranscriptResult> {
   if (!model.vision) {
     throw new Error(
@@ -71,6 +72,7 @@ export async function transcribeImage(
         ],
       },
     ],
+    signal,
     temperature: 0,
     maxTokens: 4096,
     jsonMode: true,
@@ -94,4 +96,14 @@ export async function transcribeImage(
       : [],
     summary: typeof value.summary === 'string' ? value.summary : '',
   }
+}
+
+/** Append only novel OCR paragraphs, preserving manual edits already in the field. */
+export function appendRecognizedText(current: string, incoming: string): string {
+  const normalize = (value: string) => value.replace(/\s+/g, ' ').trim()
+  let text = current
+  for (const block of incoming.split(/\n\s*\n/).map(value => value.trim()).filter(Boolean)) {
+    if (!normalize(text).includes(normalize(block))) text = text.trim() ? `${text.trimEnd()}\n\n${block}` : block
+  }
+  return text
 }

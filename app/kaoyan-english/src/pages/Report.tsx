@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { LearningPanel } from '@/components/LearningPanel'
+import { useGradeStore } from '@/app/gradeStore'
 import { Shell } from '@/components/Shell'
 import { ScoreRing, DimensionBars, formatScore } from '@/components/Score'
 import { EssaySentenceCard, TranslationSentenceCard } from '@/components/SentenceCard'
@@ -170,6 +172,7 @@ function ReportView({ record }: { record: StoredReport }) {
       actions={
         <>
           <CopyButton label="复制报告" text={reportToText(record)} />
+          <button type="button" className="btn btn--primary btn--sm" onClick={() => document.querySelector('[aria-label="持续学习"]')?.scrollIntoView({ behavior: 'smooth' })}>追问与修改复评</button>
           <button
             type="button"
             className="btn btn--secondary btn--sm"
@@ -186,10 +189,13 @@ function ReportView({ record }: { record: StoredReport }) {
           <button
             type="button"
             className="btn btn--secondary btn--sm"
-            onClick={() => navigate('grade', { task: record.taskType })}
+            onClick={() => {
+              useGradeStore.getState().updateDraft(record.taskType, { ...record.input, reference: record.input.reference ?? '', transcriptionNote: record.input.transcriptionNote ?? '', promptImages: [], essayImages: [] })
+              navigate('grade', { task: record.taskType })
+            }}
           >
             <IconSpark size={13} />
-            再批一次
+            完整重批
           </button>
         </>
       }
@@ -533,6 +539,7 @@ function ReportView({ record }: { record: StoredReport }) {
           </div>
         </div>
       </details>
+      <LearningPanel key={record.id} record={record} />
     </Shell>
   )
 }

@@ -56,6 +56,8 @@ export function TemplatesPage() {
   const [mastered, setMastered] = useState<Record<string, boolean>>(loadMastered)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<TemplateCategory | 'all' | 'recurring'>('all')
+  const [search, setSearch] = useState('')
+  const [studyFilter, setStudyFilter] = useState('all')
   const [busy, setBusy] = useState<'idle' | 'generating' | 'batch'>('idle')
   const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
 
@@ -80,10 +82,16 @@ export function TemplatesPage() {
   const totalRecurring = templates.filter(isRecurring).length
 
   const visible = useMemo(() => {
-    if (filter === 'all') return templates
-    if (filter === 'recurring') return templates.filter(isRecurring)
-    return templates.filter((t) => t.category === filter)
-  }, [templates, filter])
+    const query = search.trim().toLowerCase()
+    return templates.filter(template => {
+      if (filter === 'recurring' && !isRecurring(template)) return false
+      if (filter !== 'all' && filter !== 'recurring' && template.category !== filter) return false
+      if (studyFilter === 'pending' && (mastered[template.id] || template.practiceAttempt?.trim())) return false
+      if (studyFilter === 'practiced' && !template.practiceAttempt?.trim()) return false
+      if (studyFilter === 'mastered' && !mastered[template.id]) return false
+      return !query || [template.title, template.body, template.scene, template.usage, template.meaning].some(value => value.toLowerCase().includes(query))
+    })
+  }, [templates, filter, search, studyFilter, mastered])
 
   /** 按问题类型再分一层，同一类错误集中记忆效果最好 */
   const grouped = useMemo(() => {
@@ -280,6 +288,10 @@ export function TemplatesPage() {
 
           {/* —— 右：模板列表 —— */}
           <div className="tpl-main">
+            <div className="row row--wrap" style={{ gap: 12, marginBottom: 16 }}>
+              <label className="field" style={{ flex: '1 1 180px', minWidth: 0 }}>按场景或知识点查找<input aria-label="搜索学习卡" className="input" value={search} onChange={event => setSearch(event.target.value)} placeholder="例如：图画开头、让步、主谓一致" /></label>
+              <label className="field" style={{ flex: '1 1 140px', minWidth: 0 }}>学习进度<select aria-label="学习进度" className="input" value={studyFilter} onChange={event => setStudyFilter(event.target.value)}><option value="all">全部</option><option value="pending">待练习</option><option value="practiced">已仿写</option><option value="mastered">已掌握</option></select></label>
+            </div>
             {filter !== 'all' && filter !== 'recurring' ? (
               <div className="note tpl-tip">
                 <span className="note__icon">
@@ -457,10 +469,19 @@ function TemplateCard({
   mastered: boolean
   onToggleMastered: () => void
   onDelete: () => void
-  onSave: (patch: Partial<WritingTemplate>) => void
+  onSave: (patch: Partial<WritingTemplate>) => Promise<void>
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(template)
+  const [attempt, setAttempt] = useState(template.practiceAttempt ?? '')
+  const [saving, setSaving] = useState(false)
+  useEffect(() => { if (!editing) setDraft(template) }, [template, editing])
+  async function persist(patch: Partial<WritingTemplate>) {
+    setSaving(true)
+    try { await onSave(patch); return true }
+    catch (error) { toast.error(error instanceof Error ? error.message : '保存失败，请重试'); return false }
+    finally { setSaving(false) }
+  }
 
   const recurring = isRecurring(template)
 
@@ -502,8 +523,9 @@ function TemplateCard({
           <button
             type="button"
             className="btn btn--ghost btn--sm"
-            onClick={() => {
-              if (editing) onSave(draft)
+            disabled={saving}
+            onClick={async () => {
+              if (editing && !(await persist(draft))) return
               setEditing((v) => !v)
             }}
             title={editing ? '保存' : '编辑'}
@@ -578,6 +600,13 @@ function TemplateCard({
           </p>
         ) : null}
 
+        {template.practice ? <section className="stack stack--3" style={{ marginTop: 16 }}>
+          <h5>迁移练习 · 先尝试，再看答案</h5>
+          <p>{template.practice}</p>
+          <textarea className="textarea" aria-label="我的仿写" rows={3} value={attempt} onChange={event => setAttempt(event.target.value)} placeholder="用上面的句式换一个主题试写，完成后点击保存" />
+          <button className="btn btn--secondary btn--sm" disabled={saving || attempt === (template.practiceAttempt ?? '')} onClick={() => void persist({ practiceAttempt: attempt })}>保存仿写</button>
+          <details><summary>查看参考答案</summary><p>{template.answer}</p></details>
+        </section> : null}
         <footer className="tpl__foot">
           {template.problemTags.length > 0 ? (
             <span className="row row--wrap" style={{ gap: 'var(--ds-1)' }}>

@@ -102,6 +102,12 @@ check('按时间倒序，最近的在最前', mergedReports[0].id === 'c' && mer
 check('旧记录在合并后依然存在', mergedReports.some((r) => r.id === 'a'))
 check('重复导入同一份文件不会翻倍', mergeReports(mergedReports, newReports).length === 3)
 
+const learningOld = [{ id: 'study', createdAt: 1, learning: { turns: [{ id: 'old', createdAt: 1, content: 'old question' }] } }]
+const learningNew = [{ id: 'study', createdAt: 1, learning: { turns: [{ id: 'new', createdAt: 2, content: 'new question' }] } }]
+const learningMerged = mergeReports(learningOld, learningNew)
+check('同一报告合并保留两侧学习对话', learningMerged[0].learning.turns.length === 2)
+check('重复导入学习对话不会翻倍', mergeReports(learningMerged, learningNew)[0].learning.turns.length === 2)
+
 /* -------------------------------------------------------------------------- */
 console.log('\n── 4. 模板合并：出现次数与来源不能被抹掉 ──')
 

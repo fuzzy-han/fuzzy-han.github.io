@@ -5,12 +5,24 @@
    因此报告走 IndexedDB，设置与细则仍留在 localStorage。
    ========================================================================== */
 
-import { idb, STORES, makeId, closeDB } from './storage'
+import { idb, STORES, makeId, closeDB, putUserRecord } from './storage'
 import type { TaskType } from '@/types/domain'
 import type { GradingReport } from '@/types/report'
 import type { ReportDiagnostic } from './report'
 
+export interface LearningTurn {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: number
+  kind: 'question' | 'revision'
+}
+
 export interface StoredReport {
+  /** Ongoing questions and revisions stay attached to the original assignment. */
+  learning?: { turns: LearningTurn[] }
+  rubricSnapshot?: string
+
   id: string
   createdAt: number
   taskType: TaskType
@@ -40,7 +52,7 @@ export async function saveReport(
   draft: Omit<StoredReport, 'id' | 'createdAt'>,
 ): Promise<StoredReport> {
   const record: StoredReport = { ...draft, id: makeId('report'), createdAt: Date.now() }
-  await idb.put(STORES.reports, record)
+  await putUserRecord(STORES.reports, record)
   return record
 }
 
@@ -61,4 +73,8 @@ export async function clearReports(): Promise<void> {
   // 同 Settings：清空之前先断开连接，否则会挂起
   closeDB()
   await idb.clear(STORES.reports)
+}
+
+export async function updateReport(record: StoredReport): Promise<void> {
+  await putUserRecord(STORES.reports, record)
 }

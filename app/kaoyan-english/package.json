@@ -23,7 +23,8 @@
     "e2e:connection": "node scripts/verify-connection.mjs",
     "e2e:backup": "node --experimental-strip-types scripts/verify-backup-unit.mjs && node scripts/verify-backup-regression.mjs && node scripts/verify-backup.mjs",
     "e2e:templates": "node scripts/verify-templates.mjs && node scripts/verify-templates-real.mjs",
-    "build:vocab": "node scripts/build-vocab.mjs"
+    "build:vocab": "node scripts/build-vocab.mjs",
+    "e2e:learning": "node scripts/verify-learning.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
